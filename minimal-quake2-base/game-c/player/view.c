@@ -1136,24 +1136,14 @@ newanim:
 
 	if (!ent->groundentity)
 	{
-		/* if on grapple, don't go into jump
-		   frame, go into standing frame */
-		if (client->ctf_grapple)
-		{
-			ent->s.frame = FRAME_stand01;
-			client->anim_end = FRAME_stand40;
-		}
-		else
-		{
-			client->anim_priority = ANIM_JUMP;
+		client->anim_priority = ANIM_JUMP;
 
-			if (ent->s.frame != FRAME_jump2)
-			{
-				ent->s.frame = FRAME_jump1;
-			}
-
-			client->anim_end = FRAME_jump2;
+		if (ent->s.frame != FRAME_jump2)
+		{
+			ent->s.frame = FRAME_jump1;
 		}
+
+		client->anim_end = FRAME_jump2;
 	}
 	else if (run)
 	{   

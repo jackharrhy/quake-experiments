@@ -312,10 +312,6 @@ ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 					message = "tried to invade";
 					message2 = "'s personal space";
 					break;
-				case MOD_GRAPPLE:
-					message = "was caught by";
-					message2 = "'s grapple";
-					break;
 			}
 
 			if (message)
@@ -591,9 +587,6 @@ InitClientPersistant(gclient_t *client)
 
 	client->pers.weapon = item;
 	client->pers.lastweapon = item;
-
-	item = FindItem("Grapple");
-	client->pers.inventory[ITEM_INDEX(item)] = 1;
 
 	client->pers.health = 100;
 	client->pers.max_health = 100;

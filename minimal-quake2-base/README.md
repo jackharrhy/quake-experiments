@@ -1,5 +1,9 @@
 # quake experiments - minimal-quake2-base
 
+state:
+- still pulling in files from pak0 as needed, not yet overwritten with alternatives
+- no sounds
+
 goals:
 
 - blank canvas for a prospective quake engineer

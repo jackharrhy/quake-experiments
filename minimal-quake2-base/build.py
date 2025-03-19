@@ -120,8 +120,6 @@ def copy_file_maintaining_path(
     else:
         matching_files = [source_base / relative_path]
 
-    print(relative_path, matching_files)
-
     for source_file in matching_files:
         rel_file_path = source_file.relative_to(source_base)
         target_file = target_base / rel_file_path
