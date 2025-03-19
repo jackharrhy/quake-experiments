@@ -175,139 +175,6 @@ SpawnDamage(int type, vec3_t origin, vec3_t normal, int damage)
 	gi.multicast(origin, MULTICAST_PVS);
 }
 
-/*
- * targ		 entity that is being damaged
- * inflictor entity that is causing the damage
- * attacker	 entity that caused the inflictor to damage targ
- *
- * dir			direction of the attack
- * point		point at which the damage is being inflicted
- * normal		normal vector from that point
- * damage		amount of damage being inflicted
- * knockback	force to be applied against targ as a result of the damage
- *
- * dflags		these flags are used to control how T_Damage works
- *  DAMAGE_RADIUS			damage was indirect (from a nearby explosion)
- *  DAMAGE_NO_ARMOR			armor does not protect from this damage
- *  DAMAGE_ENERGY			damage is from an energy based weapon
- *  DAMAGE_NO_KNOCKBACK		do not affect velocity, just view angles
- *  DAMAGE_BULLET			damage is from a bullet (used for ricochets)
- *  DAMAGE_NO_PROTECTION	kills godmode, armor, everything
- * ============
- */
-static int
-CheckPowerArmor(edict_t *ent, vec3_t point, vec3_t normal,
-		int damage, int dflags)
-{
-	gclient_t *client;
-	int save;
-	int power_armor_type;
-	int index = 0;
-	int damagePerCell;
-	int pa_te_type;
-	int power = 0;
-	int power_used;
-
-	if (!damage)
-	{
-		return 0;
-	}
-
-	client = ent->client;
-
-	if (dflags & DAMAGE_NO_ARMOR)
-	{
-		return 0;
-	}
-
-	if (client)
-	{
-		power_armor_type = PowerArmorType(ent);
-
-		if (power_armor_type != POWER_ARMOR_NONE)
-		{
-			index = ITEM_INDEX(FindItem("Cells"));
-			power = client->pers.inventory[index];
-		}
-	}
-	else if (ent->svflags & SVF_MONSTER)
-	{
-		power_armor_type = ent->monsterinfo.power_armor_type;
-		power = ent->monsterinfo.power_armor_power;
-		index = 0;
-	}
-	else
-	{
-		return 0;
-	}
-
-	if (power_armor_type == POWER_ARMOR_NONE)
-	{
-		return 0;
-	}
-
-	if (!power)
-	{
-		return 0;
-	}
-
-	if (power_armor_type == POWER_ARMOR_SCREEN)
-	{
-		vec3_t vec;
-		float dot;
-		vec3_t forward;
-
-		/* only works if damage point is in front */
-		AngleVectors(ent->s.angles, forward, NULL, NULL);
-		VectorSubtract(point, ent->s.origin, vec);
-		VectorNormalize(vec);
-		dot = DotProduct(vec, forward);
-
-		if (dot <= 0.3)
-		{
-			return 0;
-		}
-
-		damagePerCell = 1;
-		pa_te_type = TE_SCREEN_SPARKS;
-		damage = damage / 3;
-	}
-	else
-	{
-		damagePerCell = 1;
-		pa_te_type = TE_SHIELD_SPARKS;
-		damage = (2 * damage) / 3;
-	}
-
-	save = power * damagePerCell;
-
-	if (!save)
-	{
-		return 0;
-	}
-
-	if (save > damage)
-	{
-		save = damage;
-	}
-
-	SpawnDamage(pa_te_type, point, normal, save);
-	ent->powerarmor_time = level.time + 0.2;
-
-	power_used = save / damagePerCell;
-
-	if (client)
-	{
-		client->pers.inventory[index] -= power_used;
-	}
-	else
-	{
-		ent->monsterinfo.power_armor_power -= power_used;
-	}
-
-	return save;
-}
-
 static int
 CheckArmor(edict_t *ent, vec3_t point, vec3_t normal,
 		int damage, int te_sparks, int dflags)
@@ -462,12 +329,6 @@ M_ReactToDamage(edict_t *targ, edict_t *attacker)
 	}
 }
 
-qboolean
-CheckTeamDamage(edict_t *targ, edict_t *attacker)
-{
-	return false;
-}
-
 void
 T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		vec3_t dir, vec3_t point, vec3_t normal, int damage,
@@ -484,30 +345,6 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 	{
 		return;
 	}
-
-	/* friendly fire avoidance 
-	   if enabled you can't hurt
-	   teammates (but you can hurt 
-	   yourself)  knockback still occurs */
-	if ((targ != attacker) &&
-		((deathmatch->value &&
-		  ((int)(dmflags->value) & (DF_MODELTEAMS | DF_SKINTEAMS))) ||
-		 coop->value))
-	{
-		if (OnSameTeam(targ, attacker))
-		{
-			if ((int)(dmflags->value) & DF_NO_FRIENDLY_FIRE)
-			{
-				damage = 0;
-			}
-			else
-			{
-				mod |= MOD_FRIENDLY_FIRE;
-			}
-		}
-	}
-
-	meansOfDeath = mod;
 
 	/* easy mode takes half damage */
 	if ((skill->value == 0) && (deathmatch->value == 0) && targ->client)
@@ -604,10 +441,6 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		save = damage;
 	}
 
-	/* team armor protect */
-	psave = CheckPowerArmor(targ, point, normal, take, dflags);
-	take -= psave;
-
 	asave = CheckArmor(targ, point, normal, take, te_sparks, dflags);
 	take -= asave;
 
@@ -615,7 +448,7 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 	asave += save;
 
 	/* team damage avoidance */
-	if (!(dflags & DAMAGE_NO_PROTECTION) && CheckTeamDamage(targ, attacker))
+	if (!(dflags & DAMAGE_NO_PROTECTION))
 	{
 		return;
 	}

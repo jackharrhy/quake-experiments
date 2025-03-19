@@ -72,7 +72,7 @@ def build_game_odin():
 def build_game_c():
     print("Building game-c")
     (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
-    subprocess.run(["make"], check=True, cwd=game_c_dir)
+    subprocess.run(["make", "DEBUG=1"], check=True, cwd=game_c_dir)
     game_lib_src = game_c_dir / "release" / "game.dylib"
     game_lib_dst = release_dir / "baseq2" / "game.dylib"
     shutil.copy2(game_lib_src, game_lib_dst)

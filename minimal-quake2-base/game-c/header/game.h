@@ -210,4 +210,3 @@ typedef struct
 } game_export_t;
 
 #endif /* MQ2B_GAME_H */
-

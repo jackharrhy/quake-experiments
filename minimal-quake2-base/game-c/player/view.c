@@ -935,40 +935,12 @@ P_WorldEffects(void)
 void
 G_SetClientEffects(edict_t *ent)
 {
-	int pa_type;
-	int remaining;
-
 	ent->s.effects = 0;
 	ent->s.renderfx = 0;
 
 	if ((ent->health <= 0) || level.intermissiontime)
 	{
 		return;
-	}
-
-	if (ent->powerarmor_time > level.time)
-	{
-		pa_type = PowerArmorType(ent);
-
-		if (pa_type == POWER_ARMOR_SCREEN)
-		{
-			ent->s.effects |= EF_POWERSCREEN;
-		}
-		else if (pa_type == POWER_ARMOR_SHIELD)
-		{
-			ent->s.effects |= EF_COLOR_SHELL;
-			ent->s.renderfx |= RF_SHELL_GREEN;
-		}
-	}
-
-	if (ent->client->quad_framenum > level.framenum)
-	{
-		remaining = ent->client->quad_framenum - level.framenum;
-	}
-
-	if (ent->client->invincible_framenum > level.framenum)
-	{
-		remaining = ent->client->invincible_framenum - level.framenum;
 	}
 
 	/* show cheaters!!! */

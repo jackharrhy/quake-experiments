@@ -920,97 +920,6 @@ Pickup_Armor(edict_t *ent, edict_t *other)
 
 /* ====================================================================== */
 
-int
-PowerArmorType(edict_t *ent)
-{
-	if (!ent->client)
-	{
-		return POWER_ARMOR_NONE;
-	}
-
-	if (!(ent->flags & FL_POWER_ARMOR))
-	{
-		return POWER_ARMOR_NONE;
-	}
-
-	if (ent->client->pers.inventory[power_shield_index] > 0)
-	{
-		return POWER_ARMOR_SHIELD;
-	}
-
-	if (ent->client->pers.inventory[power_screen_index] > 0)
-	{
-		return POWER_ARMOR_SCREEN;
-	}
-
-	return POWER_ARMOR_NONE;
-}
-
-void
-Use_PowerArmor(edict_t *ent, gitem_t *item)
-{
-	int index;
-
-	if (ent->flags & FL_POWER_ARMOR)
-	{
-		ent->flags &= ~FL_POWER_ARMOR;
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power2.wav"), 1, ATTN_NORM, 0);
-	}
-	else
-	{
-		index = ITEM_INDEX(FindItem("cells"));
-
-		if (!ent->client->pers.inventory[index])
-		{
-			gi.cprintf(ent, PRINT_HIGH, "No cells for power armor.\n");
-			return;
-		}
-
-		ent->flags |= FL_POWER_ARMOR;
-		gi.sound(ent, CHAN_AUTO, gi.soundindex("misc/power1.wav"), 1, ATTN_NORM, 0);
-	}
-}
-
-qboolean
-Pickup_PowerArmor(edict_t *ent, edict_t *other)
-{
-	int quantity;
-
-	quantity = other->client->pers.inventory[ITEM_INDEX(ent->item)];
-
-	other->client->pers.inventory[ITEM_INDEX(ent->item)]++;
-
-	if (deathmatch->value)
-	{
-		if (!(ent->spawnflags & DROPPED_ITEM))
-		{
-			SetRespawn(ent, ent->item->quantity);
-		}
-
-		/* auto-use for DM only if we didn't already have one */
-		if (!quantity)
-		{
-			ent->item->use(other, ent->item);
-		}
-	}
-
-	return true;
-}
-
-void
-Drop_PowerArmor(edict_t *ent, gitem_t *item)
-{
-	if ((ent->flags & FL_POWER_ARMOR) &&
-		(ent->client->pers.inventory[ITEM_INDEX(item)] == 1))
-	{
-		Use_PowerArmor(ent, item);
-	}
-
-	Drop_General(ent, item);
-}
-
-/* ====================================================================== */
-
 void
 Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
 {
@@ -1405,8 +1314,7 @@ SpawnItem(edict_t *ent, gitem_t *item)
 	{
 		if ((int)dmflags->value & DF_NO_ARMOR)
 		{
-			if ((item->pickup == Pickup_Armor) ||
-				(item->pickup == Pickup_PowerArmor))
+			if (item->pickup == Pickup_Armor)
 			{
 				G_FreeEdict(ent);
 				return;
@@ -1569,54 +1477,6 @@ gitem_t itemlist[] = {
 		NULL,
 		ARMOR_SHARD,
 		""
-	},
-
-	/*
-	 * QUAKED item_power_screen (.3 .3 1) (-16 -16 -16) (16 16 16)
-	 */
-	{
-		"item_power_screen",
-		Pickup_PowerArmor,
-		Use_PowerArmor,
-		Drop_PowerArmor,
-		NULL,
-		"misc/ar3_pkup.wav",
-		"models/items/armor/screen/tris.md2", EF_ROTATE,
-		NULL,
-		"i_powerscreen",
-		"Power Screen",
-		0,
-		60,
-		NULL,
-		IT_ARMOR,
-		0,
-		NULL,
-		0,
-		""
-	},
-
-	/*
-	 * QUAKED item_power_shield (.3 .3 1) (-16 -16 -16) (16 16 16)
-	 */
-	{
-		"item_power_shield",
-		Pickup_PowerArmor,
-		Use_PowerArmor,
-		Drop_PowerArmor,
-		NULL,
-		"misc/ar3_pkup.wav",
-		"models/items/armor/shield/tris.md2", EF_ROTATE,
-		NULL,
-		"i_powershield",
-		"Power Shield",
-		0,
-		60,
-		NULL,
-		IT_ARMOR,
-		0,
-		NULL,
-		0,
-		"misc/power2.wav misc/power1.wav"
 	},
 
 	/* 

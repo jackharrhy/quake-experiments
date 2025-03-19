@@ -27,57 +27,6 @@
 #include "header/local.h"
 #include "monster/player.h"
 
-static char *
-ClientTeam(edict_t *ent, char* value)
-{
-	char *p;
-
-	value[0] = 0;
-
-	if (!ent->client)
-	{
-		return value;
-	}
-
-	strcpy(value, Info_ValueForKey(ent->client->pers.userinfo, "skin"));
-	p = strchr(value, '/');
-
-	if (!p)
-	{
-		return value;
-	}
-
-	if ((int)(dmflags->value) & DF_MODELTEAMS)
-	{
-		*p = 0;
-		return value;
-	}
-
-	return ++p;
-}
-
-qboolean
-OnSameTeam(edict_t *ent1, edict_t *ent2)
-{
-	char ent1Team[512];
-	char ent2Team[512];
-
-	if (!((int)(dmflags->value) & (DF_MODELTEAMS | DF_SKINTEAMS)))
-	{
-		return false;
-	}
-
-	ClientTeam(ent1, ent1Team);
-	ClientTeam(ent2, ent2Team);
-
-	if (ent1Team[0] != '\0' && strcmp(ent1Team, ent2Team) == 0)
-	{
-		return true;
-	}
-
-	return false;
-}
-
 void
 SelectNextItem(edict_t *ent, int itflags)
 {
@@ -1002,19 +951,7 @@ Cmd_Say_f(edict_t *ent, qboolean team, qboolean arg0)
 		return;
 	}
 
-	if (!((int)(dmflags->value) & (DF_MODELTEAMS | DF_SKINTEAMS)))
-	{
-		team = false;
-	}
-
-	if (team)
-	{
-		Com_sprintf(text, sizeof(text), "(%s): ", ent->client->pers.netname);
-	}
-	else
-	{
-		Com_sprintf(text, sizeof(text), "%s: ", ent->client->pers.netname);
-	}
+	Com_sprintf(text, sizeof(text), "%s: ", ent->client->pers.netname);
 
 	if (arg0)
 	{
@@ -1065,14 +1002,6 @@ Cmd_Say_f(edict_t *ent, qboolean team, qboolean arg0)
 		if (!other->client)
 		{
 			continue;
-		}
-
-		if (team)
-		{
-			if (!OnSameTeam(ent, other))
-			{
-				continue;
-			}
 		}
 
 		gi.cprintf(other, PRINT_CHAT, "%s", text);

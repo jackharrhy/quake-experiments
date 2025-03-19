@@ -72,7 +72,6 @@
 #define FL_WATERJUMP 0x00000200             /* player jumping out of water */
 #define FL_TEAMSLAVE 0x00000400             /* not the first on the team */
 #define FL_NO_KNOCKBACK 0x00000800
-#define FL_POWER_ARMOR 0x00001000           /* power armor (if any) is active */
 #define FL_RESPAWN 0x80000000               /* used for item respawning */
 
 #define FRAMETIME 0.1
@@ -159,11 +158,6 @@ typedef enum
 #define ARMOR_COMBAT 2
 #define ARMOR_BODY 3
 #define ARMOR_SHARD 4
-
-/* power armor types */
-#define POWER_ARMOR_NONE 0
-#define POWER_ARMOR_SCREEN 1
-#define POWER_ARMOR_SHIELD 2
 
 /* handedness values */
 #define RIGHT_HANDED 0
@@ -435,9 +429,6 @@ typedef struct
 	int lefty;
 	float idle_time;
 	int linkcount;
-
-	int power_armor_type;
-	int power_armor_power;
 } monsterinfo_t;
 
 extern game_locals_t game;
@@ -599,7 +590,6 @@ void ChangeWeapon(edict_t *ent);
 void SpawnItem(edict_t *ent, gitem_t *item);
 void Think_Weapon(edict_t *ent);
 int ArmorIndex(edict_t *ent);
-int PowerArmorType(edict_t *ent);
 gitem_t *GetItemByIndex(int index);
 qboolean Add_Ammo(edict_t *ent, gitem_t *item, int count);
 void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
@@ -630,9 +620,7 @@ float vectoyaw(vec3_t vec);
 void vectoangles(vec3_t vec, vec3_t angles);
 
 /* g_combat.c */
-qboolean OnSameTeam(edict_t *ent1, edict_t *ent2);
 qboolean CanDamage(edict_t *targ, edict_t *inflictor);
-qboolean CheckTeamDamage(edict_t *targ, edict_t *attacker);
 void T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		vec3_t dir, vec3_t point, vec3_t normal, int damage, int knockback,
 		int dflags, int mod);
@@ -1026,8 +1014,6 @@ struct edict_s
 	int gib_health;
 	int deadflag;
 	int show_hostile;
-
-	float powerarmor_time;
 
 	char *map;                  /* target_changelevel */
 

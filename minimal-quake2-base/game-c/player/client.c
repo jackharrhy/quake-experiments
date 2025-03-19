@@ -497,7 +497,6 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	self->client->invincible_framenum = 0;
 	self->client->breather_framenum = 0;
 	self->client->enviro_framenum = 0;
-	self->flags &= ~FL_POWER_ARMOR;
 
 	/* clear inventory */
 	memset(self->client->pers.inventory, 0, sizeof(self->client->pers.inventory));
@@ -637,7 +636,7 @@ SaveClientData(void)
 		game.clients[i].pers.health = ent->health;
 		game.clients[i].pers.max_health = ent->max_health;
 		game.clients[i].pers.savedFlags =
-			(ent->flags & (FL_GODMODE | FL_NOTARGET | FL_POWER_ARMOR));
+			(ent->flags & (FL_GODMODE | FL_NOTARGET));
 
 		if (coop->value)
 		{
