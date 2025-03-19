@@ -1,0 +1,4 @@
+minimal-quake3-base
+tmp
+*.log
+.DS_Store

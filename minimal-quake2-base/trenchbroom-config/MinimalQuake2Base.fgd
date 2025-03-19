@@ -1,0 +1,574 @@
+@SolidClass = worldspawn : "World entity"
+[
+	sky(string) : "Environment map name"
+	skyaxis(string) : "Vector axis for rotating sky"
+	skyrotate(string) : "Speed of rotation (degrees/second)"
+	sounds(integer) : "CD Track Number" : 1
+	gravity(integer) : "Gravity" : 800
+	message(string) : "Level name"
+	nextmap(string) : "Next map (DM only)"
+]
+
+@baseclass = Appearflags [
+	spawnflags(Flags) =
+	[
+		256 : "Not in Easy" : 0
+		512 : "Not in Normal" : 0
+		1024 : "Not in Hard" : 0
+		2048 : "Not in Deathmatch" : 0
+	]
+]
+@baseclass = Angle [ angle(integer) : "Direction" ]
+@baseclass = Targetname [ targetname(target_source) : "Name" ]
+@baseclass = Target [ target(target_destination) : "Target" ]
+
+@baseclass base(Appearflags, Targetname) size(-16 -16 -24, 16 16 32) color(0 255 0) = PlayerClass []
+@PointClass base(PlayerClass) = info_player_start : "Player 1 start" []
+
+@SolidClass base(Appearflags, Targetname) = func_areaportal : "Area portal (Vis blocker)" []
+
+@SolidClass base(Appearflags, Target, Targetname) color(0 128 204) = func_button : "Button"
+[
+	pathtarget(string) : "Elevator level target"
+	speed(integer) : "Speed" : 40
+	wait(choices) : "Wait before reset" : 1 =
+	[
+		-1 : "Never Return"
+	]
+	lip(integer) : "Lip remaining after move" : 4
+	health(integer) : "Health (shootable)"
+	sounds(choices) : "Sounds" : 0 =
+	[
+		0 : "Audible"
+		1 : "Silent"
+	]
+	message(string) : "Activation message"
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@PointClass base(Appearflags, Targetname) color(0 0 255) size(-8 -8 -8, 8 8 8) = func_clock : "Clock"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Timer Up" : 0
+		2 : "Timer Down" : 0
+		4 : "Start Off" : 0
+		8 : "Multi Use" : 0
+	]
+	count(integer) : "Clock Count"
+	pathtarget(string) : "Target"
+	style(choices) : "Style" : 0 =
+	[
+		0 : "xx"
+		1 : "xx:xx"
+		2 : "xx:xx:xx"
+	]
+]
+
+@SolidClass base(Angle, Appearflags, Targetname, Target) color(0 128 204) = func_door : "Door"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Open" : 0
+		4 : "Crusher" : 0
+		8 : "No Monsters" : 0
+		16 : "Animated" : 0
+		32 : "Toggle" : 0
+		64 : "Animated Fast" : 0
+	]
+	killtarget(string) : "Kill Target"
+	team(string) : "Team"
+	message(string) : "Trigger message"
+	health(integer) : "Health (shootable)"
+	speed(integer) : "Speed" : 100
+	wait(choices) : "Wait before close" : 3 =
+	[
+		-1 : "Stay open"
+	]
+	lip(integer) : "Lip remaining after move" : 8
+	dmg(integer) : "Damage when blocked" : 2
+	sounds(choices) : "Sounds" : 0 =
+	[
+		0 : "Audible"
+		1 : "Silent"
+	]
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname, Target) color(0 128 204) = func_door_rotating : "Rotating Door"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Open" : 0
+		2 : "Reverse" : 0
+		4 : "Crusher" : 0
+		8 : "No Monsters" : 0
+		16 : "Animated" : 0
+		32 : "Toggle" : 0
+		64 : "X Axis" : 0
+		128 : "Y Axis" : 0
+	]
+	killtarget(string) : "Kill Target"
+	team(string) : "Team"
+	distance(integer) : "Degrees of rotation" : 90
+	message(string) : "Trigger message"
+	health(integer) : "Health (shootable)"
+	speed(integer) : "Speed" : 100
+	wait(choices) : "Wait before close" : 3 =
+	[
+		-1 : "Stay open"
+	]
+	dmg(integer) : "Damage when blocked" : 2
+	sounds(choices) : "Sounds" : 0 =
+	[
+		0 : "Audible"
+		1 : "Silent"
+	]
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Angle, Appearflags, Targetname) color(0 128 204) = func_door_secret : "Secret Door"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Always shoot" : 0
+		2 : "1st Left" : 0
+		4 : "1st Down" : 0
+	]
+	dmg(integer) : "Damage when blocked" : 2
+	wait(choices) : "Wait before close" : 5 =
+	[
+		-1 : "Stay open"
+	]
+	message(string) : "Message"
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname, Target) color(0 128 204) = func_explosive : "Exploding/Breakable brush"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Trigger Spawn" : 0
+		2 : "Animated" : 0
+		4 : "Animated Fast" : 0
+	]
+	health(integer) : "Health" : 100
+	mass(integer) : "Mass (debris)" : 75
+	dmg(integer) : "Damage" : 0
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname) color(255 0 0) = func_killbox : "Instant death" []
+
+@SolidClass base(Appearflags, Targetname) color (0 128 204) = func_object : "Solid bmodel, will fall if its support is removed"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Trigger Spawn" : 0
+		2 : "Animated" : 0
+		4 : "Animated Fast" : 0
+	]
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 128 204) = func_plat : "Platform"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Plat Low Trigger" : 0
+	]
+	speed(integer) : "Speed" : 100
+	accel(integer) : "Acceleration" : 500
+	lip(integer) : "Lip remaining after move" : 8
+	height(integer) : "Movement distance"
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 128 204) = func_rotating : "Rotating brush"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start On" : 0
+		2 : "Reverse" : 0
+		4 : "X Axis" : 0
+		8 : "Y Axis" : 0
+		16 : "Pain on Touch" : 0
+		32 : "Block Stops" : 0
+		64 : "Animated" : 0
+		128 : "Animated Fast" : 0
+	]
+	team(string) : "Team"
+	speed(integer) : "Speed" : 100
+	dmg(integer) : "Damage when blocked" : 2
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(76 25 153) size(-8 -8 -8, 8 8 8) = func_timer : "Timer"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start On" : 0
+	]
+	wait(integer) : "Base wait time" : 1
+	random(integer) : "Wait variance (+/-)"
+	delay(integer) : "Delay before first firing"
+	pausetime(integer) : "Additional delay"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 128 204) = func_train : "Moving platform"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start On" : 0
+		2 : "Toggle" : 0
+		4 : "Block Stops" : 0
+	]
+	target(string) : "First stop target"
+	team(string) : "Team"
+	speed(integer) : "Speed" : 100
+	dmg(integer) : "Damage when blocked" : 2
+	noise(string) : "Sound (path/file.wav)"
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 128 204) = func_wall : "Solid Wall"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Trigger Spawn" : 0
+		2 : "Toggle" : 0
+		4 : "Start On" : 0
+		8 : "Animated" : 0
+		16 : "Animated Fast" : 0
+	]
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 128 204) = func_water : "Moveable water"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Open" : 0
+	]
+	speed(integer) : "Speed" : 25
+	wait(choices) : "Wait before return" : -1 =
+	[
+		-1 : "Toggle"
+	]
+	lip(integer) : "Lip remaining after move"
+	sounds(Choices) : "Sounds" : 1 =
+	[
+		0 : "No Sounds"
+		1 : "Water"
+		2 : "Lava"
+	]
+	team(string) : "Team"
+	_minlight(integer) : "Minimum light (optional)"
+]
+
+@PointClass base(Appearflags, Targetname) color(0 128 0) size(-4 -4 -4, 4 4 4) = info_null : "Spotlight target" []
+@PointClass base(info_null) = info_notnull : "Lightning target" []
+
+@BaseClass base(Appearflags, Target) color(76 76 255) size(-16 -16 -16, 16 16 16) = Items
+[
+	team(string) : "Team"
+]
+
+@BaseClass base(Appearflags, Target) color(0 128 204) size(-16 -16 -16, 16 16 16) = Keys []
+
+@PointClass base(Appearflags, Target, Targetname) color(0 255 0) size(-8 -8 -8, 8 8 8) = light : "Light"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Off" : 0
+	]
+	light(integer) : "Brightness" : 300
+	style(Choices) : "Style" : 0 =
+	[
+		0 : "Normal"
+		1 : "Flicker #1"
+		6 : "Flicker #2"
+		2 : "Slow Strong Pulse"
+		3 : "Candle #1"
+		7 : "Candle #2"
+		8 : "Candle #3"
+		4 : "Fast Strobe"
+		5 : "Gentle Pulse #1"
+		9 : "Slow Strobe"
+		10 : "Fluorescent Flicker"
+		11 : "Slow pulse, no black"
+	]
+	_cone(integer) : "Size of light (spotlight)" : 10
+]
+
+@PointClass base(PlayerClass, Target) = misc_actor : "Actor"
+[
+	health(integer) : "Health" : 100
+]
+@PointClass base(Appearflags, Targetname) = target_actor : "Actor path"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Jump" : 0
+		2 : "Shoot" : 0
+		4 : "Attack" : 0
+		16 : "Hold" : 0
+		32 : "Brutal" : 0
+	]
+	target(string) : "Next path target"
+	pathtarget(string) : "Action target"
+	wait(integer) : "Pause time"
+	message(string) : "Message"
+	speed(integer) : "Forward (jump)" : 200
+	height(integer) : "Height (jump)" : 200
+]
+
+@PointClass base(Appearflags, Targetname) color(128 76 0) size(-8 -8 -8, 8 8 8) = path_corner : "Path marker"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Teleport" : 0
+	]
+	target(string) : "Next path target"
+	pathtarget(string) : "Event to trigger"
+	wait(choices) : "Wait" : 0 =
+	[
+		-1 : "Wait for retrigger"
+	]
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_blaster : "Blaster"
+[
+	spawnflags(Flags) =
+	[
+		1 : "No Trail" : 0
+		2 : "No Effects" : 0
+	]
+	dmg(integer) : "Damage" : 15
+	speed(integer) : "Speed" : 1000
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_changelevel : "Change level"
+[
+	map(string) : "Next map"
+]
+
+@SolidClass base(Appearflags, Targetname) color(0 0 255) = target_character : "Use with target_string and func_clock"
+[
+	team(string) : "Team"
+	count(integer) : "Position in the string"
+	_minlight(string) : "Minimum light (optional)"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(128 128 128) size(-8 -8 -8, 8 8 8) = target_crosslevel_trigger : "Cross-level trigger"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Trigger 1" : 0
+		2 : "Trigger 2" : 0
+		4 : "Trigger 3" : 0
+		8 : "Trigger 4" : 0
+		16 : "Trigger 5" : 0
+		32 : "Trigger 6" : 0
+		64 : "Trigger 7" : 0
+		128 : "Trigger 8" : 0
+	]
+	killtarget(string) : "Kill Target"
+	message(string) : "Message"
+	delay(integer) : "Trigger delay"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(128 128 128) size(-8 -8 -8, 8 8 8) = target_crosslevel_target : "Cross-level trigger"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Trigger 1" : 0
+		2 : "Trigger 2" : 0
+		4 : "Trigger 3" : 0
+		8 : "Trigger 4" : 0
+		16 : "Trigger 5" : 0
+		32 : "Trigger 6" : 0
+		64 : "Trigger 7" : 0
+		128 : "Trigger 8" : 0
+	]
+	killtarget(string) : "Kill Target"
+	delay(integer) : "Trigger delay (if activated)" : 1
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_earthquake : "Level wide earthquake"
+[
+	speed(integer) : "Severity of quake" : 200
+	count(integer) : "Duration" : 5
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_explosion : "Explosion"
+[
+	delay(integer) : "Delay before explosion"
+	dmg(integer) : "Radius damage" : 0
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 255) size(-8 -8 -8, 8 8 8) = target_goal : "Counts a goal completed" []
+
+@PointClass base(Appearflags, Targetname) color(255 0 255) size(-8 -8 -8, 8 8 8) = target_help : "Computer help message"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Main Onjective" : 0
+	]
+	message(string) : "Computer message"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(0 128 204) size(-8 -8 -8, 8 8 8) = target_laser : "Laser"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start On" : 0
+		2 : "Red" : 0
+		4 : "Green" : 0
+		8 : "Blue" : 0
+		16 : "Yellow" : 0
+		32 : "Orange" : 0
+		64 : "Fat" : 0
+	]
+	dmg(integer) : "Damage"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(0 128 204) size(-8 -8 -8, 8 8 8) = target_lightramp : "Light ramp"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Toggle" : 0
+	]
+	speed(integer) : "Speed"
+	message(string) : "start/end light level"
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_spawner : "Monster/Item spawner"
+[
+	target(string) : "Monster/Item to spawn"
+	speed(integer) : "Speed"
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_speaker : "Sound player"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Looped On" : 0
+		2 : "Looped Off" : 0
+		4 : "Reliable" : 0
+	]
+	noise(string) : "Sound (path/file.wav)"
+	attenuation(Choices) : "Attenuation" : 1 =
+	[
+		-1 : "None, send to whole level"
+		1 : "Normal fighting sounds"
+		2 : "Idle sound level"
+		3 : "Ambient sound level"
+	]
+	volume(integer) : "Volume (0.0 - 1.0)" : 1
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_splash : "Creates a splash when used"
+[
+	sounds(choices) : "Type of splash" : 2 =
+	[
+		1 : "Sparks"
+		2 : "Blue water"
+		3 : "Brown water"
+		4 : "Slime"
+		5 : "Lava"
+		6 : "Blood"
+	]
+	count(integer) : "Number of pixels in splash (1 - 255)"
+	dmg(integer) : "Radius damage"
+]
+
+@PointClass base(Appearflags, Targetname) color(0 0 255) size(-8 -8 -8, 8 8 8) = target_string : "String"
+[
+	team(string) : "Team"
+]
+
+@PointClass base(Appearflags, Targetname) color(255 0 0) size(-8 -8 -8, 8 8 8) = target_temp_entity : "Temp entity"
+[
+	style(choices) : "Style" : 22 =
+	[
+		20 : "Green Fireball"
+		21 : "Particles #1"
+		22 : "Particles #2"
+	]
+]
+
+@PointClass base(Appearflags, Target) color(128 128 128) size(-8 -8 -8, 8 8 8) = trigger_always : "Always triggers"
+[
+	killtarget(string) : "Kill Target"
+	delay(integer) : "Time before triggering"
+]
+
+@SolidClass base(Appearflags, Targetname, Target) color(128 128 128) = trigger_counter : "Counter"
+[
+	spawnflags(Flags) =
+	[
+		1 : "No Message" : 0
+	]
+	count(integer) : "Count before trigger" : 2
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(76 25 153) = trigger_elevator : "Elevator trigger" []
+
+@SolidClass base(Appearflags) color(128 128 128) = trigger_gravity : "Change gravity"
+[
+	gravity(integer) : "Gravity (standard = 1.0)" : 1
+]
+
+@SolidClass base(Appearflags, Targetname) color(128 128 128) = trigger_hurt : "Hurts on touch"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Start Off" : 0
+		2 : "Toggle" : 0
+		4 : "Silent" : 0
+		8 : "No Protection" : 0
+		16 : "Slow hurt" : 0
+	]
+	dmg(integer) : "Damage" : 5
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(128 128 128) size(-8 -8 -8, 8 8 8) = trigger_key : "Triggers with key"
+[
+	killtarget(string) : "Kill target"
+	item(string) : "Item classname" : "key_blue_key"
+]
+
+@PointClass base(Appearflags, Targetname, Target) color(128 128 128) = trigger_relay : "Relay trigger"
+[
+	killtarget(string) : "Kill Target"
+	delay(integer) : "Time before triggering"
+	message(string) : "Trigger message"
+]
+
+@SolidClass base(trigger_relay) = trigger_once : "Single fire trigger"
+[
+	spawnflags(Flags) =
+	[
+		4 : "Triggered" : 0
+	]
+]
+
+@SolidClass base(trigger_once) = trigger_multiple : "Multiple fire trigger"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Monster" : 0
+		2 : "Not Player" : 0
+	]
+	wait(integer) : "Seconds between triggers" : 0
+]
+
+@SolidClass base(Appearflags) color(128 128 128) = trigger_push : "Push trigger"
+[
+	spawnflags(Flags) =
+	[
+		1 : "Push Once" : 0
+	]
+	speed(integer) : "Speed of push" : 1000
+]
