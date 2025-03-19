@@ -150,3 +150,8 @@
 "classname" "light"
 "origin" "184 584 216"
 }
+// entity 5
+{
+"classname" "info_player_start"
+"origin" "0 480 40"
+}

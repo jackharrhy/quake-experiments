@@ -19,3 +19,16 @@ non goals:
 - work well on old computers
 - graphics anything more complex than default dev textures
 - telling you how to structure your game, just giving you a starting point on how to produce a game dll that _works_, with the basics you expect (physics, networking, etc.)
+
+---
+
+`game-c` is based off of [yquake2/ctf](https://github.com/yquake2/ctf/tree/c7a4b27bf67c9b09fe906bfb2263ff9f66fb57b6)
+
+the plan is, to tear game-c down to its _core_, and then rewrite that into `game-odin`
+
+`game-odin`, currently _boots_ and does not crash, but it does very little... for now
+
+why ctf over the base game? honestly i don't know, in my brain ctf was maybe something that came out afterwards maybe with some patches,
+and felt like a better choice than the expansions for something that would be played multiplayer
+
+but none of the above is based on facts, only vibes

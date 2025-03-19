@@ -13,12 +13,16 @@ yquake2_ref_vk_url = "https://github.com/yquake2/ref_vk"
 yquake2_ref_vk_commit = "21bde3c4bb3ab3af00d41c2fd85b86c0a021732f"
 yquake2_ref_vk_dir = Path("ref_vk")
 
+game_c_dir = Path("game-c")
+
 base_dir = Path("base")
 
 tmp_dir = Path("tmp")
 pak0_dir = tmp_dir / "pak0"
 
 release_dir = Path("release")
+
+build_odin = False
 
 
 def clone_yquake2():
@@ -63,6 +67,15 @@ def build_game_odin():
         "odin build ./game-odin -build-mode:dll -out:./release/baseq2/game.dylib"
     )
     subprocess.run(cmd, check=True)
+
+
+def build_game_c():
+    print("Building game-c")
+    (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
+    subprocess.run(["make"], check=True, cwd=game_c_dir)
+    game_lib_src = game_c_dir / "release" / "game.dylib"
+    game_lib_dst = release_dir / "baseq2" / "game.dylib"
+    shutil.copy2(game_lib_src, game_lib_dst)
 
 
 def build_maps():
@@ -180,7 +193,11 @@ def build():
     build_yquake2_ref_vk()
     build_maps()
     copy_files()
-    build_game_odin()
+
+    if build_odin:
+        build_game_odin()
+    else:
+        build_game_c()
 
 
 def run():
