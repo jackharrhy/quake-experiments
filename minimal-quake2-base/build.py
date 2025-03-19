@@ -234,6 +234,15 @@ def setup_trenchbroom():
     )
 
 
+def loc_metrics():
+    output_file = "game-c-loc.txt"
+
+    with open(output_file, "w") as f:
+        subprocess.run(["tokei", game_c_dir], stdout=f, check=True)
+
+    print(f"Lines of code metrics written to {output_file}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build tools for minimal-quake2-base")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
@@ -246,6 +255,9 @@ def main():
     subparsers.add_parser("copy", help="Copy files")
     subparsers.add_parser("copy-and-run", help="Copy files and run the game")
     subparsers.add_parser("setup-trenchbroom", help="Setup Trenchbroom")
+    subparsers.add_parser(
+        "loc-metrics", help="Get metrics on how much code is in game-c"
+    )
 
     args = parser.parse_args()
 
@@ -266,6 +278,8 @@ def main():
         run()
     elif args.command == "setup-trenchbroom":
         setup_trenchbroom()
+    elif args.command == "loc-metrics":
+        loc_metrics()
     elif not args.command:
         parser.print_help()
 
