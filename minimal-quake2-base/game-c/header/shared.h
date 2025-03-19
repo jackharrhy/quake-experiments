@@ -25,8 +25,8 @@
  * =======================================================================
  */
 
-#ifndef CTF_SHARED_H
-#define CTF_SHARED_H
+#ifndef MQ2B_SHARED_H
+#define MQ2B_SHARED_H
 
 #include <assert.h>
 #include <math.h>
@@ -1044,7 +1044,7 @@ typedef struct entity_state_s
 	vec3_t angles;
 	vec3_t old_origin;      /* for lerping */
 	int modelindex;
-	int modelindex2, modelindex3, modelindex4;      /* weapons, CTF flags, etc */
+	int modelindex2, modelindex3, modelindex4;      /* weapons, etc */
 	int frame;
 	int skinnum;
 	unsigned int effects;   
@@ -1094,4 +1094,4 @@ extern int vidref_val;
 size_t verify_fread(void *, size_t, size_t, FILE *);
 size_t verify_fwrite(void *, size_t, size_t, FILE *);
 
-#endif /* CTF_SHARED_H */
+#endif /* MQ2B_SHARED_H */

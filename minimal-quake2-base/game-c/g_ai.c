@@ -20,8 +20,6 @@
  * =======================================================================
  *
  * The basic AI functions like enemy detection, attacking and so on.
- * While mostly unused by the CTF code the functions must be here since
- * big parts of the game logic rely on them.
  *
  * =======================================================================
  */

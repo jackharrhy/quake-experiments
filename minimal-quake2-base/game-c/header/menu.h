@@ -19,13 +19,13 @@
  *
  * =======================================================================
  *
- * Header for the CTF ingame menu.
+ * Header for the MQ2B ingame menu.
  *
  * =======================================================================
  */ 
 
-#ifndef CTF_MENU_H
-#define CTF_MENU_H
+#ifndef MQ2B_MENU_H
+#define MQ2B_MENU_H
 
 enum
 {

@@ -19,9 +19,7 @@
  *
  * =======================================================================
  *
- * The savegame system. Unused by the CTF game but nevertheless called
- * during game initialization. Therefor no new savegame code ist 
- * imported.
+ * The savegame system.
  *
  * =======================================================================
  */ 

@@ -34,8 +34,8 @@
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  */
 
-#ifndef CTF_GAME_H
-#define CTF_GAME_H
+#ifndef MQ2B_GAME_H
+#define MQ2B_GAME_H
 
 #define GAME_API_VERSION 3
 
@@ -209,5 +209,5 @@ typedef struct
 	int max_edicts;
 } game_export_t;
 
-#endif /* CTF_GAME_H */
+#endif /* MQ2B_GAME_H */
 

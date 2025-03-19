@@ -466,7 +466,6 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	self->movetype = MOVETYPE_TOSS;
 
 	self->s.modelindex2 = 0; /* remove linked weapon model */
-	self->s.modelindex3 = 0; /* remove linked ctf flag */
 
 	self->s.angles[0] = 0;
 	self->s.angles[2] = 0;
@@ -604,12 +603,10 @@ InitClientPersistant(gclient_t *client)
 void
 InitClientResp(gclient_t *client)
 {
-	int ctf_team = client->resp.ctf_team;
 	qboolean id_state = client->resp.id_state;
 
 	memset(&client->resp, 0, sizeof(client->resp));
 
-	client->resp.ctf_team = ctf_team;
 	client->resp.id_state = id_state;
 
 	client->resp.enterframe = level.framenum;
@@ -1407,7 +1404,6 @@ ClientConnect(edict_t *ent, char *userinfo)
 	if (ent->inuse == false)
 	{
 		/* clear the respawning variables */
-		ent->client->resp.ctf_team = -1;
 		ent->client->resp.id_state = true;
 
 		InitClientResp(ent->client);

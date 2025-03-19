@@ -274,7 +274,7 @@ CheckPowerArmor(edict_t *ent, vec3_t point, vec3_t normal,
 	}
 	else
 	{
-		damagePerCell = 1; /* power armor is weaker in CTF */
+		damagePerCell = 1;
 		pa_te_type = TE_SHIELD_SPARKS;
 		damage = (2 * damage) / 3;
 	}

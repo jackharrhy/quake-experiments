@@ -24,8 +24,8 @@
  * =======================================================================
  */
 
-#ifndef CTF_LOCAL_H
-#define CTF_LOCAL_H
+#ifndef MQ2B_LOCAL_H
+#define MQ2B_LOCAL_H
 
 #include "shared.h"
 
@@ -833,12 +833,6 @@ typedef struct
 	client_persistant_t coop_respawn;   /* what to set client->pers to on a respawn */
 	int enterframe;                 /* level.framenum the client entered the game */
 	int score;                      /* frags, etc */
-	int ctf_team;                   /* CTF team */
-	int ctf_state;
-	float ctf_lasthurtcarrier;
-	float ctf_lastreturnedflag;
-	float ctf_flagsince;
-	float ctf_lastfraggedcarrier;
 	qboolean id_state;
 	float lastidtime;
 	qboolean voted;    /* for elections */
@@ -1092,4 +1086,4 @@ void ChaseNext(edict_t *ent);
 void ChasePrev(edict_t *ent);
 void UpdateChaseCam(edict_t *ent);
 
-#endif /* CTF_LOCAL_H */
+#endif /* MQ2B_LOCAL_H */

@@ -19,8 +19,7 @@
  *
  * =======================================================================
  *
- * Monster utility functions. While unused by the CTF code they must
- * persist here since most of the other game codes has ties to it.
+ * Monster utility functions.
  *
  * =======================================================================
  */ 

@@ -1,8 +1,8 @@
 # ----------------------------------------------------- #
-# Makefile for the CTF game module for Quake II         #
+# Makefile for the MQ2B game module for Quake II        #
 #                                                       #
 # Just type "make" to compile the                       #
-#  - CTF Game (game.so / game.dll)                      #
+#  - MQ2B Game (game.so / game.dll)                     #
 #                                                       #
 # Dependencies:                                         #
 # - None, but you need a Quake II to play.              #
@@ -166,7 +166,7 @@ endif
 # ----------
 
 # Builds everything
-all: ctf
+all: mq2b
 
 # ----------
 
@@ -182,7 +182,7 @@ endif
 # ----------
 
 # Phony targets
-.PHONY : all clean ctf
+.PHONY : all clean mq2b
 
 # ----------
 
@@ -193,19 +193,19 @@ clean:
 
 # ----------
 
-# The ctf game
+# The mq2b game
 ifeq ($(YQ2_OSTYPE), Windows)
-ctf:
+mq2b:
 	@echo "===> Building game.dll"
 	$(Q)mkdir -p release
 	$(MAKE) release/game.dll
 else ifeq ($(YQ2_OSTYPE), Darwin)
-ctf:
+mq2b:
 	@echo "===> Building game.dylib"
 	${Q}mkdir -p release
 	$(MAKE) release/game.dylib
 else
-ctf:
+mq2b:
 	@echo "===> Building game.so"
 	$(Q)mkdir -p release
 	$(MAKE) release/game.so
@@ -220,12 +220,11 @@ build/%.o: %.c
 
 # ----------
 
-CTF_OBJS_ = \
+MQ2B_OBJS_ = \
 	g_ai.o \
 	g_chase.o \
 	g_cmds.o \
 	g_combat.o \
-	g_ctf.o \
 	g_func.o \
 	g_items.o \
 	g_main.o \
@@ -251,32 +250,32 @@ CTF_OBJS_ = \
 # ----------
 
 # Rewrite pathes to our object directory
-CTF_OBJS = $(patsubst %,build/%,$(CTF_OBJS_))
+MQ2B_OBJS = $(patsubst %,build/%,$(MQ2B_OBJS_))
 
 # ----------
 
 # Generate header dependencies
-CTF_DEPS= $(CTF_OBJS:.o=.d)
+MQ2B_DEPS= $(MQ2B_OBJS:.o=.d)
 
 # ----------
 
 # Suck header dependencies in
--include $(CTF_DEPS)
+-include $(MQ2B_DEPS)
 
 # ----------
 
 ifeq ($(YQ2_OSTYPE), Windows)
-release/game.dll : $(CTF_OBJS)
+release/game.dll : $(MQ2B_OBJS)
 	@echo "===> LD $@"
-	$(Q)$(CC) -o $@ $(CTF_OBJS) $(LDFLAGS)
+	$(Q)$(CC) -o $@ $(MQ2B_OBJS) $(LDFLAGS)
 else ifeq ($(YQ2_OSTYPE), Darwin)
-release/game.dylib : $(CTF_OBJS)
+release/game.dylib : $(MQ2B_OBJS)
 	@echo "===> LD $@"
-	${Q}$(CC) -o $@ $(CTF_OBJS) $(LDFLAGS)
+	${Q}$(CC) -o $@ $(MQ2B_OBJS) $(LDFLAGS)
 else
-release/game.so : $(CTF_OBJS)
+release/game.so : $(MQ2B_OBJS)
 	@echo "===> LD $@"
-	$(Q)$(CC) -o $@ $(CTF_OBJS) $(LDFLAGS)
+	$(Q)$(CC) -o $@ $(MQ2B_OBJS) $(LDFLAGS)
 endif
 
 # ----------
