@@ -586,18 +586,6 @@ Weapon_Generic2(edict_t *ent, int FRAME_ACTIVATE_LAST, int FRAME_FIRE_LAST,
 		{
 			if (ent->client->ps.gunframe == fire_frames[n])
 			{
-				if (!CTFApplyStrengthSound(ent))
-				{
-					if (ent->client->quad_framenum > level.framenum)
-					{
-						gi.sound(ent, CHAN_ITEM,
-								gi.soundindex(
-										"items/damage3.wav"), 1, ATTN_NORM, 0);
-					}
-				}
-
-				CTFApplyHasteSound(ent);
-
 				fire(ent);
 				break;
 			}
@@ -633,9 +621,8 @@ Weapon_Generic(edict_t *ent, int FRAME_ACTIVATE_LAST, int FRAME_FIRE_LAST,
 		return;
 	}
 
-	if ((CTFApplyHaste(ent) ||
-		 ((Q_stricmp(ent->client->pers.weapon->pickup_name, "Grapple") == 0) &&
-		  (ent->client->weaponstate != WEAPON_FIRING))) &&
+	if (((Q_stricmp(ent->client->pers.weapon->pickup_name, "Grapple") == 0) &&
+		 (ent->client->weaponstate != WEAPON_FIRING)) &&
 		(oldstate == ent->client->weaponstate))
 	{
 		Weapon_Generic2(ent, FRAME_ACTIVATE_LAST, FRAME_FIRE_LAST,

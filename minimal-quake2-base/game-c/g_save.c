@@ -145,7 +145,7 @@ void
 InitGame(void)
 {
 	gi.dprintf("Game is starting up.\n");
-	gi.dprintf("Game is ctf built on %s.\n", GAMEVERSION, BUILD_DATE);
+	gi.dprintf("Game is mq2b built on %s.\n", GAMEVERSION, BUILD_DATE);
 
 	gun_x = gi.cvar("gun_x", "0", 0);
 	gun_y = gi.cvar("gun_y", "0", 0);
@@ -223,8 +223,6 @@ InitGame(void)
 	game.maxclients = maxclients->value;
 	game.clients = gi.TagMalloc(game.maxclients * sizeof(game.clients[0]), TAG_GAME);
 	globals.num_edicts = game.maxclients + 1;
-
-	CTFInit();
 }
 
 /* ========================================================= */

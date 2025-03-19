@@ -89,11 +89,6 @@ BeginIntermission(edict_t *targ)
 		return; /* allready activated */
 	}
 
-	if (deathmatch->value && ctf->value)
-	{
-		CTFCalcScores();
-	}
-
 	game.autosaved = false;
 
 	/* respawn any dead clients */
@@ -210,12 +205,6 @@ DeathmatchScoreboardMessage(edict_t *ent, edict_t *killer)
 	gclient_t *cl;
 	edict_t *cl_ent;
 	char *tag;
-
-	if (ctf->value)
-	{
-		CTFScoreboardMessage(ent, killer);
-		return;
-	}
 
 	/* sort the clients by score */
 	total = 0;
@@ -613,7 +602,5 @@ G_SetStats(edict_t *ent)
 	{
 		ent->client->ps.stats[STAT_HELPICON] = 0;
 	}
-
-	SetCTFStats(ent);
 }
 

@@ -996,14 +996,6 @@ bfg_think(edict_t *self)
 			continue;
 		}
 
-		/* don't target players in CTF */
-		if (ctf->value && ent->client &&
-			self->owner->client &&
-			(ent->client->resp.ctf_team == self->owner->client->resp.ctf_team))
-		{
-			continue;
-		}
-
 		VectorMA(ent->absmin, 0.5, ent->size, point);
 
 		VectorSubtract(point, self->s.origin, dir);

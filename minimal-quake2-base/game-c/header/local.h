@@ -37,7 +37,7 @@
 #include "menu.h"
 
 /* the "gameversion" client command will print this plus compile date */
-#define GAMEVERSION "ctf"
+#define GAMEVERSION "mq2b"
 
 /* protocol bytes that can be directly added to messages */
 #define svc_muzzleflash 1
@@ -1095,7 +1095,9 @@ struct edict_s
 	monsterinfo_t monsterinfo;
 };
 
-#include "ctf.h"
+/* g_chase.c */
+void ChaseNext(edict_t *ent);
+void ChasePrev(edict_t *ent);
+void UpdateChaseCam(edict_t *ent);
 
 #endif /* CTF_LOCAL_H */
-

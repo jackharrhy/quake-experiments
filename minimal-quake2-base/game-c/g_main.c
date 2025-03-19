@@ -308,17 +308,6 @@ CheckDMRules(void)
 		return;
 	}
 
-	if (ctf->value && CTFCheckRules())
-	{
-		EndDMLevel();
-		return;
-	}
-
-	if (CTFInMatch())
-	{
-		return; /* no checking in match mode */
-	}
-
 	if (timelimit->value)
 	{
 		if (level.time >= timelimit->value * 60)
@@ -359,11 +348,6 @@ ExitLevel(void)
 
 	level.exitintermission = 0;
 	level.intermissiontime = 0;
-
-	if (CTFNextMap())
-	{
-		return;
-	}
 
 	Com_sprintf(command, sizeof(command), "gamemap \"%s\"\n", level.changemap);
 	gi.AddCommandString(command);

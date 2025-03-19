@@ -530,12 +530,6 @@ Cmd_Drop_f(edict_t *ent)
 	gitem_t *it;
 	char *s;
 
-	if ((Q_stricmp(gi.args(), "tech") == 0) && ((it = CTFWhat_Tech(ent)) != NULL))
-	{
-		it->drop(ent, it);
-		return;
-	}
-
 	s = gi.args();
 	it = FindItem(s);
 
@@ -583,12 +577,6 @@ Cmd_Inven_f(edict_t *ent)
 	if (cl->showinventory)
 	{
 		cl->showinventory = false;
-		return;
-	}
-
-	if (ctf->value && (cl->resp.ctf_team == CTF_NOTEAM))
-	{
-		CTFOpenJoinMenu(ent);
 		return;
 	}
 
@@ -1115,12 +1103,6 @@ ClientCommand(edict_t *ent)
 		return;
 	}
 
-	if ((Q_stricmp(cmd, "say_team") == 0) || (Q_stricmp(cmd, "steam") == 0))
-	{
-		CTFSay_Team(ent, gi.args());
-		return;
-	}
-
 	if (Q_stricmp(cmd, "score") == 0)
 	{
 		Cmd_Score_f(ent);
@@ -1221,59 +1203,6 @@ ClientCommand(edict_t *ent)
 	else if (Q_stricmp(cmd, "wave") == 0)
 	{
 		Cmd_Wave_f(ent);
-	}
-	/* ZOID */
-	else if (Q_stricmp(cmd, "team") == 0)
-	{
-		CTFTeam_f(ent);
-	}
-	else if (Q_stricmp(cmd, "id") == 0)
-	{
-		CTFID_f(ent);
-	}
-	else if (Q_stricmp(cmd, "yes") == 0)
-	{
-		CTFVoteYes(ent);
-	}
-	else if (Q_stricmp(cmd, "no") == 0)
-	{
-		CTFVoteNo(ent);
-	}
-	else if (Q_stricmp(cmd, "ready") == 0)
-	{
-		CTFReady(ent);
-	}
-	else if (Q_stricmp(cmd, "notready") == 0)
-	{
-		CTFNotReady(ent);
-	}
-	else if (Q_stricmp(cmd, "ghost") == 0)
-	{
-		CTFGhost(ent);
-	}
-	else if (Q_stricmp(cmd, "admin") == 0)
-	{
-		CTFAdmin(ent);
-	}
-	else if (Q_stricmp(cmd, "stats") == 0)
-	{
-		CTFStats(ent);
-	}
-	else if (Q_stricmp(cmd, "warp") == 0)
-	{
-		CTFWarp(ent);
-	}
-	else if (Q_stricmp(cmd, "boot") == 0)
-	{
-		CTFBoot(ent);
-	}
-	else if (Q_stricmp(cmd, "playerlist") == 0)
-	{
-		CTFPlayerList(ent);
-	}
-	else if (Q_stricmp(cmd, "observer") == 0)
-	{
-		CTFObserver(ent);
 	}
 	else /* anything that doesn't match a command will be a chat */
 	{

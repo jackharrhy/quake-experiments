@@ -651,14 +651,6 @@ P_FallingDamage(edict_t *ent)
 
 	delta = delta * delta * 0.0001;
 
-	/* never take damage if just release grapple or on grapple */
-	if ((level.time - ent->client->ctf_grapplereleasetime <= FRAMETIME * 2) ||
-		(ent->client->ctf_grapple &&
-		 (ent->client->ctf_grapplestate > CTF_GRAPPLE_STATE_FLY)))
-	{
-		return;
-	}
-
 	/* never take falling damage if completely underwater */
 	if (ent->waterlevel == 3)
 	{
@@ -969,26 +961,14 @@ G_SetClientEffects(edict_t *ent)
 		}
 	}
 
-	CTFEffects(ent);
-
 	if (ent->client->quad_framenum > level.framenum)
 	{
 		remaining = ent->client->quad_framenum - level.framenum;
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			CTFSetPowerUpEffect(ent, EF_QUAD);
-		}
 	}
 
 	if (ent->client->invincible_framenum > level.framenum)
 	{
 		remaining = ent->client->invincible_framenum - level.framenum;
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			CTFSetPowerUpEffect(ent, EF_PENT);
-		}
 	}
 
 	/* show cheaters!!! */

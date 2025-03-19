@@ -465,15 +465,6 @@ M_ReactToDamage(edict_t *targ, edict_t *attacker)
 qboolean
 CheckTeamDamage(edict_t *targ, edict_t *attacker)
 {
-	if (ctf->value && targ->client && attacker->client)
-	{
-		if ((targ->client->resp.ctf_team == attacker->client->resp.ctf_team) &&
-			(targ != attacker))
-		{
-			return true;
-		}
-	}
-
 	return false;
 }
 
@@ -549,9 +540,6 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		damage *= 2;
 	}
 
-	/* strength tech */
-	damage = CTFApplyStrength(attacker, damage);
-
 	if (targ->flags & FL_NO_KNOCKBACK)
 	{
 		knockback = 0;
@@ -617,34 +605,20 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 	}
 
 	/* team armor protect */
-	if (ctf->value && targ->client && attacker->client &&
-		(targ->client->resp.ctf_team == attacker->client->resp.ctf_team) &&
-		(targ != attacker) && ((int)dmflags->value & DF_ARMOR_PROTECT))
-	{
-		psave = asave = 0;
-	}
-	else
-	{
-		psave = CheckPowerArmor(targ, point, normal, take, dflags);
-		take -= psave;
+	psave = CheckPowerArmor(targ, point, normal, take, dflags);
+	take -= psave;
 
-		asave = CheckArmor(targ, point, normal, take, te_sparks, dflags);
-		take -= asave;
-	}
+	asave = CheckArmor(targ, point, normal, take, te_sparks, dflags);
+	take -= asave;
 
 	/* treat cheat/powerup savings the same as armor */
 	asave += save;
-
-	/* resistance tech */
-	take = CTFApplyResistance(targ, take);
 
 	/* team damage avoidance */
 	if (!(dflags & DAMAGE_NO_PROTECTION) && CheckTeamDamage(targ, attacker))
 	{
 		return;
 	}
-
-	CTFCheckHurtCarrier(targ, attacker);
 
 	/* do the damage */
 	if (take)
@@ -656,11 +630,6 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 		else
 		{
 			SpawnDamage(te_sparks, point, normal, take);
-		}
-
-		if (!CTFMatchSetup())
-		{
-			targ->health = targ->health - take;
 		}
 
 		if (targ->health <= 0)
@@ -692,7 +661,7 @@ T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
 	}
 	else if (client)
 	{
-		if (!(targ->flags & FL_GODMODE) && (take) && !CTFMatchSetup())
+		if (!(targ->flags & FL_GODMODE) && (take))
 		{
 			targ->pain(targ, attacker, knockback, take);
 		}

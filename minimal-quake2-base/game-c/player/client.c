@@ -489,20 +489,7 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 		self->client->ps.pmove.pm_type = PM_DEAD;
 		ClientObituary(self, inflictor, attacker);
 
-		/* if at start and same team, clear */
-		if (ctf->value && (meansOfDeath == MOD_TELEFRAG) &&
-			(self->client->resp.ctf_state < 2) &&
-			(self->client->resp.ctf_team == attacker->client->resp.ctf_team))
-		{
-			attacker->client->resp.score--;
-			self->client->resp.ctf_state = 0;
-		}
-
-		CTFFragBonuses(self, inflictor, attacker);
 		TossClientWeapon(self);
-		CTFPlayerResetGrapple(self);
-		CTFDeadDropFlag(self);
-		CTFDeadDropTech(self);
 
 		if (deathmatch->value && !self->client->showscores)
 		{
@@ -634,11 +621,6 @@ InitClientResp(gclient_t *client)
 
 	client->resp.enterframe = level.framenum;
 	client->resp.coop_respawn = client->pers;
-
-	if (ctf->value && (client->resp.ctf_team < CTF_TEAM1))
-	{
-		CTFAssignTeam(client);
-	}
 }
 
 /*
@@ -904,14 +886,7 @@ SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 
 	if (deathmatch->value)
 	{
-		if (ctf->value)
-		{
-			spot = SelectCTFSpawnPoint(ent);
-		}
-		else
-		{
-			spot = SelectDeathmatchSpawnPoint();
-		}
+		spot = SelectDeathmatchSpawnPoint();
 	}
 	else if (coop->value)
 	{
@@ -1219,11 +1194,6 @@ PutClientInServer(edict_t *ent)
 	VectorCopy(ent->s.angles, client->ps.viewangles);
 	VectorCopy(ent->s.angles, client->v_angle);
 
-	if (CTFStartClient(ent))
-	{
-		return;
-	}
-
 	if (!KillBox(ent))
 	{
 		/* could't spawn in? */
@@ -1365,15 +1335,8 @@ ClientUserinfoChanged(edict_t *ent, char *userinfo)
 	playernum = ent - g_edicts - 1;
 
 	/* combine name and skin into a configstring */
-	if (ctf->value)
-	{
-		CTFAssignSkin(ent, s);
-	}
-	else
-	{
-		gi.configstring(CS_PLAYERSKINS + playernum,
-				va("%s\\%s", ent->client->pers.netname, s));
-	}
+	gi.configstring(CS_PLAYERSKINS + playernum,
+			va("%s\\%s", ent->client->pers.netname, s));
 
 	/* set player name field (used in id_state view) */
 	gi.configstring(CS_GENERAL + playernum, ent->client->pers.netname);
@@ -1489,10 +1452,6 @@ ClientDisconnect(edict_t *ent)
 
 	gi.bprintf(PRINT_HIGH, "%s disconnected\n", ent->client->pers.netname);
 
-	CTFDeadDropFlag(ent);
-	CTFDeadDropTech(ent);
-
-	/* send effect */
 	gi.WriteByte(svc_muzzleflash);
 	gi.WriteShort(ent - g_edicts);
 	gi.WriteByte(MZ_LOGOUT);
@@ -1685,11 +1644,6 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 		VectorCopy(pm.viewangles, client->ps.viewangles);
 	}
 
-	if (client->ctf_grapple)
-	{
-		CTFGrapplePull(client->ctf_grapple);
-	}
-
 	gi.linkentity(ent);
 
 	if (ent->movetype != MOVETYPE_NOCLIP)
@@ -1741,9 +1695,6 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 			Think_Weapon(ent);
 		}
 	}
-
-	/* regen tech */
-	CTFApplyRegeneration(ent);
 
 	for (i = 1; i <= maxclients->value; i++)
 	{
@@ -1809,8 +1760,7 @@ ClientBeginServerFrame(edict_t *ent)
 
 			if ((client->latched_buttons & buttonMask) ||
 				(deathmatch->value &&
-				 ((int)dmflags->value & DF_FORCE_RESPAWN)) ||
-				CTFMatchOn())
+				 ((int)dmflags->value & DF_FORCE_RESPAWN)))
 			{
 				respawn(ent);
 				client->latched_buttons = 0;
