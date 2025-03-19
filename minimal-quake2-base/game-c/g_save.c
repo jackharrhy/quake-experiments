@@ -22,7 +22,7 @@
  * The savegame system.
  *
  * =======================================================================
- */ 
+ */
 
 #include "header/local.h"
 
@@ -79,8 +79,7 @@ field_t fields[] = {
 	{"maxyaw", STOFS(maxyaw), F_FLOAT, FFL_SPAWNTEMP},
 	{"minpitch", STOFS(minpitch), F_FLOAT, FFL_SPAWNTEMP},
 	{"maxpitch", STOFS(maxpitch), F_FLOAT, FFL_SPAWNTEMP},
-	{"nextmap", STOFS(nextmap), F_LSTRING, FFL_SPAWNTEMP}
-};
+	{"nextmap", STOFS(nextmap), F_LSTRING, FFL_SPAWNTEMP}};
 
 field_t savefields[] = {
 	{"", FOFS(classname), F_LSTRING},
@@ -112,8 +111,7 @@ field_t savefields[] = {
 	{"", FOFS(target_ent), F_EDICT},
 	{"", FOFS(chain), F_EDICT},
 
-	{NULL, 0, F_INT}
-};
+	{NULL, 0, F_INT}};
 
 field_t levelfields[] = {
 	{"", LLOFS(changemap), F_LSTRING},
@@ -123,24 +121,21 @@ field_t levelfields[] = {
 	{"", LLOFS(sound_entity), F_EDICT},
 	{"", LLOFS(sound2_entity), F_EDICT},
 
-	{NULL, 0, F_INT}
-};
+	{NULL, 0, F_INT}};
 
 field_t clientfields[] = {
 	{"", CLOFS(pers.weapon), F_ITEM},
 	{"", CLOFS(pers.lastweapon), F_ITEM},
 	{"", CLOFS(newweapon), F_ITEM},
 
-	{NULL, 0, F_INT}
-};
+	{NULL, 0, F_INT}};
 
 /*
  * This will be called when the dll is first loaded, which
  * only happens when a new game is started or a save game
  * is loaded.
  */
-void
-InitGame(void)
+void InitGame(void)
 {
 	gi.dprintf("Game is starting up.\n");
 	gi.dprintf("Game is mq2b built on %s.\n", GAMEVERSION, BUILD_DATE);
@@ -225,8 +220,7 @@ InitGame(void)
 
 /* ========================================================= */
 
-void
-WriteField1(FILE *f, field_t *field, byte *base)
+void WriteField1(FILE *f, field_t *field, byte *base)
 {
 	void *p;
 	int len;
@@ -236,74 +230,73 @@ WriteField1(FILE *f, field_t *field, byte *base)
 
 	switch (field->type)
 	{
-		case F_INT:
-		case F_FLOAT:
-		case F_ANGLEHACK:
-		case F_VECTOR:
-		case F_IGNORE:
-			break;
+	case F_INT:
+	case F_FLOAT:
+	case F_ANGLEHACK:
+	case F_VECTOR:
+	case F_IGNORE:
+		break;
 
-		case F_LSTRING:
-		case F_GSTRING:
+	case F_LSTRING:
+	case F_GSTRING:
 
-			if (*(char **)p)
-			{
-				len = strlen(*(char **)p) + 1;
-			}
-			else
-			{
-				len = 0;
-			}
+		if (*(char **)p)
+		{
+			len = strlen(*(char **)p) + 1;
+		}
+		else
+		{
+			len = 0;
+		}
 
-			*(int *)p = len;
-			break;
-		case F_EDICT:
+		*(int *)p = len;
+		break;
+	case F_EDICT:
 
-			if (*(edict_t **)p == NULL)
-			{
-				index = -1;
-			}
-			else
-			{
-				index = *(edict_t **)p - g_edicts;
-			}
+		if (*(edict_t **)p == NULL)
+		{
+			index = -1;
+		}
+		else
+		{
+			index = *(edict_t **)p - g_edicts;
+		}
 
-			*(int *)p = index;
-			break;
-		case F_CLIENT:
+		*(int *)p = index;
+		break;
+	case F_CLIENT:
 
-			if (*(gclient_t **)p == NULL)
-			{
-				index = -1;
-			}
-			else
-			{
-				index = *(gclient_t **)p - game.clients;
-			}
+		if (*(gclient_t **)p == NULL)
+		{
+			index = -1;
+		}
+		else
+		{
+			index = *(gclient_t **)p - game.clients;
+		}
 
-			*(int *)p = index;
-			break;
-		case F_ITEM:
+		*(int *)p = index;
+		break;
+	case F_ITEM:
 
-			if (*(edict_t **)p == NULL)
-			{
-				index = -1;
-			}
-			else
-			{
-				index = *(gitem_t **)p - itemlist;
-			}
+		if (*(edict_t **)p == NULL)
+		{
+			index = -1;
+		}
+		else
+		{
+			index = *(gitem_t **)p - itemlist;
+		}
 
-			*(int *)p = index;
-			break;
+		*(int *)p = index;
+		break;
 
-		default:
-			gi.error("WriteEdict: unknown field type");
+	default:
+		gi.error("WriteEdict: unknown field type");
 	}
 }
 
-void
-WriteField2(FILE *f, field_t *field, byte *base)
+void WriteField2(FILE *f, field_t *field, byte *base)
 {
 	int len;
 	void *p;
@@ -312,23 +305,22 @@ WriteField2(FILE *f, field_t *field, byte *base)
 
 	switch (field->type)
 	{
-		case F_LSTRING:
-		case F_GSTRING:
+	case F_LSTRING:
+	case F_GSTRING:
 
-			if (*(char **)p)
-			{
-				len = strlen(*(char **)p) + 1;
-				fwrite(*(char **)p, len, 1, f);
-			}
+		if (*(char **)p)
+		{
+			len = strlen(*(char **)p) + 1;
+			fwrite(*(char **)p, len, 1, f);
+		}
 
-			break;
-		default:
-			break;
+		break;
+	default:
+		break;
 	}
 }
 
-void
-ReadField(FILE *f, field_t *field, byte *base)
+void ReadField(FILE *f, field_t *field, byte *base)
 {
 	void *p;
 	int len;
@@ -338,94 +330,93 @@ ReadField(FILE *f, field_t *field, byte *base)
 
 	switch (field->type)
 	{
-		case F_INT:
-		case F_FLOAT:
-		case F_ANGLEHACK:
-		case F_VECTOR:
-		case F_IGNORE:
-			break;
+	case F_INT:
+	case F_FLOAT:
+	case F_ANGLEHACK:
+	case F_VECTOR:
+	case F_IGNORE:
+		break;
 
-		case F_LSTRING:
-			len = *(int *)p;
+	case F_LSTRING:
+		len = *(int *)p;
 
-			if (!len)
-			{
-				*(char **)p = NULL;
-			}
-			else
-			{
-				*(char **)p = gi.TagMalloc(len, TAG_LEVEL);
-				fread(*(char **)p, len, 1, f);
-			}
+		if (!len)
+		{
+			*(char **)p = NULL;
+		}
+		else
+		{
+			*(char **)p = gi.TagMalloc(len, TAG_LEVEL);
+			fread(*(char **)p, len, 1, f);
+		}
 
-			break;
-		case F_GSTRING:
-			len = *(int *)p;
+		break;
+	case F_GSTRING:
+		len = *(int *)p;
 
-			if (!len)
-			{
-				*(char **)p = NULL;
-			}
-			else
-			{
-				*(char **)p = gi.TagMalloc(len, TAG_GAME);
-				fread(*(char **)p, len, 1, f);
-			}
+		if (!len)
+		{
+			*(char **)p = NULL;
+		}
+		else
+		{
+			*(char **)p = gi.TagMalloc(len, TAG_GAME);
+			fread(*(char **)p, len, 1, f);
+		}
 
-			break;
-		case F_EDICT:
-			index = *(int *)p;
+		break;
+	case F_EDICT:
+		index = *(int *)p;
 
-			if (index == -1)
-			{
-				*(edict_t **)p = NULL;
-			}
-			else
-			{
-				*(edict_t **)p = &g_edicts[index];
-			}
+		if (index == -1)
+		{
+			*(edict_t **)p = NULL;
+		}
+		else
+		{
+			*(edict_t **)p = &g_edicts[index];
+		}
 
-			break;
-		case F_CLIENT:
-			index = *(int *)p;
+		break;
+	case F_CLIENT:
+		index = *(int *)p;
 
-			if (index == -1)
-			{
-				*(gclient_t **)p = NULL;
-			}
-			else
-			{
-				*(gclient_t **)p = &game.clients[index];
-			}
+		if (index == -1)
+		{
+			*(gclient_t **)p = NULL;
+		}
+		else
+		{
+			*(gclient_t **)p = &game.clients[index];
+		}
 
-			break;
-		case F_ITEM:
-			index = *(int *)p;
+		break;
+	case F_ITEM:
+		index = *(int *)p;
 
-			if (index == -1)
-			{
-				*(gitem_t **)p = NULL;
-			}
-			else
-			{
-				*(gitem_t **)p = &itemlist[index];
-			}
+		if (index == -1)
+		{
+			*(gitem_t **)p = NULL;
+		}
+		else
+		{
+			*(gitem_t **)p = &itemlist[index];
+		}
 
-			break;
+		break;
 
-		default:
-			gi.error("ReadEdict: unknown field type");
+	default:
+		gi.error("ReadEdict: unknown field type");
 	}
 }
 
 /* ========================================================= */
 
 /*
- * All pointer variables (except function 
+ * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-WriteClient(FILE *f, gclient_t *client)
+void WriteClient(FILE *f, gclient_t *client)
 {
 	field_t *field;
 	gclient_t temp;
@@ -453,8 +444,7 @@ WriteClient(FILE *f, gclient_t *client)
  * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-ReadClient(FILE *f, gclient_t *client)
+void ReadClient(FILE *f, gclient_t *client)
 {
 	field_t *field;
 
@@ -476,8 +466,7 @@ ReadClient(FILE *f, gclient_t *client)
  * A single player death will automatically restore from the
  * last save position.
  */
-void
-WriteGame(char *filename, qboolean autosave)
+void WriteGame(char *filename, qboolean autosave)
 {
 	FILE *f;
 	int i;
@@ -511,8 +500,7 @@ WriteGame(char *filename, qboolean autosave)
 	fclose(f);
 }
 
-void
-ReadGame(char *filename)
+void ReadGame(char *filename)
 {
 	FILE *f;
 	int i;
@@ -552,11 +540,10 @@ ReadGame(char *filename)
 /* ========================================================== */
 
 /*
- * All pointer variables (except function 
+ * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-WriteEdict(FILE *f, edict_t *ent)
+void WriteEdict(FILE *f, edict_t *ent)
 {
 	field_t *field;
 	edict_t temp;
@@ -584,8 +571,7 @@ WriteEdict(FILE *f, edict_t *ent)
  * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-WriteLevelLocals(FILE *f)
+void WriteLevelLocals(FILE *f)
 {
 	field_t *field;
 	level_locals_t temp;
@@ -613,8 +599,7 @@ WriteLevelLocals(FILE *f)
  * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-ReadEdict(FILE *f, edict_t *ent)
+void ReadEdict(FILE *f, edict_t *ent)
 {
 	field_t *field;
 
@@ -630,8 +615,7 @@ ReadEdict(FILE *f, edict_t *ent)
  * All pointer variables (except function
  * pointers) must be handled specially.
  */
-void
-ReadLevelLocals(FILE *f)
+void ReadLevelLocals(FILE *f)
 {
 	field_t *field;
 
@@ -643,8 +627,7 @@ ReadLevelLocals(FILE *f)
 	}
 }
 
-void
-WriteLevel(char *filename)
+void WriteLevel(char *filename)
 {
 	int i;
 	edict_t *ent;
@@ -701,8 +684,7 @@ WriteLevel(char *filename)
  *
  * No clients are connected yet.
  */
-void
-ReadLevel(char *filename)
+void ReadLevel(char *filename)
 {
 	int entnum;
 	FILE *f;
@@ -803,4 +785,3 @@ ReadLevel(char *filename)
 		}
 	}
 }
-

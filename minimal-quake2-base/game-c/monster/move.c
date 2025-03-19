@@ -22,7 +22,7 @@
  * Monster movement support functions.
  *
  * =======================================================================
- */ 
+ */
 
 #include "../header/local.h"
 
@@ -45,7 +45,7 @@ M_CheckBottom(edict_t *ent)
 	VectorAdd(ent->s.origin, ent->mins, mins);
 	VectorAdd(ent->s.origin, ent->maxs, maxs);
 
-	/* if all of the points under the corners are 
+	/* if all of the points under the corners are
 	   solid world, don't bother with the tougher
 	   checks  the corners must be within 16 of the
 	   midpoint */
@@ -79,7 +79,7 @@ realcheck:
 	start[1] = stop[1] = (mins[1] + maxs[1]) * 0.5;
 	stop[2] = start[2] - 2 * STEPSIZE;
 	trace = gi.trace(start, vec3_origin, vec3_origin,
-			stop, ent, MASK_MONSTERSOLID);
+					 stop, ent, MASK_MONSTERSOLID);
 
 	if (trace.fraction == 1.0)
 	{
@@ -97,7 +97,7 @@ realcheck:
 			start[1] = stop[1] = y ? maxs[1] : mins[1];
 
 			trace = gi.trace(start, vec3_origin, vec3_origin,
-					stop, ent, MASK_MONSTERSOLID);
+							 stop, ent, MASK_MONSTERSOLID);
 
 			if ((trace.fraction != 1.0) && (trace.endpos[2] > bottom))
 			{
@@ -117,12 +117,12 @@ realcheck:
 
 /*
  * Called by monster program code.
- * The move will be adjusted for 
+ * The move will be adjusted for
  * slopes and stairs, but if the move
- * isn't possible, no move is done, 
+ * isn't possible, no move is done,
  * false is returned, and
- * pr_global_struct->trace_normal 
- * is set to the normal of the 
+ * pr_global_struct->trace_normal
+ * is set to the normal of the
  * blocking wall
  */
 qboolean
@@ -194,7 +194,7 @@ SV_movestep(edict_t *ent, vec3_t move, qboolean relink)
 			}
 
 			trace = gi.trace(ent->s.origin, ent->mins, ent->maxs,
-					neworg, ent, MASK_MONSTERSOLID);
+							 neworg, ent, MASK_MONSTERSOLID);
 
 			/* fly monsters don't enter water voluntarily */
 			if (ent->flags & FL_FLY)
@@ -277,7 +277,7 @@ SV_movestep(edict_t *ent, vec3_t move, qboolean relink)
 	{
 		neworg[2] -= stepsize;
 		trace = gi.trace(neworg, ent->mins, ent->maxs, end,
-				ent, MASK_MONSTERSOLID);
+						 ent, MASK_MONSTERSOLID);
 
 		if (trace.allsolid || trace.startsolid)
 		{
@@ -325,8 +325,8 @@ SV_movestep(edict_t *ent, vec3_t move, qboolean relink)
 	if (!M_CheckBottom(ent))
 	{
 		if (ent->flags & FL_PARTIALGROUND)
-		{   
-			/* entity had floor mostly pulled out 
+		{
+			/* entity had floor mostly pulled out
 			   from underneath it and is trying to
 			   correct */
 			if (relink)
@@ -362,8 +362,7 @@ SV_movestep(edict_t *ent, vec3_t move, qboolean relink)
 
 /* ============================================================================ */
 
-void
-M_ChangeYaw(edict_t *ent)
+void M_ChangeYaw(edict_t *ent)
 {
 	float ideal;
 	float current;
@@ -415,7 +414,7 @@ M_ChangeYaw(edict_t *ent)
 }
 
 /*
- * Turns to the movement direction, and 
+ * Turns to the movement direction, and
  * walks the current distance if facing it.
  */
 qboolean
@@ -439,7 +438,7 @@ SV_StepDirection(edict_t *ent, float yaw, float dist)
 		delta = ent->s.angles[YAW] - ent->ideal_yaw;
 
 		if ((delta > 45) && (delta < 315))
-		{       
+		{
 			/* not turned far enough, so don't take the step */
 			VectorCopy(oldorigin, ent->s.origin);
 		}
@@ -454,16 +453,14 @@ SV_StepDirection(edict_t *ent, float yaw, float dist)
 	return false;
 }
 
-void
-SV_FixCheckBottom(edict_t *ent)
+void SV_FixCheckBottom(edict_t *ent)
 {
 	ent->flags |= FL_PARTIALGROUND;
 }
 
 #define DI_NODIR -1
 
-void
-SV_NewChaseDir(edict_t *actor, edict_t *enemy, float dist)
+void SV_NewChaseDir(edict_t *actor, edict_t *enemy, float dist)
 {
 	float deltax, deltay;
 	float d[3];
@@ -578,8 +575,8 @@ SV_NewChaseDir(edict_t *actor, edict_t *enemy, float dist)
 
 	actor->ideal_yaw = olddir; /* can't move */
 
-	/* if a bridge was pulled out from underneath a 
-	   monster, it may not have  a valid standing 
+	/* if a bridge was pulled out from underneath a
+	   monster, it may not have  a valid standing
 	   position at all */
 	if (!M_CheckBottom(actor))
 	{
@@ -608,8 +605,7 @@ SV_CloseEnough(edict_t *ent, edict_t *goal, float dist)
 	return true;
 }
 
-void
-M_MoveToGoal(edict_t *ent, float dist)
+void M_MoveToGoal(edict_t *ent, float dist)
 {
 	edict_t *goal;
 
@@ -654,4 +650,3 @@ M_walkmove(edict_t *ent, float yaw, float dist)
 
 	return SV_movestep(ent, move, true);
 }
-

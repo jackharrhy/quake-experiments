@@ -32,9 +32,8 @@ vec3_t vec3_origin = {0, 0, 0};
 
 /* ============================================================================ */
 
-void
-RotatePointAroundVector(vec3_t dst, const vec3_t dir,
-		const vec3_t point, float degrees)
+void RotatePointAroundVector(vec3_t dst, const vec3_t dir,
+							 const vec3_t point, float degrees)
 {
 	float m[3][3];
 	float im[3][3];
@@ -85,13 +84,11 @@ RotatePointAroundVector(vec3_t dst, const vec3_t dir,
 
 	for (i = 0; i < 3; i++)
 	{
-		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] *
-				 point[2];
+		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
 	}
 }
 
-void
-AngleVectors(vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
+void AngleVectors(vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
 	float angle;
 	static float sr, sp, sy, cr, cp, cy;
@@ -115,21 +112,20 @@ AngleVectors(vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 
 	if (right)
 	{
-		right[0] = (-1 * sr * sp * cy + - 1 * cr * -sy);
-		right[1] = (-1 * sr * sp * sy + - 1 * cr * cy);
+		right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
+		right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
 		right[2] = -1 * sr * cp;
 	}
 
 	if (up)
 	{
-		up[0] = (cr * sp * cy + - sr * -sy);
-		up[1] = (cr * sp * sy + - sr * cy);
+		up[0] = (cr * sp * cy + -sr * -sy);
+		up[1] = (cr * sp * sy + -sr * cy);
 		up[2] = cr * cp;
 	}
 }
 
-void
-AngleVectors2(vec3_t value1, vec3_t angles)
+void AngleVectors2(vec3_t value1, vec3_t angles)
 {
 	float forward;
 	float yaw, pitch;
@@ -184,8 +180,7 @@ AngleVectors2(vec3_t value1, vec3_t angles)
 	angles[ROLL] = 0;
 }
 
-void
-ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal)
+void ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal)
 {
 	float d;
 	vec3_t n;
@@ -205,8 +200,7 @@ ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal)
 }
 
 /* assumes "src" is normalized */
-void
-PerpendicularVector(vec3_t dst, const vec3_t src)
+void PerpendicularVector(vec3_t dst, const vec3_t src)
 {
 	int pos;
 	int i;
@@ -233,8 +227,7 @@ PerpendicularVector(vec3_t dst, const vec3_t src)
 	VectorNormalize(dst);
 }
 
-void
-R_ConcatRotations(float in1[3][3], float in2[3][3], float out[3][3])
+void R_ConcatRotations(float in1[3][3], float in2[3][3], float out[3][3])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
 				in1[0][2] * in2[2][0];
@@ -256,8 +249,7 @@ R_ConcatRotations(float in1[3][3], float in2[3][3], float out[3][3])
 				in1[2][2] * in2[2][2];
 }
 
-void
-R_ConcatTransforms(float in1[3][4], float in2[3][4], float out[3][4])
+void R_ConcatTransforms(float in1[3][4], float in2[3][4], float out[3][4])
 {
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
 				in1[0][2] * in2[2][0];
@@ -287,8 +279,7 @@ R_ConcatTransforms(float in1[3][4], float in2[3][4], float out[3][4])
 
 /* ============================================================================ */
 
-float
-Q_fabs(float f)
+float Q_fabs(float f)
 {
 	int tmp = *(int *)&f;
 
@@ -296,8 +287,7 @@ Q_fabs(float f)
 	return *(float *)&tmp;
 }
 
-float
-LerpAngle(float a2, float a1, float frac)
+float LerpAngle(float a2, float a1, float frac)
 {
 	if (a1 - a2 > 180)
 	{
@@ -312,8 +302,7 @@ LerpAngle(float a2, float a1, float frac)
 	return a2 + frac * (a1 - a2);
 }
 
-float
-anglemod(float a)
+float anglemod(float a)
 {
 	a = (360.0 / 65536) * ((int)(a * (65536 / 360.0)) & 65535);
 	return a;
@@ -322,8 +311,7 @@ anglemod(float a)
 /*
  * This is the slow, general version
  */
-int
-BoxOnPlaneSide2(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
+int BoxOnPlaneSide2(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 {
 	int i;
 	float dist1, dist2;
@@ -364,8 +352,7 @@ BoxOnPlaneSide2(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 /*
  * Returns 1, 2, or 1 + 2
  */
-int
-BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
+int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 {
 	float dist1, dist2;
 	int sides;
@@ -389,57 +376,57 @@ BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 	/* general case */
 	switch (p->signbits)
 	{
-		case 0:
-			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emaxs[2];
-			dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emins[2];
-			break;
-		case 1:
-			dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emaxs[2];
-			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emins[2];
-			break;
-		case 2:
-			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emaxs[2];
-			dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emins[2];
-			break;
-		case 3:
-			dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emaxs[2];
-			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emins[2];
-			break;
-		case 4:
-			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emins[2];
-			dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emaxs[2];
-			break;
-		case 5:
-			dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emins[2];
-			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emaxs[2];
-			break;
-		case 6:
-			dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emins[2];
-			dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emaxs[2];
-			break;
-		case 7:
-			dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
-					p->normal[2] * emins[2];
-			dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
-					p->normal[2] * emaxs[2];
-			break;
-		default:
-			dist1 = dist2 = 0;
-			break;
+	case 0:
+		dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+		dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+		break;
+	case 1:
+		dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+		dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+		break;
+	case 2:
+		dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+		dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+		break;
+	case 3:
+		dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+		dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+		break;
+	case 4:
+		dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+		dist2 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+		break;
+	case 5:
+		dist1 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emins[2];
+		dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emaxs[2];
+		break;
+	case 6:
+		dist1 = p->normal[0] * emaxs[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+		dist2 = p->normal[0] * emins[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+		break;
+	case 7:
+		dist1 = p->normal[0] * emins[0] + p->normal[1] * emins[1] +
+				p->normal[2] * emins[2];
+		dist2 = p->normal[0] * emaxs[0] + p->normal[1] * emaxs[1] +
+				p->normal[2] * emaxs[2];
+		break;
+	default:
+		dist1 = dist2 = 0;
+		break;
 	}
 
 	sides = 0;
@@ -457,15 +444,13 @@ BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 	return sides;
 }
 
-void
-ClearBounds(vec3_t mins, vec3_t maxs)
+void ClearBounds(vec3_t mins, vec3_t maxs)
 {
 	mins[0] = mins[1] = mins[2] = 99999;
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 }
 
-void
-AddPointToBounds(vec3_t v, vec3_t mins, vec3_t maxs)
+void AddPointToBounds(vec3_t v, vec3_t mins, vec3_t maxs)
 {
 	int i;
 	vec_t val;
@@ -486,8 +471,7 @@ AddPointToBounds(vec3_t v, vec3_t mins, vec3_t maxs)
 	}
 }
 
-int
-VectorCompare(vec3_t v1, vec3_t v2)
+int VectorCompare(vec3_t v1, vec3_t v2)
 {
 	if ((v1[0] != v2[0]) || (v1[1] != v2[1]) || (v1[2] != v2[2]))
 	{
@@ -497,8 +481,7 @@ VectorCompare(vec3_t v1, vec3_t v2)
 	return 1;
 }
 
-vec_t
-VectorNormalize(vec3_t v)
+vec_t VectorNormalize(vec3_t v)
 {
 	float length, ilength;
 
@@ -516,8 +499,7 @@ VectorNormalize(vec3_t v)
 	return length;
 }
 
-vec_t
-VectorNormalize2(vec3_t v, vec3_t out)
+vec_t VectorNormalize2(vec3_t v, vec3_t out)
 {
 	float length, ilength;
 
@@ -535,46 +517,40 @@ VectorNormalize2(vec3_t v, vec3_t out)
 	return length;
 }
 
-void
-VectorMA(vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
+void VectorMA(vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
 {
 	vecc[0] = veca[0] + scale * vecb[0];
 	vecc[1] = veca[1] + scale * vecb[1];
 	vecc[2] = veca[2] + scale * vecb[2];
 }
 
-vec_t
-_DotProduct(vec3_t v1, vec3_t v2)
+vec_t _DotProduct(vec3_t v1, vec3_t v2)
 {
 	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-void
-_VectorSubtract(vec3_t veca, vec3_t vecb, vec3_t out)
+void _VectorSubtract(vec3_t veca, vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] - vecb[0];
 	out[1] = veca[1] - vecb[1];
 	out[2] = veca[2] - vecb[2];
 }
 
-void
-_VectorAdd(vec3_t veca, vec3_t vecb, vec3_t out)
+void _VectorAdd(vec3_t veca, vec3_t vecb, vec3_t out)
 {
 	out[0] = veca[0] + vecb[0];
 	out[1] = veca[1] + vecb[1];
 	out[2] = veca[2] + vecb[2];
 }
 
-void
-_VectorCopy(vec3_t in, vec3_t out)
+void _VectorCopy(vec3_t in, vec3_t out)
 {
 	out[0] = in[0];
 	out[1] = in[1];
 	out[2] = in[2];
 }
 
-void
-CrossProduct(vec3_t v1, vec3_t v2, vec3_t cross)
+void CrossProduct(vec3_t v1, vec3_t v2, vec3_t cross)
 {
 	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
 	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
@@ -583,8 +559,7 @@ CrossProduct(vec3_t v1, vec3_t v2, vec3_t cross)
 
 double sqrt(double x);
 
-vec_t
-VectorLength(vec3_t v)
+vec_t VectorLength(vec3_t v)
 {
 	int i;
 	float length;
@@ -601,24 +576,21 @@ VectorLength(vec3_t v)
 	return length;
 }
 
-void
-VectorInverse(vec3_t v)
+void VectorInverse(vec3_t v)
 {
 	v[0] = -v[0];
 	v[1] = -v[1];
 	v[2] = -v[2];
 }
 
-void
-VectorScale(vec3_t in, vec_t scale, vec3_t out)
+void VectorScale(vec3_t in, vec_t scale, vec3_t out)
 {
 	out[0] = in[0] * scale;
 	out[1] = in[1] * scale;
 	out[2] = in[2] * scale;
 }
 
-int
-Q_log2(int val)
+int Q_log2(int val)
 {
 	int answer = 0;
 
@@ -652,8 +624,7 @@ COM_SkipPath(char *pathname)
 	return last;
 }
 
-void
-COM_StripExtension(char *in, char *out)
+void COM_StripExtension(char *in, char *out)
 {
 	while (*in && *in != '.')
 	{
@@ -676,8 +647,7 @@ COM_FileExtension(const char *in)
 	return ext + 1;
 }
 
-void
-COM_FileBase(char *in, char *out)
+void COM_FileBase(char *in, char *out)
 {
 	char *s, *s2;
 
@@ -707,8 +677,7 @@ COM_FileBase(char *in, char *out)
 /*
  * Returns the path up to, but not including the last /
  */
-void
-COM_FilePath(const char *in, char *out)
+void COM_FilePath(const char *in, char *out)
 {
 	const char *s;
 
@@ -723,8 +692,7 @@ COM_FilePath(const char *in, char *out)
 	out[s - in] = 0;
 }
 
-void
-COM_DefaultExtension(char *path, const char *extension)
+void COM_DefaultExtension(char *path, const char *extension)
 {
 	char *src;
 
@@ -738,7 +706,7 @@ COM_DefaultExtension(char *path, const char *extension)
 	{
 		if (*src == '.')
 		{
-			return;                 /* it has an extension */
+			return; /* it has an extension */
 		}
 
 		src--;
@@ -766,44 +734,37 @@ int (*_LittleLong)(int l);
 float (*_BigFloat)(float l);
 float (*_LittleFloat)(float l);
 
-short
-BigShort(short l)
+short BigShort(short l)
 {
 	return _BigShort(l);
 }
 
-short
-LittleShort(short l)
-{return
-	_LittleShort(l);
+short LittleShort(short l)
+{
+	return _LittleShort(l);
 }
 
-int
-BigLong(int l)
+int BigLong(int l)
 {
 	return _BigLong(l);
 }
 
-int
-LittleLong(int l)
+int LittleLong(int l)
 {
 	return _LittleLong(l);
 }
 
-float
-BigFloat(float l)
+float BigFloat(float l)
 {
 	return _BigFloat(l);
 }
 
-float
-LittleFloat(float l)
+float LittleFloat(float l)
 {
 	return _LittleFloat(l);
 }
 
-short
-ShortSwap(short l)
+short ShortSwap(short l)
 {
 	byte b1, b2;
 
@@ -813,14 +774,12 @@ ShortSwap(short l)
 	return (b1 << 8) + b2;
 }
 
-short
-ShortNoSwap(short l)
+short ShortNoSwap(short l)
 {
 	return l;
 }
 
-int
-LongSwap(int l)
+int LongSwap(int l)
 {
 	byte b1, b2, b3, b4;
 
@@ -832,14 +791,12 @@ LongSwap(int l)
 	return ((int)b1 << 24) + ((int)b2 << 16) + ((int)b3 << 8) + b4;
 }
 
-int
-LongNoSwap(int l)
+int LongNoSwap(int l)
 {
 	return l;
 }
 
-float
-FloatSwap(float f)
+float FloatSwap(float f)
 {
 	union
 	{
@@ -855,14 +812,12 @@ FloatSwap(float f)
 	return dat2.f;
 }
 
-float
-FloatNoSwap(float f)
+float FloatNoSwap(float f)
 {
 	return f;
 }
 
-void
-Swap_Init(void)
+void Swap_Init(void)
 {
 	byte swaptest[2] = {1, 0};
 
@@ -987,8 +942,7 @@ skipwhite:
 
 		data++;
 		c = *data;
-	}
-	while (c > 32);
+	} while (c > 32);
 
 	if (len == MAX_TOKEN_CHARS)
 	{
@@ -1003,8 +957,7 @@ skipwhite:
 
 int paged_total;
 
-void
-Com_PageInMemory(byte *buffer, int size)
+void Com_PageInMemory(byte *buffer, int size)
 {
 	int i;
 
@@ -1022,14 +975,12 @@ Com_PageInMemory(byte *buffer, int size)
  * ============================================================================
  */
 
-int
-Q_stricmp(const char *s1, const char *s2)
+int Q_stricmp(const char *s1, const char *s2)
 {
 	return strcasecmp(s1, s2);
 }
 
-int
-Q_strncasecmp(char *s1, char *s2, int n)
+int Q_strncasecmp(char *s1, char *s2, int n)
 {
 	int c1, c2;
 
@@ -1060,20 +1011,17 @@ Q_strncasecmp(char *s1, char *s2, int n)
 				return -1; /* strings not equal */
 			}
 		}
-	}
-	while (c1);
+	} while (c1);
 
 	return 0; /* strings are equal */
 }
 
-int
-Q_strcasecmp(char *s1, char *s2)
+int Q_strcasecmp(char *s1, char *s2)
 {
 	return Q_strncasecmp(s1, s2, 99999);
 }
 
-int
-Q_strlcpy(char *dst, const char *src, int size)
+int Q_strlcpy(char *dst, const char *src, int size)
 {
 	const char *s = src;
 
@@ -1094,8 +1042,7 @@ Q_strlcpy(char *dst, const char *src, int size)
 	return s - src;
 }
 
-int
-Q_strlcat(char *dst, const char *src, int size)
+int Q_strlcat(char *dst, const char *src, int size)
 {
 	char *d = dst;
 
@@ -1108,9 +1055,7 @@ Q_strlcat(char *dst, const char *src, int size)
 	return (d - dst) + Q_strlcpy(d, src, size);
 }
 
-
-void
-Com_sprintf(char *dest, int size, char *fmt, ...)
+void Com_sprintf(char *dest, int size, char *fmt, ...)
 {
 	int len;
 	va_list argptr;
@@ -1148,7 +1093,7 @@ Info_ValueForKey(char *s, char *key)
 {
 	char pkey[512];
 	static char value[2][512]; /* use two buffers so compares
-							     work without stomping on each other */
+								 work without stomping on each other */
 	static int valueindex;
 	char *o;
 
@@ -1204,8 +1149,7 @@ Info_ValueForKey(char *s, char *key)
 	}
 }
 
-void
-Info_RemoveKey(char *s, char *key)
+void Info_RemoveKey(char *s, char *key)
 {
 	char *start;
 	char pkey[512];
@@ -1288,8 +1232,7 @@ Info_Validate(char *s)
 	return true;
 }
 
-void
-Info_SetValueForKey(char *s, char *key, char *value)
+void Info_SetValueForKey(char *s, char *key, char *value)
 {
 	char newi[MAX_INFO_STRING], *v;
 	int c;
@@ -1351,4 +1294,3 @@ Info_SetValueForKey(char *s, char *key, char *value)
 
 	*s = 0;
 }
-

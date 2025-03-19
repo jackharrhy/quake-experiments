@@ -22,12 +22,11 @@
  * Chase cam.
  *
  * =======================================================================
- */ 
+ */
 
 #include "header/local.h"
 
-void
-UpdateChaseCam(edict_t *ent)
+void UpdateChaseCam(edict_t *ent)
 {
 	vec3_t o, ownerv, goal;
 	edict_t *targ;
@@ -103,7 +102,7 @@ UpdateChaseCam(edict_t *ent)
 	for (i = 0; i < 3; i++)
 	{
 		ent->client->ps.pmove.delta_angles[i] = ANGLE2SHORT(
-				targ->client->v_angle[i] - ent->client->resp.cmd_angles[i]);
+			targ->client->v_angle[i] - ent->client->resp.cmd_angles[i]);
 	}
 
 	VectorCopy(targ->client->v_angle, ent->client->ps.viewangles);
@@ -115,7 +114,8 @@ UpdateChaseCam(edict_t *ent)
 
 	if ((!ent->client->showscores && !ent->client->menu &&
 		 !ent->client->showinventory && !ent->client->showhelp &&
-		 !(level.framenum & 31)) || ent->client->update_chase)
+		 !(level.framenum & 31)) ||
+		ent->client->update_chase)
 	{
 		char s[1024];
 
@@ -128,8 +128,7 @@ UpdateChaseCam(edict_t *ent)
 	}
 }
 
-void
-ChaseNext(edict_t *ent)
+void ChaseNext(edict_t *ent)
 {
 	int i;
 	edict_t *e;
@@ -161,15 +160,13 @@ ChaseNext(edict_t *ent)
 		{
 			break;
 		}
-	}
-	while (e != ent->client->chase_target);
+	} while (e != ent->client->chase_target);
 
 	ent->client->chase_target = e;
 	ent->client->update_chase = true;
 }
 
-void
-ChasePrev(edict_t *ent)
+void ChasePrev(edict_t *ent)
 {
 	int i;
 	edict_t *e;
@@ -201,8 +198,7 @@ ChasePrev(edict_t *ent)
 		{
 			break;
 		}
-	}
-	while (e != ent->client->chase_target);
+	} while (e != ent->client->chase_target);
 
 	ent->client->chase_target = e;
 	ent->client->update_chase = true;

@@ -22,7 +22,7 @@
  * Item handling and item definitions.
  *
  * =======================================================================
- */ 
+ */
 
 #include "header/local.h"
 
@@ -122,8 +122,7 @@ FindItem(char *pickup_name)
 
 /* ====================================================================== */
 
-void
-DoRespawn(edict_t *ent)
+void DoRespawn(edict_t *ent)
 {
 	if (ent->team)
 	{
@@ -152,8 +151,7 @@ DoRespawn(edict_t *ent)
 	ent->s.event = EV_ITEM_RESPAWN;
 }
 
-void
-SetRespawn(edict_t *ent, float delay)
+void SetRespawn(edict_t *ent, float delay)
 {
 	ent->flags |= FL_RESPAWN;
 	ent->svflags |= SVF_NOCLIENT;
@@ -209,8 +207,7 @@ Pickup_Powerup(edict_t *ent, edict_t *other)
 	return true;
 }
 
-void
-Drop_General(edict_t *ent, gitem_t *item)
+void Drop_General(edict_t *ent, gitem_t *item)
 {
 	Drop_Item(ent, item);
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
@@ -453,8 +450,7 @@ Pickup_Pack(edict_t *ent, edict_t *other)
 
 /* ====================================================================== */
 
-void
-Use_Quad(edict_t *ent, gitem_t *item)
+void Use_Quad(edict_t *ent, gitem_t *item)
 {
 	int timeout;
 
@@ -485,8 +481,7 @@ Use_Quad(edict_t *ent, gitem_t *item)
 
 /* ====================================================================== */
 
-void
-Use_Breather(edict_t *ent, gitem_t *item)
+void Use_Breather(edict_t *ent, gitem_t *item)
 {
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
 	ValidateSelectedItem(ent);
@@ -503,8 +498,7 @@ Use_Breather(edict_t *ent, gitem_t *item)
 
 /* ====================================================================== */
 
-void
-Use_Envirosuit(edict_t *ent, gitem_t *item)
+void Use_Envirosuit(edict_t *ent, gitem_t *item)
 {
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
 	ValidateSelectedItem(ent);
@@ -521,8 +515,7 @@ Use_Envirosuit(edict_t *ent, gitem_t *item)
 
 /* ====================================================================== */
 
-void
-Use_Invulnerability(edict_t *ent, gitem_t *item)
+void Use_Invulnerability(edict_t *ent, gitem_t *item)
 {
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
 	ValidateSelectedItem(ent);
@@ -536,14 +529,12 @@ Use_Invulnerability(edict_t *ent, gitem_t *item)
 		ent->client->invincible_framenum = level.framenum + 300;
 	}
 
-	gi.sound(ent, CHAN_ITEM, gi.soundindex(
-					"items/protect.wav"), 1, ATTN_NORM, 0);
+	gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect.wav"), 1, ATTN_NORM, 0);
 }
 
 /* ====================================================================== */
 
-void
-Use_Silencer(edict_t *ent, gitem_t *item)
+void Use_Silencer(edict_t *ent, gitem_t *item)
 {
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
 	ValidateSelectedItem(ent);
@@ -693,8 +684,7 @@ Pickup_Ammo(edict_t *ent, edict_t *other)
 	return true;
 }
 
-void
-Drop_Ammo(edict_t *ent, gitem_t *item)
+void Drop_Ammo(edict_t *ent, gitem_t *item)
 {
 	edict_t *dropped;
 	int index;
@@ -717,8 +707,7 @@ Drop_Ammo(edict_t *ent, gitem_t *item)
 
 /* ====================================================================== */
 
-void
-MegaHealth_think(edict_t *self)
+void MegaHealth_think(edict_t *self)
 {
 	if (self->owner->health > self->owner->max_health)
 	{
@@ -790,8 +779,7 @@ Pickup_Health(edict_t *ent, edict_t *other)
 
 /* ====================================================================== */
 
-int
-ArmorIndex(edict_t *ent)
+int ArmorIndex(edict_t *ent)
 {
 	if (!ent->client)
 	{
@@ -920,8 +908,7 @@ Pickup_Armor(edict_t *ent, edict_t *other)
 
 /* ====================================================================== */
 
-void
-Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
+void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
 {
 	qboolean taken;
 
@@ -957,36 +944,31 @@ Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf)
 		{
 			other->client->pers.selected_item =
 				other->client->ps.stats[STAT_SELECTED_ITEM] = ITEM_INDEX(
-						ent->item);
+					ent->item);
 		}
 
 		if (ent->item->pickup == Pickup_Health)
 		{
 			if (ent->count == 2)
 			{
-				gi.sound(other, CHAN_ITEM, gi.soundindex(
-								"items/s_health.wav"), 1, ATTN_NORM, 0);
+				gi.sound(other, CHAN_ITEM, gi.soundindex("items/s_health.wav"), 1, ATTN_NORM, 0);
 			}
 			else if (ent->count == 10)
 			{
-				gi.sound(other, CHAN_ITEM, gi.soundindex(
-								"items/n_health.wav"), 1, ATTN_NORM, 0);
+				gi.sound(other, CHAN_ITEM, gi.soundindex("items/n_health.wav"), 1, ATTN_NORM, 0);
 			}
 			else if (ent->count == 25)
 			{
-				gi.sound(other, CHAN_ITEM, gi.soundindex(
-								"items/l_health.wav"), 1, ATTN_NORM, 0);
+				gi.sound(other, CHAN_ITEM, gi.soundindex("items/l_health.wav"), 1, ATTN_NORM, 0);
 			}
 			else
 			{
-				gi.sound(other, CHAN_ITEM, gi.soundindex(
-								"items/m_health.wav"), 1, ATTN_NORM, 0);
+				gi.sound(other, CHAN_ITEM, gi.soundindex("items/m_health.wav"), 1, ATTN_NORM, 0);
 			}
 		}
 		else if (ent->item->pickup_sound)
 		{
-			gi.sound(other, CHAN_ITEM, gi.soundindex(
-							ent->item->pickup_sound), 1, ATTN_NORM, 0);
+			gi.sound(other, CHAN_ITEM, gi.soundindex(ent->item->pickup_sound), 1, ATTN_NORM, 0);
 		}
 	}
 
@@ -1070,7 +1052,7 @@ Drop_Item(edict_t *ent, gitem_t *item)
 		VectorSet(offset, 24, 0, -16);
 		G_ProjectSource(ent->s.origin, offset, forward, right, dropped->s.origin);
 		trace = gi.trace(ent->s.origin, dropped->mins, dropped->maxs,
-				dropped->s.origin, ent, CONTENTS_SOLID);
+						 dropped->s.origin, ent, CONTENTS_SOLID);
 		VectorCopy(trace.endpos, dropped->s.origin);
 	}
 	else
@@ -1090,8 +1072,7 @@ Drop_Item(edict_t *ent, gitem_t *item)
 	return dropped;
 }
 
-void
-Use_Item(edict_t *ent, edict_t *other, edict_t *activator)
+void Use_Item(edict_t *ent, edict_t *other, edict_t *activator)
 {
 	ent->svflags &= ~SVF_NOCLIENT;
 	ent->use = NULL;
@@ -1112,8 +1093,7 @@ Use_Item(edict_t *ent, edict_t *other, edict_t *activator)
 
 /* ====================================================================== */
 
-void
-droptofloor(edict_t *ent)
+void droptofloor(edict_t *ent)
 {
 	trace_t tr;
 	vec3_t dest;
@@ -1145,7 +1125,7 @@ droptofloor(edict_t *ent)
 	if (tr.startsolid)
 	{
 		gi.dprintf("droptofloor: %s startsolid at %s\n", ent->classname,
-				vtos(ent->s.origin));
+				   vtos(ent->s.origin));
 		G_FreeEdict(ent);
 		return;
 	}
@@ -1191,8 +1171,7 @@ droptofloor(edict_t *ent)
  * This will be called for each item spawned in a level,
  * and for each item in each client's inventory.
  */
-void
-PrecacheItem(gitem_t *it)
+void PrecacheItem(gitem_t *it)
 {
 	char *s, *start;
 	char data[MAX_QPATH];
@@ -1294,8 +1273,7 @@ PrecacheItem(gitem_t *it)
  * Items can't be immediately dropped to floor, because they might
  * be on an entity that hasn't spawned yet.
  */
-void
-SpawnItem(edict_t *ent, gitem_t *item)
+void SpawnItem(edict_t *ent, gitem_t *item)
 {
 	PrecacheItem(item);
 
@@ -1305,7 +1283,7 @@ SpawnItem(edict_t *ent, gitem_t *item)
 		{
 			ent->spawnflags = 0;
 			gi.dprintf("%s at %s has invalid spawnflags set\n",
-					ent->classname, vtos(ent->s.origin));
+					   ent->classname, vtos(ent->s.origin));
 		}
 	}
 
@@ -1379,9 +1357,7 @@ SpawnItem(edict_t *ent, gitem_t *item)
 /* ====================================================================== */
 
 gitem_t itemlist[] = {
-	{
-		NULL
-	},
+	{NULL},
 
 	/*
 	 * QUAKED item_armor_body (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1404,8 +1380,7 @@ gitem_t itemlist[] = {
 		0,
 		&bodyarmor_info,
 		ARMOR_BODY,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_armor_combat (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1428,8 +1403,7 @@ gitem_t itemlist[] = {
 		0,
 		&combatarmor_info,
 		ARMOR_COMBAT,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_armor_jacket (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1452,8 +1426,7 @@ gitem_t itemlist[] = {
 		0,
 		&jacketarmor_info,
 		ARMOR_JACKET,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_armor_shard (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1476,10 +1449,9 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		ARMOR_SHARD,
-		""
-	},
+		""},
 
-	/* 
+	/*
 	 * weapon_blaster (.3 .3 1) (-16 -16 -16) (16 16 16)
 	 * always owned, never in the world
 	 */
@@ -1501,8 +1473,7 @@ gitem_t itemlist[] = {
 		WEAP_BLASTER,
 		NULL,
 		0,
-		"weapons/blastf1a.wav misc/lasfly.wav"
-	},
+		"weapons/blastf1a.wav misc/lasfly.wav"},
 
 	/*
 	 * QUAKED weapon_shotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1525,8 +1496,7 @@ gitem_t itemlist[] = {
 		WEAP_SHOTGUN,
 		NULL,
 		0,
-		"weapons/shotgf1b.wav weapons/shotgr1b.wav"
-	},
+		"weapons/shotgf1b.wav weapons/shotgr1b.wav"},
 
 	/*
 	 * QUAKED weapon_supershotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1549,8 +1519,7 @@ gitem_t itemlist[] = {
 		WEAP_SUPERSHOTGUN,
 		NULL,
 		0,
-		"weapons/sshotf1b.wav"
-	},
+		"weapons/sshotf1b.wav"},
 
 	/*
 	 * QUAKED weapon_machinegun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1574,8 +1543,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"weapons/machgf1b.wav weapons/machgf2b.wav weapons/machgf3b.wav weapons/machgf4b.wav weapons/machgf5b.wav"
-	},
+		"weapons/machgf1b.wav weapons/machgf2b.wav weapons/machgf3b.wav weapons/machgf4b.wav weapons/machgf5b.wav"},
 
 	/*
 	 * QUAKED weapon_chaingun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1599,8 +1567,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"weapons/chngnu1a.wav weapons/chngnl1a.wav weapons/machgf3b.wav` weapons/chngnd1a.wav"
-	},
+		"weapons/chngnu1a.wav weapons/chngnl1a.wav weapons/machgf3b.wav` weapons/chngnd1a.wav"},
 
 	/*
 	 * QUAKED ammo_grenades (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1624,8 +1591,7 @@ gitem_t itemlist[] = {
 		NULL,
 		AMMO_GRENADES,
 
-		"weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
-	},
+		"weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "},
 
 	/*
 	 * QUAKED weapon_grenadelauncher (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1649,8 +1615,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"models/objects/grenade/tris.md2 weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav"
-	},
+		"models/objects/grenade/tris.md2 weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav"},
 
 	/*
 	 * QUAKED weapon_rocketlauncher (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1674,8 +1639,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"models/objects/rocket/tris.md2 weapons/rockfly.wav weapons/rocklf1a.wav weapons/rocklr1b.wav models/objects/debris2/tris.md2"
-	},
+		"models/objects/rocket/tris.md2 weapons/rockfly.wav weapons/rocklf1a.wav weapons/rocklr1b.wav models/objects/debris2/tris.md2"},
 
 	/*
 	 * QUAKED weapon_hyperblaster (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1699,8 +1663,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"weapons/hyprbu1a.wav weapons/hyprbl1a.wav weapons/hyprbf1a.wav weapons/hyprbd1a.wav misc/lasfly.wav"
-	},
+		"weapons/hyprbu1a.wav weapons/hyprbl1a.wav weapons/hyprbf1a.wav weapons/hyprbd1a.wav misc/lasfly.wav"},
 
 	/*
 	 * QUAKED weapon_railgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1723,8 +1686,7 @@ gitem_t itemlist[] = {
 		WEAP_RAILGUN,
 		NULL,
 		0,
-		"weapons/rg_hum.wav"
-	},
+		"weapons/rg_hum.wav"},
 
 	/*
 	 * QUAKED weapon_bfg (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1748,8 +1710,7 @@ gitem_t itemlist[] = {
 		NULL,
 		0,
 
-		"sprites/s_bfg1.sp2 sprites/s_bfg2.sp2 sprites/s_bfg3.sp2 weapons/bfg__f1y.wav weapons/bfg__l1a.wav weapons/bfg__x1b.wav weapons/bfg_hum.wav"
-	},
+		"sprites/s_bfg1.sp2 sprites/s_bfg2.sp2 sprites/s_bfg3.sp2 weapons/bfg__f1y.wav weapons/bfg__l1a.wav weapons/bfg__x1b.wav weapons/bfg_hum.wav"},
 
 	/*
 	 * QUAKED ammo_shells (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1772,8 +1733,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		AMMO_SHELLS,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED ammo_bullets (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1796,8 +1756,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		AMMO_BULLETS,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED ammo_cells (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1820,8 +1779,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		AMMO_CELLS,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED ammo_rockets (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1844,8 +1802,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		AMMO_ROCKETS,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED ammo_slugs (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1868,8 +1825,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		AMMO_SLUGS,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_quad (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1892,8 +1848,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		"items/damage.wav items/damage2.wav items/damage3.wav"
-	},
+		"items/damage.wav items/damage2.wav items/damage3.wav"},
 
 	/*
 	 * QUAKED item_invulnerability (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1916,8 +1871,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		"items/protect.wav items/protect2.wav items/protect4.wav"
-	},
+		"items/protect.wav items/protect2.wav items/protect4.wav"},
 
 	/*
 	 * QUAKED item_silencer (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1940,8 +1894,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_breather (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1964,8 +1917,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		"items/airout.wav"
-	},
+		"items/airout.wav"},
 
 	/*
 	 * QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1988,8 +1940,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		"items/airout.wav"
-	},
+		"items/airout.wav"},
 
 	/*
 	 * QUAKED item_ancient_head (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -2013,8 +1964,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_adrenaline (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -2038,8 +1988,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED item_bandolier (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -2062,10 +2011,9 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
-	/* 
+	/*
 	 * QUAKED item_pack (.3 .3 1) (-16 -16 -16) (16 16 16)
 	 */
 	{
@@ -2086,8 +2034,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_data_cd (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2111,8 +2058,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_power_cube (0 .5 .8) (-16 -16 -16) (16 16 16) TRIGGER_SPAWN NO_TOUCH
@@ -2136,8 +2082,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_pyramid (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2161,8 +2106,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_data_spinner (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2186,8 +2130,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_pass (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2211,8 +2154,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_blue_key (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2236,8 +2178,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_red_key (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2261,8 +2202,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_commander_head (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2286,8 +2226,7 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
 	/*
 	 * QUAKED key_airstrike_target (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2311,40 +2250,35 @@ gitem_t itemlist[] = {
 		0,
 		NULL,
 		0,
-		""
-	},
+		""},
 
-	{
-		NULL,
-		Pickup_Health,
-		NULL,
-		NULL,
-		NULL,
-		"items/pkup.wav",
-		NULL, 0,
-		NULL,
-		"i_health",
-		"Health",
-		3,
-		0,
-		NULL,
-		0,
-		0,
-		NULL,
-		0,
+	{NULL,
+	 Pickup_Health,
+	 NULL,
+	 NULL,
+	 NULL,
+	 "items/pkup.wav",
+	 NULL, 0,
+	 NULL,
+	 "i_health",
+	 "Health",
+	 3,
+	 0,
+	 NULL,
+	 0,
+	 0,
+	 NULL,
+	 0,
 
-		"items/s_health.wav items/n_health.wav items/l_health.wav items/m_health.wav"
-	},
+	 "items/s_health.wav items/n_health.wav items/l_health.wav items/m_health.wav"},
 
 	/* end of list marker */
-	{NULL}
-};
+	{NULL}};
 
 /*
  * QUAKED item_health (.3 .3 1) (-16 -16 -16) (16 16 16)
  */
-void
-SP_item_health(edict_t *self)
+void SP_item_health(edict_t *self)
 {
 	if (deathmatch->value && ((int)dmflags->value & DF_NO_HEALTH))
 	{
@@ -2361,8 +2295,7 @@ SP_item_health(edict_t *self)
 /*
  * QUAKED item_health_small (.3 .3 1) (-16 -16 -16) (16 16 16)
  */
-void
-SP_item_health_small(edict_t *self)
+void SP_item_health_small(edict_t *self)
 {
 	if (deathmatch->value && ((int)dmflags->value & DF_NO_HEALTH))
 	{
@@ -2380,8 +2313,7 @@ SP_item_health_small(edict_t *self)
 /*
  * QUAKED item_health_large (.3 .3 1) (-16 -16 -16) (16 16 16)
  */
-void
-SP_item_health_large(edict_t *self)
+void SP_item_health_large(edict_t *self)
 {
 	if (deathmatch->value && ((int)dmflags->value & DF_NO_HEALTH))
 	{
@@ -2398,8 +2330,7 @@ SP_item_health_large(edict_t *self)
 /*
  * QUAKED item_health_mega (.3 .3 1) (-16 -16 -16) (16 16 16)
  */
-void
-SP_item_health_mega(edict_t *self)
+void SP_item_health_mega(edict_t *self)
 {
 	if (deathmatch->value && ((int)dmflags->value & DF_NO_HEALTH))
 	{
@@ -2414,8 +2345,7 @@ SP_item_health_mega(edict_t *self)
 	self->style = HEALTH_IGNORE_MAX | HEALTH_TIMED;
 }
 
-void
-InitItems(void)
+void InitItems(void)
 {
 	game.num_items = sizeof(itemlist) / sizeof(itemlist[0]) - 1;
 }
@@ -2423,8 +2353,7 @@ InitItems(void)
 /*
  * Called by worldspawn
  */
-void
-SetItemNames(void)
+void SetItemNames(void)
 {
 	int i;
 	gitem_t *it;
@@ -2441,4 +2370,3 @@ SetItemNames(void)
 	power_screen_index = ITEM_INDEX(FindItem("Power Screen"));
 	power_shield_index = ITEM_INDEX(FindItem("Power Shield"));
 }
-

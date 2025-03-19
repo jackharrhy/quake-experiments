@@ -26,8 +26,7 @@
 
 #include "header/local.h"
 
-void
-Svcmd_Test_f(void)
+void Svcmd_Test_f(void)
 {
 	gi.cprintf(NULL, PRINT_HIGH, "Svcmd_Test_f()\n");
 }
@@ -43,19 +42,19 @@ Svcmd_Test_f(void)
  * addip <ip>
  * removeip <ip>
  *
- * The ip address is specified in dot format, and any unspecified 
+ * The ip address is specified in dot format, and any unspecified
  * digits will match any value, so you can specify an entire class C
  * network with "addip 192.246.40".
  *
- * Removeip will only remove an address specified exactly the same way. 
+ * Removeip will only remove an address specified exactly the same way.
  * You cannot addip a subnet, then removeip a single host.
  *
  * listip
  * Prints the current list of filters.
  *
  * writeip
- * Dumps "addip <ip>" commands to listip.cfg so it can be execed at a 
- * later date. The filter lists are not saved and restored by default, 
+ * Dumps "addip <ip>" commands to listip.cfg so it can be execed at a
+ * later date. The filter lists are not saved and restored by default,
  * because I beleive it would cause too much confusion.
  *
  * filterban <0 or 1>
@@ -64,7 +63,7 @@ Svcmd_Test_f(void)
  * be prohibited from entering the game. This is the default setting.
  *
  * If 0, then only addresses matching the list will be allowed. This lets
- * you easily set up a private game, or a game that only allows players 
+ * you easily set up a private game, or a game that only allows players
  * from your local network.
  *
  *
@@ -175,8 +174,7 @@ SV_FilterPacket(char *from)
 	return (filterban->value == 0);
 }
 
-void
-SVCmd_AddIP_f(void)
+void SVCmd_AddIP_f(void)
 {
 	int i;
 
@@ -211,8 +209,7 @@ SVCmd_AddIP_f(void)
 	}
 }
 
-void
-SVCmd_RemoveIP_f(void)
+void SVCmd_RemoveIP_f(void)
 {
 	ipfilter_t f;
 	int i, j;
@@ -247,8 +244,7 @@ SVCmd_RemoveIP_f(void)
 	gi.cprintf(NULL, PRINT_HIGH, "Didn't find %s.\n", gi.argv(2));
 }
 
-void
-SVCmd_ListIP_f(void)
+void SVCmd_ListIP_f(void)
 {
 	int i;
 	byte b[4];
@@ -259,12 +255,11 @@ SVCmd_ListIP_f(void)
 	{
 		*(unsigned *)b = ipfilters[i].compare;
 		gi.cprintf(NULL, PRINT_HIGH, "%3i.%3i.%3i.%3i\n", b[0],
-				b[1], b[2], b[3]);
+				   b[1], b[2], b[3]);
 	}
 }
 
-void
-SVCmd_WriteIP_f(void)
+void SVCmd_WriteIP_f(void)
 {
 	FILE *f;
 	char name[MAX_OSPATH];
@@ -309,8 +304,7 @@ SVCmd_WriteIP_f(void)
  * The game can issue gi.argc() / gi.argv() commands to get the rest
  * of the parameters
  */
-void
-ServerCommand(void)
+void ServerCommand(void)
 {
 	char *cmd;
 
@@ -341,4 +335,3 @@ ServerCommand(void)
 		gi.cprintf(NULL, PRINT_HIGH, "Unknown server command \"%s\"\n", cmd);
 	}
 }
-

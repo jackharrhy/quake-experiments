@@ -229,7 +229,6 @@ MQ2B_OBJS_ = \
 	g_items.o \
 	g_main.o \
 	g_misc.o \
-	g_monster.o \
 	g_phys.o \
 	g_save.o \
 	g_spawn.o \
@@ -237,7 +236,6 @@ MQ2B_OBJS_ = \
 	g_target.o \
 	g_trigger.o \
 	g_utils.o \
-	g_weapon.o \
 	menu/menu.o \
 	monster/move.o \
 	player/client.o \

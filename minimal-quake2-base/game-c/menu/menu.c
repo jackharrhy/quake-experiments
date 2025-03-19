@@ -26,11 +26,11 @@
 
 #include "../header/local.h"
 
-/* Note that the pmenu entries are duplicated 
-   this is so that a static set of pmenu entries can be used 
-   for multiple clients and changed without interference 
+/* Note that the pmenu entries are duplicated
+   this is so that a static set of pmenu entries can be used
+   for multiple clients and changed without interference
    note that arg will be freed when the menu is closed, it
-    must be allocated memory */
+	must be allocated memory */
 pmenuhnd_t *
 PMenu_Open(edict_t *ent, pmenu_t *entries, int cur, int num, void *arg)
 {
@@ -100,8 +100,7 @@ PMenu_Open(edict_t *ent, pmenu_t *entries, int cur, int num, void *arg)
 	return hnd;
 }
 
-void
-PMenu_Close(edict_t *ent)
+void PMenu_Close(edict_t *ent)
 {
 	int i;
 	pmenuhnd_t *hnd;
@@ -133,12 +132,11 @@ PMenu_Close(edict_t *ent)
 	ent->client->showscores = false;
 }
 
-/* 
- * Only use on pmenu's that have been called with PMenu_Open 
+/*
+ * Only use on pmenu's that have been called with PMenu_Open
  */
-void
-PMenu_UpdateEntry(pmenu_t *entry, const char *text, int align,
-		SelectFunc_t SelectFunc)
+void PMenu_UpdateEntry(pmenu_t *entry, const char *text, int align,
+					   SelectFunc_t SelectFunc)
 {
 	if (entry->text)
 	{
@@ -150,8 +148,7 @@ PMenu_UpdateEntry(pmenu_t *entry, const char *text, int align,
 	entry->SelectFunc = SelectFunc;
 }
 
-void
-PMenu_Do_Update(edict_t *ent)
+void PMenu_Do_Update(edict_t *ent)
 {
 	char string[1400];
 	int i;
@@ -223,8 +220,7 @@ PMenu_Do_Update(edict_t *ent)
 	gi.WriteString(string);
 }
 
-void
-PMenu_Update(edict_t *ent)
+void PMenu_Update(edict_t *ent)
 {
 	if (!ent->client->menu)
 	{
@@ -245,8 +241,7 @@ PMenu_Update(edict_t *ent)
 	ent->client->menudirty = true;
 }
 
-void
-PMenu_Next(edict_t *ent)
+void PMenu_Next(edict_t *ent)
 {
 	pmenuhnd_t *hnd;
 	int i;
@@ -281,16 +276,14 @@ PMenu_Next(edict_t *ent)
 		{
 			break;
 		}
-	}
-	while (i != hnd->cur);
+	} while (i != hnd->cur);
 
 	hnd->cur = i;
 
 	PMenu_Update(ent);
 }
 
-void
-PMenu_Prev(edict_t *ent)
+void PMenu_Prev(edict_t *ent)
 {
 	pmenuhnd_t *hnd;
 	int i;
@@ -328,16 +321,14 @@ PMenu_Prev(edict_t *ent)
 		{
 			break;
 		}
-	}
-	while (i != hnd->cur);
+	} while (i != hnd->cur);
 
 	hnd->cur = i;
 
 	PMenu_Update(ent);
 }
 
-void
-PMenu_Select(edict_t *ent)
+void PMenu_Select(edict_t *ent)
 {
 	pmenuhnd_t *hnd;
 	pmenu_t *p;
@@ -362,4 +353,3 @@ PMenu_Select(edict_t *ent)
 		p->SelectFunc(ent, hnd);
 	}
 }
-

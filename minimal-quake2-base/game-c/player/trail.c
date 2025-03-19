@@ -22,7 +22,7 @@
  * The player trail, used by monsters to locate the player.
  *
  * =======================================================================
- */ 
+ */
 
 #include "../header/local.h"
 
@@ -50,8 +50,7 @@ qboolean trail_active = false;
 #define NEXT(n) (((n) + 1) & (TRAIL_LENGTH - 1))
 #define PREV(n) (((n) - 1) & (TRAIL_LENGTH - 1))
 
-void
-PlayerTrail_Init(void)
+void PlayerTrail_Init(void)
 {
 	int n;
 
@@ -70,8 +69,7 @@ PlayerTrail_Init(void)
 	trail_active = true;
 }
 
-void
-PlayerTrail_Add(vec3_t spot)
+void PlayerTrail_Add(vec3_t spot)
 {
 	vec3_t temp;
 
@@ -90,8 +88,7 @@ PlayerTrail_Add(vec3_t spot)
 	trail_head = NEXT(trail_head);
 }
 
-void
-PlayerTrail_New(vec3_t spot)
+void PlayerTrail_New(vec3_t spot)
 {
 	if (!trail_active)
 	{
@@ -169,4 +166,3 @@ PlayerTrail_LastSpot(void)
 {
 	return trail[PREV(trail_head)];
 }
-

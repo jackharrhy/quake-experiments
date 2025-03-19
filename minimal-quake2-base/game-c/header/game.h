@@ -40,18 +40,18 @@
 #define GAME_API_VERSION 3
 
 /* edict->svflags */
-#define SVF_NOCLIENT 0x00000001             /* don't send entity to clients, even if it has effects */
-#define SVF_DEADMONSTER 0x00000002          /* treat as CONTENTS_DEADMONSTER for collision */
-#define SVF_MONSTER 0x00000004              /* treat as CONTENTS_MONSTER for collision */
-#define SVF_PROJECTILE 0x00000008           /* entity is simple projectile, used for network optimization */
+#define SVF_NOCLIENT 0x00000001	   /* don't send entity to clients, even if it has effects */
+#define SVF_DEADMONSTER 0x00000002 /* treat as CONTENTS_DEADMONSTER for collision */
+#define SVF_MONSTER 0x00000004	   /* treat as CONTENTS_MONSTER for collision */
+#define SVF_PROJECTILE 0x00000008  /* entity is simple projectile, used for network optimization */
 
 /* edict->solid values */
 typedef enum
 {
-	SOLID_NOT,      /* no interaction with other objects */
-	SOLID_TRIGGER,  /* only touch when inside, after moving */
-	SOLID_BBOX,     /* touch on edge */
-	SOLID_BSP       /* bsp clip, touch on edge */
+	SOLID_NOT,	   /* no interaction with other objects */
+	SOLID_TRIGGER, /* only touch when inside, after moving */
+	SOLID_BBOX,	   /* touch on edge */
+	SOLID_BSP	   /* bsp clip, touch on edge */
 } solid_t;
 
 /* =============================================================== */
@@ -71,7 +71,7 @@ typedef struct gclient_s gclient_t;
 
 struct gclient_s
 {
-	player_state_t ps;      /* communicated by server to clients */
+	player_state_t ps; /* communicated by server to clients */
 	int ping;
 	/* the game dll can add anything it wants after */
 	/* this point in the structure */
@@ -84,11 +84,11 @@ struct edict_s
 	qboolean inuse;
 	int linkcount;
 
-	link_t area;                    /* linked to a division node or leaf */
+	link_t area; /* linked to a division node or leaf */
 
-	int num_clusters;               /* if -1, use headnode instead */
+	int num_clusters; /* if -1, use headnode instead */
 	int clusternums[MAX_ENT_CLUSTERS];
-	int headnode;                   /* unused if num_clusters != -1 */
+	int headnode; /* unused if num_clusters != -1 */
 	int areanum, areanum2;
 
 	/* ================================ */
@@ -114,9 +114,9 @@ typedef struct
 	void (*cprintf)(edict_t *ent, int printlevel, char *fmt, ...);
 	void (*centerprintf)(edict_t *ent, char *fmt, ...);
 	void (*sound)(edict_t *ent, int channel, int soundindex, float volume,
-			float attenuation, float timeofs);
+				  float attenuation, float timeofs);
 	void (*positioned_sound)(vec3_t origin, edict_t *ent, int channel,
-			int soundinedex, float volume, float attenuation, float timeofs);
+							 int soundinedex, float volume, float attenuation, float timeofs);
 
 	void (*configstring)(int num, char *string);
 
@@ -131,7 +131,7 @@ typedef struct
 
 	/* collision detection */
 	trace_t (*trace)(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end,
-			edict_t *passent, int contentmask);
+					 edict_t *passent, int contentmask);
 	int (*pointcontents)(vec3_t point);
 	qboolean (*inPVS)(vec3_t p1, vec3_t p2);
 	qboolean (*inPHS)(vec3_t p1, vec3_t p2);
@@ -139,10 +139,10 @@ typedef struct
 	qboolean (*AreasConnected)(int area1, int area2);
 
 	void (*linkentity)(edict_t *ent);
-	void (*unlinkentity)(edict_t *ent);         /* call before removing an interactive edict */
+	void (*unlinkentity)(edict_t *ent); /* call before removing an interactive edict */
 	int (*BoxEdicts)(vec3_t mins, vec3_t maxs, edict_t **list, int maxcount,
-			int areatype);
-	void (*Pmove)(pmove_t *pmove);          /* player movement code common with client prediction */
+					 int areatype);
+	void (*Pmove)(pmove_t *pmove); /* player movement code common with client prediction */
 
 	/* network messaging */
 	void (*multicast)(vec3_t origin, multicast_t to);
@@ -153,8 +153,8 @@ typedef struct
 	void (*WriteLong)(int c);
 	void (*WriteFloat)(float f);
 	void (*WriteString)(char *s);
-	void (*WritePosition)(vec3_t pos);      /* some fractional bits */
-	void (*WriteDir)(vec3_t pos);           /* single byte encoded, very coarse */
+	void (*WritePosition)(vec3_t pos); /* some fractional bits */
+	void (*WriteDir)(vec3_t pos);	   /* single byte encoded, very coarse */
 	void (*WriteAngle)(float f);
 
 	/* managed memory allocation */
@@ -170,7 +170,7 @@ typedef struct
 	/* ClientCommand and ServerCommand parameter access */
 	int (*argc)(void);
 	char *(*argv)(int n);
-	char *(*args)(void);        /* concatenation of all argv >= 1 */
+	char *(*args)(void); /* concatenation of all argv >= 1 */
 
 	void (*AddCommandString)(char *text);
 	void (*DebugGraph)(float value, int color);
@@ -205,7 +205,7 @@ typedef struct
 	/* global variables shared between game and server */
 	struct edict_s *edicts;
 	int edict_size;
-	int num_edicts;             /* current number, <= max_edicts */
+	int num_edicts; /* current number, <= max_edicts */
 	int max_edicts;
 } game_export_t;
 

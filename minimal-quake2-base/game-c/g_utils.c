@@ -22,13 +22,12 @@
  * Misc. utility functions for the game logic.
  *
  * =======================================================================
- */ 
+ */
 
 #include "header/local.h"
 
-void
-G_ProjectSource(vec3_t point, vec3_t distance, vec3_t forward,
-		vec3_t right, vec3_t result)
+void G_ProjectSource(vec3_t point, vec3_t distance, vec3_t forward,
+					 vec3_t right, vec3_t result)
 {
 	result[0] = point[0] + forward[0] * distance[0] + right[0] * distance[1];
 	result[1] = point[1] + forward[1] * distance[0] + right[1] * distance[1];
@@ -59,7 +58,7 @@ G_Find(edict_t *from, int fieldofs, char *match)
 		from++;
 	}
 
-	for ( ; from < &g_edicts[globals.num_edicts]; from++)
+	for (; from < &g_edicts[globals.num_edicts]; from++)
 	{
 		if (!from->inuse)
 		{
@@ -100,7 +99,7 @@ findradius(edict_t *from, vec3_t org, float rad)
 		from++;
 	}
 
-	for ( ; from < &g_edicts[globals.num_edicts]; from++)
+	for (; from < &g_edicts[globals.num_edicts]; from++)
 	{
 		if (!from->inuse)
 		{
@@ -115,7 +114,7 @@ findradius(edict_t *from, vec3_t org, float rad)
 		for (j = 0; j < 3; j++)
 		{
 			eorg[j] = org[j] - (from->s.origin[j] +
-					(from->mins[j] + from->maxs[j]) * 0.5);
+								(from->mins[j] + from->maxs[j]) * 0.5);
 		}
 
 		if (VectorLength(eorg) > rad)
@@ -177,8 +176,7 @@ G_PickTarget(char *targetname)
 	return choice[rand() % num_choices];
 }
 
-void
-Think_Delay(edict_t *ent)
+void Think_Delay(edict_t *ent)
 {
 	G_UseTargets(ent, ent->activator);
 	G_FreeEdict(ent);
@@ -188,8 +186,8 @@ Think_Delay(edict_t *ent)
  * The global "activator" should be set to the entity
  * that initiated the firing.
  *
- * If self.delay is set, a DelayedUse entity will be 
- * created that will actually do the SUB_UseTargets 
+ * If self.delay is set, a DelayedUse entity will be
+ * created that will actually do the SUB_UseTargets
  * after that many seconds have passed.
  *
  * Centerprints any self.message to the activator.
@@ -197,8 +195,7 @@ Think_Delay(edict_t *ent)
  * Search for (string)targetname in all entities that
  * match (string)self.target and call their .use function
  */
-void
-G_UseTargets(edict_t *ent, edict_t *activator)
+void G_UseTargets(edict_t *ent, edict_t *activator)
 {
 	edict_t *t;
 
@@ -234,8 +231,7 @@ G_UseTargets(edict_t *ent, edict_t *activator)
 		}
 		else
 		{
-			gi.sound(activator, CHAN_AUTO, gi.soundindex(
-							"misc/talk1.wav"), 1, ATTN_NORM, 0);
+			gi.sound(activator, CHAN_AUTO, gi.soundindex("misc/talk1.wav"), 1, ATTN_NORM, 0);
 		}
 	}
 
@@ -338,8 +334,7 @@ vec3_t MOVEDIR_UP = {0, 0, 1};
 vec3_t VEC_DOWN = {0, -2, 0};
 vec3_t MOVEDIR_DOWN = {0, 0, -1};
 
-void
-G_SetMovedir(vec3_t angles, vec3_t movedir)
+void G_SetMovedir(vec3_t angles, vec3_t movedir)
 {
 	if (VectorCompare(angles, VEC_UP))
 	{
@@ -357,8 +352,7 @@ G_SetMovedir(vec3_t angles, vec3_t movedir)
 	VectorClear(angles);
 }
 
-float
-vectoyaw(vec3_t vec)
+float vectoyaw(vec3_t vec)
 {
 	float yaw;
 
@@ -388,8 +382,7 @@ vectoyaw(vec3_t vec)
 	return yaw;
 }
 
-void
-vectoangles(vec3_t value1, vec3_t angles)
+void vectoangles(vec3_t value1, vec3_t angles)
 {
 	float forward;
 	float yaw, pitch;
@@ -451,8 +444,7 @@ G_CopyString(char *in)
 	return out;
 }
 
-void
-G_InitEdict(edict_t *e)
+void G_InitEdict(edict_t *e)
 {
 	e->inuse = true;
 	e->classname = "noclass";
@@ -477,7 +469,7 @@ G_Spawn(void)
 
 	for (i = maxclients->value + 1; i < globals.num_edicts; i++, e++)
 	{
-		/* the first couple seconds of server time can involve a lot of 
+		/* the first couple seconds of server time can involve a lot of
 		   freeing and allocating, so relax the replacement policy */
 		if (!e->inuse && ((e->freetime < 2) || (level.time - e->freetime > 0.5)))
 		{
@@ -499,8 +491,7 @@ G_Spawn(void)
 /*
  * Marks the edict as free
  */
-void
-G_FreeEdict(edict_t *ed)
+void G_FreeEdict(edict_t *ed)
 {
 	gi.unlinkentity(ed); /* unlink from world */
 
@@ -515,8 +506,7 @@ G_FreeEdict(edict_t *ed)
 	ed->inuse = false;
 }
 
-void
-G_TouchTriggers(edict_t *ent)
+void G_TouchTriggers(edict_t *ent)
 {
 	int i, num;
 	edict_t *touch[MAX_EDICTS], *hit;
@@ -528,9 +518,9 @@ G_TouchTriggers(edict_t *ent)
 	}
 
 	num = gi.BoxEdicts(ent->absmin, ent->absmax, touch,
-			MAX_EDICTS, AREA_TRIGGERS);
+					   MAX_EDICTS, AREA_TRIGGERS);
 
-	/* be careful, it is possible to have an entity in this 
+	/* be careful, it is possible to have an entity in this
 	   list removed before we get to it (killtriggered) */
 	for (i = 0; i < num; i++)
 	{
@@ -554,16 +544,15 @@ G_TouchTriggers(edict_t *ent)
  * Call after linking a new trigger in during gameplay
  * to force all entities it covers to immediately touch it
  */
-void
-G_TouchSolids(edict_t *ent)
+void G_TouchSolids(edict_t *ent)
 {
 	int i, num;
 	edict_t *touch[MAX_EDICTS], *hit;
 
 	num = gi.BoxEdicts(ent->absmin, ent->absmax, touch,
-			MAX_EDICTS, AREA_SOLID);
+					   MAX_EDICTS, AREA_SOLID);
 
-	/* be careful, it is possible to have an entity in this 
+	/* be careful, it is possible to have an entity in this
 	   list removed before we get to it (killtriggered) */
 	for (i = 0; i < num; i++)
 	{
@@ -606,7 +595,7 @@ KillBox(edict_t *ent)
 	while (1)
 	{
 		tr = gi.trace(ent->s.origin, ent->mins, ent->maxs, ent->s.origin,
-				NULL, MASK_PLAYERSOLID);
+					  NULL, MASK_PLAYERSOLID);
 
 		if (!tr.ent)
 		{
@@ -615,8 +604,8 @@ KillBox(edict_t *ent)
 
 		/* nail it */
 		T_Damage(tr.ent, ent, ent, vec3_origin, ent->s.origin,
-				vec3_origin, 100000, 0, DAMAGE_NO_PROTECTION,
-				MOD_TELEFRAG);
+				 vec3_origin, 100000, 0, DAMAGE_NO_PROTECTION,
+				 MOD_TELEFRAG);
 
 		/* if we didn't kill it, fail */
 		if (tr.ent->solid)
@@ -627,4 +616,3 @@ KillBox(edict_t *ent)
 
 	return true; /* all clear */
 }
-

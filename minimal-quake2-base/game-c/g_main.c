@@ -96,8 +96,7 @@ void G_RunFrame(void);
 
 /* =================================================================== */
 
-void
-ShutdownGame(void)
+void ShutdownGame(void)
 {
 	gi.dprintf("==== ShutdownGame ====\n");
 
@@ -140,8 +139,7 @@ GetGameAPI(game_import_t *import)
 	return &globals;
 }
 
-void
-Sys_Error(char *error, ...)
+void Sys_Error(char *error, ...)
 {
 	va_list argptr;
 	char text[1024];
@@ -153,8 +151,7 @@ Sys_Error(char *error, ...)
 	gi.error(ERR_FATAL, "%s", text);
 }
 
-void
-Com_Printf(char *msg, ...)
+void Com_Printf(char *msg, ...)
 {
 	va_list argptr;
 	char text[1024];
@@ -168,8 +165,7 @@ Com_Printf(char *msg, ...)
 
 /* ====================================================================== */
 
-void
-ClientEndServerFrames(void)
+void ClientEndServerFrames(void)
 {
 	int i;
 	edict_t *ent;
@@ -207,8 +203,7 @@ CreateTargetChangeLevel(char *map)
 /*
  * The timelimit or fraglimit has been exceeded
  */
-void
-EndDMLevel(void)
+void EndDMLevel(void)
 {
 	edict_t *ent;
 	char *s, *t, *f;
@@ -292,8 +287,7 @@ EndDMLevel(void)
 	}
 }
 
-void
-CheckDMRules(void)
+void CheckDMRules(void)
 {
 	int i;
 	gclient_t *cl;
@@ -339,8 +333,7 @@ CheckDMRules(void)
 	}
 }
 
-void
-ExitLevel(void)
+void ExitLevel(void)
 {
 	int i;
 	edict_t *ent;
@@ -378,8 +371,7 @@ ExitLevel(void)
 /*
  * Advances the world by 0.1 seconds
  */
-void
-G_RunFrame(void)
+void G_RunFrame(void)
 {
 	int i;
 	edict_t *ent;
@@ -421,12 +413,6 @@ G_RunFrame(void)
 			(ent->groundentity->linkcount != ent->groundentity_linkcount))
 		{
 			ent->groundentity = NULL;
-
-			if (!(ent->flags & (FL_SWIM | FL_FLY)) &&
-				(ent->svflags & SVF_MONSTER))
-			{
-				M_CheckGround(ent);
-			}
 		}
 
 		if ((i > 0) && (i <= maxclients->value))
@@ -444,4 +430,3 @@ G_RunFrame(void)
 	/* build the playerstate_t structures for all players */
 	ClientEndServerFrames();
 }
-

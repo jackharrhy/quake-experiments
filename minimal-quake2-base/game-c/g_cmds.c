@@ -27,8 +27,7 @@
 #include "header/local.h"
 #include "monster/player.h"
 
-void
-SelectNextItem(edict_t *ent, int itflags)
+void SelectNextItem(edict_t *ent, int itflags)
 {
 	gclient_t *cl;
 	int i, index;
@@ -76,8 +75,7 @@ SelectNextItem(edict_t *ent, int itflags)
 	cl->pers.selected_item = -1;
 }
 
-void
-SelectPrevItem(edict_t *ent, int itflags)
+void SelectPrevItem(edict_t *ent, int itflags)
 {
 	gclient_t *cl;
 	int i, index;
@@ -125,8 +123,7 @@ SelectPrevItem(edict_t *ent, int itflags)
 	cl->pers.selected_item = -1;
 }
 
-void
-ValidateSelectedItem(edict_t *ent)
+void ValidateSelectedItem(edict_t *ent)
 {
 	gclient_t *cl;
 
@@ -145,8 +142,7 @@ ValidateSelectedItem(edict_t *ent)
 /*
  * Give items to a client
  */
-void
-Cmd_Give_f(edict_t *ent)
+void Cmd_Give_f(edict_t *ent)
 {
 	char *name;
 	gitem_t *it;
@@ -157,8 +153,8 @@ Cmd_Give_f(edict_t *ent)
 
 	if (deathmatch->value && !sv_cheats->value)
 	{
-		gi.cprintf( ent, PRINT_HIGH,
-				"You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprintf(ent, PRINT_HIGH,
+				   "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -178,7 +174,7 @@ Cmd_Give_f(edict_t *ent)
 		if (gi.argc() == 3)
 		{
 			ent->health = atoi(gi.argv(2));
-		    ent->health = ent->health < 1 ? 1 : ent->health; 
+			ent->health = ent->health < 1 ? 1 : ent->health;
 		}
 		else
 		{
@@ -352,15 +348,14 @@ Cmd_Give_f(edict_t *ent)
 /*
  * Sets client to godmode
  */
-void
-Cmd_God_f(edict_t *ent)
+void Cmd_God_f(edict_t *ent)
 {
 	char *msg;
 
 	if (deathmatch->value && !sv_cheats->value)
 	{
-		gi.cprintf( ent, PRINT_HIGH,
-				"You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprintf(ent, PRINT_HIGH,
+				   "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -381,15 +376,14 @@ Cmd_God_f(edict_t *ent)
 /*
  * Sets client to notarget
  */
-void
-Cmd_Notarget_f(edict_t *ent)
+void Cmd_Notarget_f(edict_t *ent)
 {
 	char *msg;
 
 	if (deathmatch->value && !sv_cheats->value)
 	{
-		gi.cprintf( ent, PRINT_HIGH,
-				"You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprintf(ent, PRINT_HIGH,
+				   "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -407,15 +401,14 @@ Cmd_Notarget_f(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, msg);
 }
 
-void
-Cmd_Noclip_f(edict_t *ent)
+void Cmd_Noclip_f(edict_t *ent)
 {
 	char *msg;
 
 	if (deathmatch->value && !sv_cheats->value)
 	{
-		gi.cprintf( ent, PRINT_HIGH,
-				"You must run the server with '+set cheats 1' to enable this command.\n");
+		gi.cprintf(ent, PRINT_HIGH,
+				   "You must run the server with '+set cheats 1' to enable this command.\n");
 		return;
 	}
 
@@ -436,8 +429,7 @@ Cmd_Noclip_f(edict_t *ent)
 /*
  * Use an inventory item
  */
-void
-Cmd_Use_f(edict_t *ent)
+void Cmd_Use_f(edict_t *ent)
 {
 	int index;
 	gitem_t *it;
@@ -472,8 +464,7 @@ Cmd_Use_f(edict_t *ent)
 /*
  * Drop an inventory item
  */
-void
-Cmd_Drop_f(edict_t *ent)
+void Cmd_Drop_f(edict_t *ent)
 {
 	int index;
 	gitem_t *it;
@@ -505,8 +496,7 @@ Cmd_Drop_f(edict_t *ent)
 	it->drop(ent, it);
 }
 
-void
-Cmd_Inven_f(edict_t *ent)
+void Cmd_Inven_f(edict_t *ent)
 {
 	int i;
 	gclient_t *cl;
@@ -541,8 +531,7 @@ Cmd_Inven_f(edict_t *ent)
 	gi.unicast(ent, true);
 }
 
-void
-Cmd_InvUse_f(edict_t *ent)
+void Cmd_InvUse_f(edict_t *ent)
 {
 	gitem_t *it;
 
@@ -571,8 +560,7 @@ Cmd_InvUse_f(edict_t *ent)
 	it->use(ent, it);
 }
 
-void
-Cmd_LastWeap_f(edict_t *ent)
+void Cmd_LastWeap_f(edict_t *ent)
 {
 	gclient_t *cl;
 
@@ -586,8 +574,7 @@ Cmd_LastWeap_f(edict_t *ent)
 	cl->pers.lastweapon->use(ent, cl->pers.lastweapon);
 }
 
-void
-Cmd_WeapPrev_f(edict_t *ent)
+void Cmd_WeapPrev_f(edict_t *ent)
 {
 	gclient_t *cl;
 	int i, index;
@@ -634,8 +621,7 @@ Cmd_WeapPrev_f(edict_t *ent)
 	}
 }
 
-void
-Cmd_WeapNext_f(edict_t *ent)
+void Cmd_WeapNext_f(edict_t *ent)
 {
 	gclient_t *cl;
 	int i, index;
@@ -682,8 +668,7 @@ Cmd_WeapNext_f(edict_t *ent)
 	}
 }
 
-void
-Cmd_WeapLast_f(edict_t *ent)
+void Cmd_WeapLast_f(edict_t *ent)
 {
 	gclient_t *cl;
 	int index;
@@ -718,8 +703,7 @@ Cmd_WeapLast_f(edict_t *ent)
 	it->use(ent, it);
 }
 
-void
-Cmd_InvDrop_f(edict_t *ent)
+void Cmd_InvDrop_f(edict_t *ent)
 {
 	gitem_t *it;
 
@@ -742,8 +726,7 @@ Cmd_InvDrop_f(edict_t *ent)
 	it->drop(ent, it);
 }
 
-void
-Cmd_Kill_f(edict_t *ent)
+void Cmd_Kill_f(edict_t *ent)
 {
 	if (ent->solid == SOLID_NOT)
 	{
@@ -761,8 +744,7 @@ Cmd_Kill_f(edict_t *ent)
 	player_die(ent, ent, ent, 100000, vec3_origin);
 }
 
-void
-Cmd_PutAway_f(edict_t *ent)
+void Cmd_PutAway_f(edict_t *ent)
 {
 	ent->client->showscores = false;
 	ent->client->showhelp = false;
@@ -776,8 +758,7 @@ Cmd_PutAway_f(edict_t *ent)
 	ent->client->update_chase = true;
 }
 
-int
-PlayerSort(void const *a, void const *b)
+int PlayerSort(void const *a, void const *b)
 {
 	int anum, bnum;
 
@@ -800,8 +781,7 @@ PlayerSort(void const *a, void const *b)
 	return 0;
 }
 
-void
-Cmd_Players_f(edict_t *ent)
+void Cmd_Players_f(edict_t *ent)
 {
 	int i;
 	int count;
@@ -829,11 +809,11 @@ Cmd_Players_f(edict_t *ent)
 	for (i = 0; i < count; i++)
 	{
 		Com_sprintf(small, sizeof(small), "%3i %s\n",
-				game.clients[index[i]].ps.stats[STAT_FRAGS],
-				game.clients[index[i]].pers.netname);
+					game.clients[index[i]].ps.stats[STAT_FRAGS],
+					game.clients[index[i]].pers.netname);
 
 		if (strlen(small) + strlen(large) > sizeof(large) - 100)
-		{   
+		{
 			/* can't print all of them in one packet */
 			strcat(large, "...\n");
 			break;
@@ -845,8 +825,7 @@ Cmd_Players_f(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, "%s\n%i players\n", large, count);
 }
 
-void
-Cmd_Wave_f(edict_t *ent)
+void Cmd_Wave_f(edict_t *ent)
 {
 	int i;
 
@@ -867,32 +846,32 @@ Cmd_Wave_f(edict_t *ent)
 
 	switch (i)
 	{
-		case 0:
-			gi.cprintf(ent, PRINT_HIGH, "flipoff\n");
-			ent->s.frame = FRAME_flip01 - 1;
-			ent->client->anim_end = FRAME_flip12;
-			break;
-		case 1:
-			gi.cprintf(ent, PRINT_HIGH, "salute\n");
-			ent->s.frame = FRAME_salute01 - 1;
-			ent->client->anim_end = FRAME_salute11;
-			break;
-		case 2:
-			gi.cprintf(ent, PRINT_HIGH, "taunt\n");
-			ent->s.frame = FRAME_taunt01 - 1;
-			ent->client->anim_end = FRAME_taunt17;
-			break;
-		case 3:
-			gi.cprintf(ent, PRINT_HIGH, "wave\n");
-			ent->s.frame = FRAME_wave01 - 1;
-			ent->client->anim_end = FRAME_wave11;
-			break;
-		case 4:
-		default:
-			gi.cprintf(ent, PRINT_HIGH, "point\n");
-			ent->s.frame = FRAME_point01 - 1;
-			ent->client->anim_end = FRAME_point12;
-			break;
+	case 0:
+		gi.cprintf(ent, PRINT_HIGH, "flipoff\n");
+		ent->s.frame = FRAME_flip01 - 1;
+		ent->client->anim_end = FRAME_flip12;
+		break;
+	case 1:
+		gi.cprintf(ent, PRINT_HIGH, "salute\n");
+		ent->s.frame = FRAME_salute01 - 1;
+		ent->client->anim_end = FRAME_salute11;
+		break;
+	case 2:
+		gi.cprintf(ent, PRINT_HIGH, "taunt\n");
+		ent->s.frame = FRAME_taunt01 - 1;
+		ent->client->anim_end = FRAME_taunt17;
+		break;
+	case 3:
+		gi.cprintf(ent, PRINT_HIGH, "wave\n");
+		ent->s.frame = FRAME_wave01 - 1;
+		ent->client->anim_end = FRAME_wave11;
+		break;
+	case 4:
+	default:
+		gi.cprintf(ent, PRINT_HIGH, "point\n");
+		ent->s.frame = FRAME_point01 - 1;
+		ent->client->anim_end = FRAME_point12;
+		break;
 	}
 }
 
@@ -909,7 +888,7 @@ CheckFlood(edict_t *ent)
 		if (level.time < cl->flood_locktill)
 		{
 			gi.cprintf(ent, PRINT_HIGH, "You can't talk for %d more seconds\n",
-					(int)(cl->flood_locktill - level.time));
+					   (int)(cl->flood_locktill - level.time));
 			return true;
 		}
 
@@ -925,8 +904,8 @@ CheckFlood(edict_t *ent)
 		{
 			cl->flood_locktill = level.time + flood_waitdelay->value;
 			gi.cprintf(ent, PRINT_CHAT,
-					"Flood protection:  You can't talk for %d seconds.\n",
-					(int)flood_waitdelay->value);
+					   "Flood protection:  You can't talk for %d seconds.\n",
+					   (int)flood_waitdelay->value);
 			return true;
 		}
 
@@ -938,8 +917,7 @@ CheckFlood(edict_t *ent)
 	return false;
 }
 
-void
-Cmd_Say_f(edict_t *ent, qboolean team, qboolean arg0)
+void Cmd_Say_f(edict_t *ent, qboolean team, qboolean arg0)
 {
 	int j;
 	edict_t *other;
@@ -1008,8 +986,7 @@ Cmd_Say_f(edict_t *ent, qboolean team, qboolean arg0)
 	}
 }
 
-void
-ClientCommand(edict_t *ent)
+void ClientCommand(edict_t *ent)
 {
 	char *cmd;
 
@@ -1138,4 +1115,3 @@ ClientCommand(edict_t *ent)
 		Cmd_Say_f(ent, false, true);
 	}
 }
-

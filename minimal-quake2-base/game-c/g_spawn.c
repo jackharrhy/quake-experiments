@@ -79,7 +79,6 @@ void SP_target_secret(edict_t *ent);
 void SP_target_goal(edict_t *ent);
 void SP_target_splash(edict_t *ent);
 void SP_target_spawner(edict_t *ent);
-void SP_target_blaster(edict_t *ent);
 void SP_target_crosslevel_trigger(edict_t *ent);
 void SP_target_crosslevel_target(edict_t *ent);
 void SP_target_laser(edict_t *self);
@@ -197,7 +196,6 @@ spawn_t spawns[] = {
 	{"target_goal", SP_target_goal},
 	{"target_splash", SP_target_splash},
 	{"target_spawner", SP_target_spawner},
-	{"target_blaster", SP_target_blaster},
 	{"target_crosslevel_trigger", SP_target_crosslevel_trigger},
 	{"target_crosslevel_target", SP_target_crosslevel_target},
 	{"target_laser", SP_target_laser},
@@ -240,14 +238,12 @@ spawn_t spawns[] = {
 	{"misc_easterchick", SP_misc_easterchick},
 	{"misc_easterchick2", SP_misc_easterchick2},
 
-	{NULL, NULL}
-};
+	{NULL, NULL}};
 
 /*
  * Finds the spawn function for the entity and calls it
  */
-void
-ED_CallSpawn(edict_t *ent)
+void ED_CallSpawn(edict_t *ent)
 {
 	spawn_t *s;
 	gitem_t *item;
@@ -268,7 +264,7 @@ ED_CallSpawn(edict_t *ent)
 		}
 
 		if (!strcmp(item->classname, ent->classname))
-		{   
+		{
 			/* found it */
 			SpawnItem(ent, item);
 			return;
@@ -279,7 +275,7 @@ ED_CallSpawn(edict_t *ent)
 	for (s = spawns; s->name; s++)
 	{
 		if (!strcmp(s->name, ent->classname))
-		{   
+		{
 			/* found it */
 			s->spawn(ent);
 			return;
@@ -329,8 +325,7 @@ ED_NewString(char *string)
  * Takes a key/value pair and sets
  * the binary values in an edict
  */
-void
-ED_ParseField(char *key, char *value, edict_t *ent)
+void ED_ParseField(char *key, char *value, edict_t *ent)
 {
 	field_t *f;
 	byte *b;
@@ -340,7 +335,7 @@ ED_ParseField(char *key, char *value, edict_t *ent)
 	for (f = fields; f->name; f++)
 	{
 		if (!Q_stricmp(f->name, key))
-		{   
+		{
 			/* found it */
 			if (f->flags & FFL_SPAWNTEMP)
 			{
@@ -353,31 +348,31 @@ ED_ParseField(char *key, char *value, edict_t *ent)
 
 			switch (f->type)
 			{
-				case F_LSTRING:
-					*(char **)(b + f->ofs) = ED_NewString(value);
-					break;
-				case F_VECTOR:
-					sscanf(value, "%f %f %f", &vec[0], &vec[1], &vec[2]);
-					((float *)(b + f->ofs))[0] = vec[0];
-					((float *)(b + f->ofs))[1] = vec[1];
-					((float *)(b + f->ofs))[2] = vec[2];
-					break;
-				case F_INT:
-					*(int *)(b + f->ofs) = atoi(value);
-					break;
-				case F_FLOAT:
-					*(float *)(b + f->ofs) = atof(value);
-					break;
-				case F_ANGLEHACK:
-					v = atof(value);
-					((float *)(b + f->ofs))[0] = 0;
-					((float *)(b + f->ofs))[1] = v;
-					((float *)(b + f->ofs))[2] = 0;
-					break;
-				case F_IGNORE:
-					break;
-				default:
-					break;
+			case F_LSTRING:
+				*(char **)(b + f->ofs) = ED_NewString(value);
+				break;
+			case F_VECTOR:
+				sscanf(value, "%f %f %f", &vec[0], &vec[1], &vec[2]);
+				((float *)(b + f->ofs))[0] = vec[0];
+				((float *)(b + f->ofs))[1] = vec[1];
+				((float *)(b + f->ofs))[2] = vec[2];
+				break;
+			case F_INT:
+				*(int *)(b + f->ofs) = atoi(value);
+				break;
+			case F_FLOAT:
+				*(float *)(b + f->ofs) = atof(value);
+				break;
+			case F_ANGLEHACK:
+				v = atof(value);
+				((float *)(b + f->ofs))[0] = 0;
+				((float *)(b + f->ofs))[1] = v;
+				((float *)(b + f->ofs))[2] = 0;
+				break;
+			case F_IGNORE:
+				break;
+			default:
+				break;
 			}
 
 			return;
@@ -460,8 +455,7 @@ ED_ParseEdict(char *data, edict_t *ent)
  * All but the first will have the FL_TEAMSLAVE flag set.
  * All but the last will have the teamchain field set to the next one
  */
-void
-G_FindTeams(void)
+void G_FindTeams(void)
 {
 	edict_t *e, *e2, *chain;
 	int i, j;
@@ -527,8 +521,7 @@ G_FindTeams(void)
  * Creates a server's entity / program execution context by
  * parsing textual entity definitions out of an ent file.
  */
-void
-SpawnEntities(char *mapname, char *entities, char *spawnpoint)
+void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 {
 	edict_t *ent;
 	int inhibit;
@@ -601,13 +594,14 @@ SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 
 		/* yet another map hack */
 		if (!Q_stricmp(level.mapname, "command") &&
-				!Q_stricmp(ent->classname,
-					"trigger_once") && !Q_stricmp(ent->model, "*27"))
+			!Q_stricmp(ent->classname,
+					   "trigger_once") &&
+			!Q_stricmp(ent->model, "*27"))
 		{
 			ent->spawnflags &= ~SPAWNFLAG_NOT_HARD;
 		}
 
-		/* remove things (except the world) from 
+		/* remove things (except the world) from
 		   different skill levels or deathmatch */
 		if (ent != g_edicts)
 		{
@@ -628,8 +622,7 @@ SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 					 (ent->spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
 					(((skill->value == 2) ||
 					  (skill->value == 3)) &&
-					 (ent->spawnflags & SPAWNFLAG_NOT_HARD))
-					)
+					 (ent->spawnflags & SPAWNFLAG_NOT_HARD)))
 				{
 					G_FreeEdict(ent);
 					inhibit++;
@@ -638,7 +631,7 @@ SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 			}
 
 			ent->spawnflags &= ~(SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM |
-				  SPAWNFLAG_NOT_HARD | SPAWNFLAG_NOT_COOP | SPAWNFLAG_NOT_DEATHMATCH);
+								 SPAWNFLAG_NOT_HARD | SPAWNFLAG_NOT_COOP | SPAWNFLAG_NOT_DEATHMATCH);
 		}
 
 		ED_CallSpawn(ent);
@@ -654,125 +647,123 @@ SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 /* =================================================================== */
 
 char *single_statusbar =
-"yb	-24 "
+	"yb	-24 "
 
-/* health */
-"xv	0 "
-"hnum "
-"xv	50 "
-"pic 0 "
+	/* health */
+	"xv	0 "
+	"hnum "
+	"xv	50 "
+	"pic 0 "
 
-/* ammo */
-"if 2 "
-"	xv	100 "
-"	anum "
-"	xv	150 "
-"	pic 2 "
-"endif "
+	/* ammo */
+	"if 2 "
+	"	xv	100 "
+	"	anum "
+	"	xv	150 "
+	"	pic 2 "
+	"endif "
 
-/* armor */
-"if 4 "
-"	xv	200 "
-"	rnum "
-"	xv	250 "
-"	pic 4 "
-"endif "
+	/* armor */
+	"if 4 "
+	"	xv	200 "
+	"	rnum "
+	"	xv	250 "
+	"	pic 4 "
+	"endif "
 
-/* selected item */
-"if 6 "
-"	xv	296 "
-"	pic 6 "
-"endif "
+	/* selected item */
+	"if 6 "
+	"	xv	296 "
+	"	pic 6 "
+	"endif "
 
-"yb	-50 "
+	"yb	-50 "
 
-/* picked up item */
-"if 7 "
-"	xv	0 "
-"	pic 7 "
-"	xv	26 "
-"	yb	-42 "
-"	stat_string 8 "
-"	yb	-50 "
-"endif "
+	/* picked up item */
+	"if 7 "
+	"	xv	0 "
+	"	pic 7 "
+	"	xv	26 "
+	"	yb	-42 "
+	"	stat_string 8 "
+	"	yb	-50 "
+	"endif "
 
-/* timer */
-"if 9 "
-"	xv	262 "
-"	num	2	10 "
-"	xv	296 "
-"	pic	9 "
-"endif "
+	/* timer */
+	"if 9 "
+	"	xv	262 "
+	"	num	2	10 "
+	"	xv	296 "
+	"	pic	9 "
+	"endif "
 
-/*  help / weapon icon */
-"if 11 "
-"	xv	148 "
-"	pic	11 "
-"endif "
-;
+	/*  help / weapon icon */
+	"if 11 "
+	"	xv	148 "
+	"	pic	11 "
+	"endif ";
 
 char *dm_statusbar =
-"yb	-24 "
+	"yb	-24 "
 
-/* health */
-"xv	0 "
-"hnum "
-"xv	50 "
-"pic 0 "
+	/* health */
+	"xv	0 "
+	"hnum "
+	"xv	50 "
+	"pic 0 "
 
-/* ammo */
-"if 2 "
-"	xv	100 "
-"	anum "
-"	xv	150 "
-"	pic 2 "
-"endif "
+	/* ammo */
+	"if 2 "
+	"	xv	100 "
+	"	anum "
+	"	xv	150 "
+	"	pic 2 "
+	"endif "
 
-/* armor */
-"if 4 "
-"	xv	200 "
-"	rnum "
-"	xv	250 "
-"	pic 4 "
-"endif "
+	/* armor */
+	"if 4 "
+	"	xv	200 "
+	"	rnum "
+	"	xv	250 "
+	"	pic 4 "
+	"endif "
 
-/* selected item */
-"if 6 "
-"	xv	296 "
-"	pic 6 "
-"endif "
+	/* selected item */
+	"if 6 "
+	"	xv	296 "
+	"	pic 6 "
+	"endif "
 
-"yb	-50 "
+	"yb	-50 "
 
-/* picked up item */
-"if 7 "
-"	xv	0 "
-"	pic 7 "
-"	xv	26 "
-"	yb	-42 "
-"	stat_string 8 "
-"	yb	-50 "
-"endif "
+	/* picked up item */
+	"if 7 "
+	"	xv	0 "
+	"	pic 7 "
+	"	xv	26 "
+	"	yb	-42 "
+	"	stat_string 8 "
+	"	yb	-50 "
+	"endif "
 
-/* timer */
-"if 9 "
-"	xv	246 "
-"	num	2	10 "
-"	xv	296 "
-"	pic	9 "
-"endif "
+	/* timer */
+	"if 9 "
+	"	xv	246 "
+	"	num	2	10 "
+	"	xv	296 "
+	"	pic	9 "
+	"endif "
 
-/* help / weapon icon */
-"if 11 "
-"	xv	148 "
-"	pic	11 "
-"endif "
+	/* help / weapon icon */
+	"if 11 "
+	"	xv	148 "
+	"	pic	11 "
+	"endif "
 
-/* frags */
-"xr	-50 "
-"yt 2 "
-"num 3 14"
-;
+	/* frags */
+	"xr	-50 "
+	"yt 2 "
+	"num 3 14";
 
 /*QUAKED worldspawn (0 0 0) ?
  *
@@ -784,12 +775,11 @@ char *dm_statusbar =
  * "gravity"	800 is default gravity
  * "message"	text to print at user logon
  */
-void
-SP_worldspawn(edict_t *ent)
+void SP_worldspawn(edict_t *ent)
 {
 	ent->movetype = MOVETYPE_PUSH;
 	ent->solid = SOLID_BSP;
-	ent->inuse = true; /* since the world doesn't use G_Spawn() */
+	ent->inuse = true;	   /* since the world doesn't use G_Spawn() */
 	ent->s.modelindex = 1; /* world model is always index 1 */
 
 	/* --------------- */
@@ -860,7 +850,7 @@ SP_worldspawn(edict_t *ent)
 		gi.cvar_set("sv_gravity", st.gravity);
 	}
 
-	snd_fry = gi.soundindex("player/fry.wav");  /* standing in lava / slime */
+	snd_fry = gi.soundindex("player/fry.wav"); /* standing in lava / slime */
 
 	PrecacheItem(FindItem("Blaster"));
 
@@ -909,20 +899,20 @@ SP_worldspawn(edict_t *ent)
 
 	/* ------------------- */
 
-	gi.soundindex("player/gasp1.wav");      /* gasping for air */
-	gi.soundindex("player/gasp2.wav");      /* head breaking surface, not gasping */
+	gi.soundindex("player/gasp1.wav"); /* gasping for air */
+	gi.soundindex("player/gasp2.wav"); /* head breaking surface, not gasping */
 
-	gi.soundindex("player/watr_in.wav");    /* feet hitting water */
-	gi.soundindex("player/watr_out.wav");   /* feet leaving water */
+	gi.soundindex("player/watr_in.wav");  /* feet hitting water */
+	gi.soundindex("player/watr_out.wav"); /* feet leaving water */
 
-	gi.soundindex("player/watr_un.wav");    /* head going underwater */
+	gi.soundindex("player/watr_un.wav"); /* head going underwater */
 
 	gi.soundindex("player/u_breath1.wav");
 	gi.soundindex("player/u_breath2.wav");
 
-	gi.soundindex("items/pkup.wav");        /* bonus item pickup */
-	gi.soundindex("world/land.wav");        /* landing thud */
-	gi.soundindex("misc/h2ohit1.wav");      /* landing splash */
+	gi.soundindex("items/pkup.wav");   /* bonus item pickup */
+	gi.soundindex("world/land.wav");   /* landing thud */
+	gi.soundindex("misc/h2ohit1.wav"); /* landing splash */
 
 	gi.soundindex("items/damage.wav");
 	gi.soundindex("items/protect.wav");
@@ -982,4 +972,3 @@ SP_worldspawn(edict_t *ent)
 	/* 63 testing */
 	gi.configstring(CS_LIGHTS + 63, "a");
 }
-

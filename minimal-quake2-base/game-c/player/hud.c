@@ -19,7 +19,7 @@
  *
  * =======================================================================
  *
- * HUD, deathmatch scoreboard, help computer and intermission stuff.
+ * Minimized HUD implementation - removed weapons, ammo, health display
  *
  * =======================================================================
  */
@@ -34,8 +34,7 @@
  * ======================================================================
  */
 
-void
-MoveClientToIntermission(edict_t *ent)
+void MoveClientToIntermission(edict_t *ent)
 {
 	if (deathmatch->value || coop->value)
 	{
@@ -57,8 +56,6 @@ MoveClientToIntermission(edict_t *ent)
 	ent->client->invincible_framenum = 0;
 	ent->client->breather_framenum = 0;
 	ent->client->enviro_framenum = 0;
-	ent->client->grenade_blew_up = false;
-	ent->client->grenade_time = 0;
 
 	ent->viewheight = 0;
 	ent->s.modelindex = 0;
@@ -68,25 +65,16 @@ MoveClientToIntermission(edict_t *ent)
 	ent->s.effects = 0;
 	ent->s.sound = 0;
 	ent->solid = SOLID_NOT;
-
-	/* add the layout */
-
-	if (deathmatch->value || coop->value)
-	{
-		DeathmatchScoreboardMessage(ent, NULL);
-		gi.unicast(ent, true);
-	}
 }
 
-void
-BeginIntermission(edict_t *targ)
+void BeginIntermission(edict_t *targ)
 {
 	int i, n;
 	edict_t *ent, *client;
 
 	if (level.intermissiontime)
 	{
-		return; /* allready activated */
+		return; /* already activated */
 	}
 
 	game.autosaved = false;
@@ -149,7 +137,7 @@ BeginIntermission(edict_t *targ)
 	ent = G_Find(NULL, FOFS(classname), "info_player_intermission");
 
 	if (!ent)
-	{   
+	{
 		/* the map creator forgot to put in an intermission point... */
 		ent = G_Find(NULL, FOFS(classname), "info_player_start");
 
@@ -191,389 +179,46 @@ BeginIntermission(edict_t *targ)
 	}
 }
 
-void
-DeathmatchScoreboardMessage(edict_t *ent, edict_t *killer)
+/* Empty stub for scoreboard - not needed for movement */
+void DeathmatchScoreboardMessage(edict_t *ent, edict_t *killer)
 {
-	char entry[1024];
-	char string[1400];
-	int stringlength;
-	int i, j, k;
-	int sorted[MAX_CLIENTS];
-	int sortedscores[MAX_CLIENTS];
-	int score, total;
-	int x, y;
-	gclient_t *cl;
-	edict_t *cl_ent;
-	char *tag;
-
-	/* sort the clients by score */
-	total = 0;
-
-	for (i = 0; i < game.maxclients; i++)
-	{
-		cl_ent = g_edicts + 1 + i;
-
-		if (!cl_ent->inuse)
-		{
-			continue;
-		}
-
-		score = game.clients[i].resp.score;
-
-		for (j = 0; j < total; j++)
-		{
-			if (score > sortedscores[j])
-			{
-				break;
-			}
-		}
-
-		for (k = total; k > j; k--)
-		{
-			sorted[k] = sorted[k - 1];
-			sortedscores[k] = sortedscores[k - 1];
-		}
-
-		sorted[j] = i;
-		sortedscores[j] = score;
-		total++;
-	}
-
-	/* print level name and exit rules */
-	string[0] = 0;
-
-	stringlength = strlen(string);
-
-	/* add the clients in sorted order */
-	if (total > 12)
-	{
-		total = 12;
-	}
-
-	for (i = 0; i < total; i++)
-	{
-		cl = &game.clients[sorted[i]];
-		cl_ent = g_edicts + 1 + sorted[i];
-
-		x = (i >= 6) ? 160 : 0;
-		y = 32 + 32 * (i % 6);
-
-		/* add a dogtag */
-		if (cl_ent == ent)
-		{
-			tag = "tag1";
-		}
-		else if (cl_ent == killer)
-		{
-			tag = "tag2";
-		}
-		else
-		{
-			tag = NULL;
-		}
-
-		if (tag)
-		{
-			Com_sprintf(entry, sizeof(entry),
-					"xv %i yv %i picn %s ", x + 32, y, tag);
-			j = strlen(entry);
-
-			if (stringlength + j > 1024)
-			{
-				break;
-			}
-
-			strcpy(string + stringlength, entry);
-			stringlength += j;
-		}
-
-		/* send the layout */
-		Com_sprintf(entry, sizeof(entry), "client %i %i %i %i %i %i ",
-				x, y, sorted[i], cl->resp.score, cl->ping,
-				(level.framenum - cl->resp.enterframe) / 600);
-		j = strlen(entry);
-
-		if (stringlength + j > 1024)
-		{
-			break;
-		}
-
-		strcpy(string + stringlength, entry);
-		stringlength += j;
-	}
-
-	gi.WriteByte(svc_layout);
-	gi.WriteString(string);
+	/* Minimal stub */
 }
 
-/*
- * Draw instead of help message.
- * Note that it isn't that hard to
- * overflow the 1400 byte message limit!
- */
-void
-DeathmatchScoreboard(edict_t *ent)
+/* Empty stub for scoreboard - not needed for movement */
+void DeathmatchScoreboard(edict_t *ent)
 {
-	DeathmatchScoreboardMessage(ent, ent->enemy);
-	gi.unicast(ent, true);
+	/* Minimal stub */
 }
 
-/*
- * Display the scoreboard
- */
-void
-Cmd_Score_f(edict_t *ent)
+/* Empty stub for scoreboard - not needed for movement */
+void Cmd_Score_f(edict_t *ent)
 {
-	ent->client->showinventory = false;
-	ent->client->showhelp = false;
-
-	if (ent->client->menu)
-	{
-		PMenu_Close(ent);
-	}
-
-	if (!deathmatch->value && !coop->value)
-	{
-		return;
-	}
-
-	if (ent->client->showscores)
-	{
-		ent->client->showscores = false;
-		ent->client->update_chase = true;
-		return;
-	}
-
-	ent->client->showscores = true;
-
-	DeathmatchScoreboard(ent);
+	/* Minimal stub */
 }
 
-/*
- * Draw help computer.
- */
-void
-HelpComputer(edict_t *ent)
+/* Empty stub for help display - not needed for movement */
+void HelpComputer(edict_t *ent)
 {
-	char string[1024];
-	char *sk;
-
-	if (skill->value == 0)
-	{
-		sk = "easy";
-	}
-	else if (skill->value == 1)
-	{
-		sk = "medium";
-	}
-	else if (skill->value == 2)
-	{
-		sk = "hard";
-	}
-	else
-	{
-		sk = "hard+";
-	}
-
-	/* send the layout */
-	Com_sprintf(string, sizeof(string),
-			"xv 32 yv 8 picn help " /* background */
-			"xv 202 yv 12 string2 \"%s\" " /* skill */
-			"xv 0 yv 24 cstring2 \"%s\" " /* level name */
-			"xv 0 yv 54 cstring2 \"%s\" " /* help 1 */
-			"xv 0 yv 110 cstring2 \"%s\" " /* help 2 */
-			"xv 50 yv 164 string2 \" kills     goals    secrets\" "
-			"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ",
-			sk,
-			level.level_name,
-			game.helpmessage1,
-			game.helpmessage2,
-			level.killed_monsters, level.total_monsters,
-			level.found_goals, level.total_goals,
-			level.found_secrets, level.total_secrets);
-
-	gi.WriteByte(svc_layout);
-	gi.WriteString(string);
-	gi.unicast(ent, true);
+	/* Minimal stub */
 }
 
-/*
- * Display the current help message
- */
-void
-Cmd_Help_f(edict_t *ent)
+/* Empty stub for help display - not needed for movement */
+void Cmd_Help_f(edict_t *ent)
 {
-	/* this is for backwards compatability */
-	if (deathmatch->value)
-	{
-		Cmd_Score_f(ent);
-		return;
-	}
-
-	ent->client->showinventory = false;
-	ent->client->showscores = false;
-
-	if (ent->client->showhelp &&
-		(ent->client->resp.game_helpchanged == game.helpchanged))
-	{
-		ent->client->showhelp = false;
-		return;
-	}
-
-	ent->client->showhelp = true;
-	ent->client->resp.helpchanged = 0;
-	HelpComputer(ent);
+	/* Minimal stub */
 }
 
-/* ======================================================================= */
-
-void
-G_SetStats(edict_t *ent)
+/* Simplified stats setting - remove weapon, ammo displays */
+void G_SetStats(edict_t *ent)
 {
-	gitem_t *item;
-	int index;
+	/* Minimal implementation - clear stats */
+	memset(ent->client->ps.stats, 0, sizeof(ent->client->ps.stats));
 
-	/* health */
-	ent->client->ps.stats[STAT_HEALTH_ICON] = level.pic_health;
-	ent->client->ps.stats[STAT_HEALTH] = ent->health;
-
-	/* ammo */
-	if (!ent->client->ammo_index)
-	{
-		ent->client->ps.stats[STAT_AMMO_ICON] = 0;
-		ent->client->ps.stats[STAT_AMMO] = 0;
-	}
-	else
-	{
-		item = &itemlist[ent->client->ammo_index];
-		ent->client->ps.stats[STAT_AMMO_ICON] = gi.imageindex(item->icon);
-		ent->client->ps.stats[STAT_AMMO] =
-			ent->client->pers.inventory[ent->client->ammo_index];
-	}
-
-	index = ArmorIndex(ent);
-
-	if (index)
-	{
-		item = GetItemByIndex(index);
-		ent->client->ps.stats[STAT_ARMOR_ICON] = gi.imageindex(item->icon);
-		ent->client->ps.stats[STAT_ARMOR] = ent->client->pers.inventory[index];
-	}
-	else
-	{
-		ent->client->ps.stats[STAT_ARMOR_ICON] = 0;
-		ent->client->ps.stats[STAT_ARMOR] = 0;
-	}
-
-	/* pickup message */
-	if (level.time > ent->client->pickup_msg_time)
-	{
-		ent->client->ps.stats[STAT_PICKUP_ICON] = 0;
-		ent->client->ps.stats[STAT_PICKUP_STRING] = 0;
-	}
-
-	/* timers */
-	if (ent->client->quad_framenum > level.framenum)
-	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_quad");
-		ent->client->ps.stats[STAT_TIMER] =
-			(ent->client->quad_framenum - level.framenum) / 10;
-	}
-	else if (ent->client->invincible_framenum > level.framenum)
-	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex(
-				"p_invulnerability");
-		ent->client->ps.stats[STAT_TIMER] =
-			(ent->client->invincible_framenum - level.framenum) / 10;
-	}
-	else if (ent->client->enviro_framenum > level.framenum)
-	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_envirosuit");
-		ent->client->ps.stats[STAT_TIMER] =
-			(ent->client->enviro_framenum - level.framenum) / 10;
-	}
-	else if (ent->client->breather_framenum > level.framenum)
-	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_rebreather");
-		ent->client->ps.stats[STAT_TIMER] =
-			(ent->client->breather_framenum - level.framenum) / 10;
-	}
-	else
-	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = 0;
-		ent->client->ps.stats[STAT_TIMER] = 0;
-	}
-
-	/* selected item */
-	if (ent->client->pers.selected_item == -1)
-	{
-		ent->client->ps.stats[STAT_SELECTED_ICON] = 0;
-	}
-	else
-	{
-		ent->client->ps.stats[STAT_SELECTED_ICON] =
-			gi.imageindex(itemlist[ent->client->pers.selected_item].icon);
-	}
-
-	ent->client->ps.stats[STAT_SELECTED_ITEM] = ent->client->pers.selected_item;
-
-	/* layouts */
+	/* Set minimal required stats */
 	ent->client->ps.stats[STAT_LAYOUTS] = 0;
 
-	if (deathmatch->value)
-	{
-		if ((ent->client->pers.health <= 0) || level.intermissiontime ||
-			ent->client->showscores)
-		{
-			ent->client->ps.stats[STAT_LAYOUTS] |= 1;
-		}
-
-		if (ent->client->showinventory && (ent->client->pers.health > 0))
-		{
-			ent->client->ps.stats[STAT_LAYOUTS] |= 2;
-		}
-	}
-	else
-	{
-		if (ent->client->showscores || ent->client->showhelp)
-		{
-			ent->client->ps.stats[STAT_LAYOUTS] |= 1;
-		}
-
-		if (ent->client->showinventory && (ent->client->pers.health > 0))
-		{
-			ent->client->ps.stats[STAT_LAYOUTS] |= 2;
-		}
-	}
-
-	/* frags */
-	ent->client->ps.stats[STAT_FRAGS] = ent->client->resp.score;
-
-	/* help icon / current weapon if not shown */
-	if (ent->client->resp.helpchanged && (level.framenum & 8))
-	{
-		ent->client->ps.stats[STAT_HELPICON] = gi.imageindex("i_help");
-	}
-	else if (((ent->client->pers.hand == CENTER_HANDED) ||
-			  (ent->client->ps.fov > 91)) &&
-			 ent->client->pers.weapon)
-	{
-		cvar_t *gun;
-		gun = gi.cvar("cl_gun", "2", 0);
-
-		if (gun->value != 2)
-		{
-			ent->client->ps.stats[STAT_HELPICON] = gi.imageindex(
-					ent->client->pers.weapon->icon);
-		}
-		else
-		{
-			ent->client->ps.stats[STAT_HELPICON] = 0;
-		}
-	}
-	else
-	{
-		ent->client->ps.stats[STAT_HELPICON] = 0;
-	}
+	if (ent->client->chase_target)
+		ent->client->ps.stats[STAT_CHASE] = CS_PLAYERSKINS +
+											(ent->client->chase_target - g_edicts) - 1;
 }
-

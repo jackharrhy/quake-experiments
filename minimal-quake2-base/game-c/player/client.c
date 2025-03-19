@@ -33,8 +33,7 @@ void SP_misc_teleporter_dest(edict_t *ent);
  * QUAKED info_player_start (1 0 0) (-16 -16 -24) (16 16 32)
  * The normal starting point for a level.
  */
-void
-SP_info_player_start(edict_t *self)
+void SP_info_player_start(edict_t *self)
 {
 	if (!coop->value)
 	{
@@ -46,8 +45,7 @@ SP_info_player_start(edict_t *self)
  * QUAKED info_player_deathmatch (1 0 1) (-16 -16 -24) (16 16 32)
  * potential spawning position for deathmatch games
  */
-void
-SP_info_player_deathmatch(edict_t *self)
+void SP_info_player_deathmatch(edict_t *self)
 {
 	if (!deathmatch->value)
 	{
@@ -63,8 +61,7 @@ SP_info_player_deathmatch(edict_t *self)
  * potential spawning position for coop games
  */
 
-void
-SP_info_player_coop(edict_t *self)
+void SP_info_player_coop(edict_t *self)
 {
 	if (!coop->value)
 	{
@@ -79,15 +76,13 @@ SP_info_player_coop(edict_t *self)
  * Use 'angles' instead of 'angle', so you can set pitch or
  * roll as well as yaw.  'pitch yaw roll'
  */
-void
-SP_info_player_intermission(edict_t *ent)
+void SP_info_player_intermission(edict_t *ent)
 {
 }
 
 /* ======================================================================= */
 
-void
-player_pain(edict_t *self, edict_t *other, float kick, int damage)
+void player_pain(edict_t *self, edict_t *other, float kick, int damage)
 {
 	/* player pain is handled at the
 	   end of the frame in P_DamageFeedback */
@@ -113,8 +108,7 @@ IsFemale(edict_t *ent)
 	return false;
 }
 
-void
-ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
+void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 {
 	int mod;
 	char *message;
@@ -135,99 +129,99 @@ ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 
 		switch (mod)
 		{
-			case MOD_SUICIDE:
-				message = "suicides";
-				break;
-			case MOD_FALLING:
-				message = "cratered";
-				break;
-			case MOD_CRUSH:
-				message = "was squished";
-				break;
-			case MOD_WATER:
-				message = "sank like a rock";
-				break;
-			case MOD_SLIME:
-				message = "melted";
-				break;
-			case MOD_LAVA:
-				message = "does a back flip into the lava";
-				break;
-			case MOD_EXPLOSIVE:
-			case MOD_BARREL:
-				message = "blew up";
-				break;
-			case MOD_EXIT:
-				message = "found a way out";
-				break;
-			case MOD_TARGET_LASER:
-				message = "saw the light";
-				break;
-			case MOD_TARGET_BLASTER:
-				message = "got blasted";
-				break;
-			case MOD_BOMB:
-			case MOD_SPLASH:
-			case MOD_TRIGGER_HURT:
-				message = "was in the wrong place";
-				break;
+		case MOD_SUICIDE:
+			message = "suicides";
+			break;
+		case MOD_FALLING:
+			message = "cratered";
+			break;
+		case MOD_CRUSH:
+			message = "was squished";
+			break;
+		case MOD_WATER:
+			message = "sank like a rock";
+			break;
+		case MOD_SLIME:
+			message = "melted";
+			break;
+		case MOD_LAVA:
+			message = "does a back flip into the lava";
+			break;
+		case MOD_EXPLOSIVE:
+		case MOD_BARREL:
+			message = "blew up";
+			break;
+		case MOD_EXIT:
+			message = "found a way out";
+			break;
+		case MOD_TARGET_LASER:
+			message = "saw the light";
+			break;
+		case MOD_TARGET_BLASTER:
+			message = "got blasted";
+			break;
+		case MOD_BOMB:
+		case MOD_SPLASH:
+		case MOD_TRIGGER_HURT:
+			message = "was in the wrong place";
+			break;
 		}
 
 		if (attacker == self)
 		{
 			switch (mod)
 			{
-				case MOD_HELD_GRENADE:
-					message = "tried to put the pin back in";
-					break;
-				case MOD_HG_SPLASH:
-				case MOD_G_SPLASH:
+			case MOD_HELD_GRENADE:
+				message = "tried to put the pin back in";
+				break;
+			case MOD_HG_SPLASH:
+			case MOD_G_SPLASH:
 
-					if (IsFemale(self))
-					{
-						message = "tripped on her own grenade";
-					}
-					else
-					{
-						message = "tripped on his own grenade";
-					}
+				if (IsFemale(self))
+				{
+					message = "tripped on her own grenade";
+				}
+				else
+				{
+					message = "tripped on his own grenade";
+				}
 
-					break;
-				case MOD_R_SPLASH:
+				break;
+			case MOD_R_SPLASH:
 
-					if (IsFemale(self))
-					{
-						message = "blew herself up";
-					}
-					else
-					{
-						message = "blew himself up";
-					}
+				if (IsFemale(self))
+				{
+					message = "blew herself up";
+				}
+				else
+				{
+					message = "blew himself up";
+				}
 
-					break;
-				case MOD_BFG_BLAST:
-					message = "should have used a smaller gun";
-					break;
-				default:
+				break;
+			case MOD_BFG_BLAST:
+				message = "should have used a smaller gun";
+				break;
+			default:
 
-					if (IsFemale(self))
-					{
-						message = "killed herself";
-					}
-					else
-					{
-						message = "killed himself";
-					}
+				if (IsFemale(self))
+				{
+					message = "killed herself";
+				}
+				else
+				{
+					message = "killed himself";
+				}
 
-					break;
+				break;
 			}
 		}
 
 		if (message)
 		{
 			gi.bprintf(PRINT_MEDIUM, "%s %s.\n",
-					self->client->pers.netname,
-					message);
+					   self->client->pers.netname,
+					   message);
 
 			if (deathmatch->value)
 			{
@@ -244,80 +238,80 @@ ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 		{
 			switch (mod)
 			{
-				case MOD_BLASTER:
-					message = "was blasted by";
-					break;
-				case MOD_SHOTGUN:
-					message = "was gunned down by";
-					break;
-				case MOD_SSHOTGUN:
-					message = "was blown away by";
-					message2 = "'s super shotgun";
-					break;
-				case MOD_MACHINEGUN:
-					message = "was machinegunned by";
-					break;
-				case MOD_CHAINGUN:
-					message = "was cut in half by";
-					message2 = "'s chaingun";
-					break;
-				case MOD_GRENADE:
-					message = "was popped by";
-					message2 = "'s grenade";
-					break;
-				case MOD_G_SPLASH:
-					message = "was shredded by";
-					message2 = "'s shrapnel";
-					break;
-				case MOD_ROCKET:
-					message = "ate";
-					message2 = "'s rocket";
-					break;
-				case MOD_R_SPLASH:
-					message = "almost dodged";
-					message2 = "'s rocket";
-					break;
-				case MOD_HYPERBLASTER:
-					message = "was melted by";
-					message2 = "'s hyperblaster";
-					break;
-				case MOD_RAILGUN:
-					message = "was railed by";
-					break;
-				case MOD_BFG_LASER:
-					message = "saw the pretty lights from";
-					message2 = "'s BFG";
-					break;
-				case MOD_BFG_BLAST:
-					message = "was disintegrated by";
-					message2 = "'s BFG blast";
-					break;
-				case MOD_BFG_EFFECT:
-					message = "couldn't hide from";
-					message2 = "'s BFG";
-					break;
-				case MOD_HANDGRENADE:
-					message = "caught";
-					message2 = "'s handgrenade";
-					break;
-				case MOD_HG_SPLASH:
-					message = "didn't see";
-					message2 = "'s handgrenade";
-					break;
-				case MOD_HELD_GRENADE:
-					message = "feels";
-					message2 = "'s pain";
-					break;
-				case MOD_TELEFRAG:
-					message = "tried to invade";
-					message2 = "'s personal space";
-					break;
+			case MOD_BLASTER:
+				message = "was blasted by";
+				break;
+			case MOD_SHOTGUN:
+				message = "was gunned down by";
+				break;
+			case MOD_SSHOTGUN:
+				message = "was blown away by";
+				message2 = "'s super shotgun";
+				break;
+			case MOD_MACHINEGUN:
+				message = "was machinegunned by";
+				break;
+			case MOD_CHAINGUN:
+				message = "was cut in half by";
+				message2 = "'s chaingun";
+				break;
+			case MOD_GRENADE:
+				message = "was popped by";
+				message2 = "'s grenade";
+				break;
+			case MOD_G_SPLASH:
+				message = "was shredded by";
+				message2 = "'s shrapnel";
+				break;
+			case MOD_ROCKET:
+				message = "ate";
+				message2 = "'s rocket";
+				break;
+			case MOD_R_SPLASH:
+				message = "almost dodged";
+				message2 = "'s rocket";
+				break;
+			case MOD_HYPERBLASTER:
+				message = "was melted by";
+				message2 = "'s hyperblaster";
+				break;
+			case MOD_RAILGUN:
+				message = "was railed by";
+				break;
+			case MOD_BFG_LASER:
+				message = "saw the pretty lights from";
+				message2 = "'s BFG";
+				break;
+			case MOD_BFG_BLAST:
+				message = "was disintegrated by";
+				message2 = "'s BFG blast";
+				break;
+			case MOD_BFG_EFFECT:
+				message = "couldn't hide from";
+				message2 = "'s BFG";
+				break;
+			case MOD_HANDGRENADE:
+				message = "caught";
+				message2 = "'s handgrenade";
+				break;
+			case MOD_HG_SPLASH:
+				message = "didn't see";
+				message2 = "'s handgrenade";
+				break;
+			case MOD_HELD_GRENADE:
+				message = "feels";
+				message2 = "'s pain";
+				break;
+			case MOD_TELEFRAG:
+				message = "tried to invade";
+				message2 = "'s personal space";
+				break;
 			}
 
 			if (message)
 			{
 				gi.bprintf(PRINT_MEDIUM, "%s %s %s%s\n", self->client->pers.netname,
-						message, attacker->client->pers.netname, message2);
+						   message, attacker->client->pers.netname, message2);
 
 				if (deathmatch->value)
 				{
@@ -346,8 +340,7 @@ ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 
 void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
 
-void
-TossClientWeapon(edict_t *self)
+void TossClientWeapon(edict_t *self)
 {
 	gitem_t *item;
 	edict_t *drop;
@@ -406,13 +399,13 @@ TossClientWeapon(edict_t *self)
 
 		drop->touch = Touch_Item;
 		drop->nextthink = level.time + (self->client->quad_framenum -
-						   level.framenum) * FRAMETIME;
+										level.framenum) *
+										   FRAMETIME;
 		drop->think = G_FreeEdict;
 	}
 }
 
-void
-LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
+void LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
 {
 	vec3_t dir;
 
@@ -432,7 +425,7 @@ LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
 
 	if (dir[0])
 	{
-		self->client->killer_yaw = 180 / M_PI *atan2(dir[1], dir[0]);
+		self->client->killer_yaw = 180 / M_PI * atan2(dir[1], dir[0]);
 	}
 	else
 	{
@@ -454,9 +447,8 @@ LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
 	}
 }
 
-void
-player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
-		int damage, vec3_t point)
+void player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
+				int damage, vec3_t point)
 {
 	int n;
 
@@ -504,13 +496,12 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	if (self->health < -40)
 	{
 		/* gib */
-		gi.sound(self, CHAN_BODY, gi.soundindex(
-						"misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_BODY, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
 
 		for (n = 0; n < 4; n++)
 		{
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2",
-					damage, GIB_ORGANIC);
+					 damage, GIB_ORGANIC);
 		}
 
 		ThrowClientHead(self, damage);
@@ -539,23 +530,22 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 			{
 				switch (i)
 				{
-					case 0:
-						self->s.frame = FRAME_death101 - 1;
-						self->client->anim_end = FRAME_death106;
-						break;
-					case 1:
-						self->s.frame = FRAME_death201 - 1;
-						self->client->anim_end = FRAME_death206;
-						break;
-					case 2:
-						self->s.frame = FRAME_death301 - 1;
-						self->client->anim_end = FRAME_death308;
-						break;
+				case 0:
+					self->s.frame = FRAME_death101 - 1;
+					self->client->anim_end = FRAME_death106;
+					break;
+				case 1:
+					self->s.frame = FRAME_death201 - 1;
+					self->client->anim_end = FRAME_death206;
+					break;
+				case 2:
+					self->s.frame = FRAME_death301 - 1;
+					self->client->anim_end = FRAME_death308;
+					break;
 				}
 			}
 
-			gi.sound(self, CHAN_VOICE, gi.soundindex(va("*death%i.wav",
-							(rand() % 4) + 1)), 1, ATTN_NORM, 0);
+			gi.sound(self, CHAN_VOICE, gi.soundindex(va("*death%i.wav", (rand() % 4) + 1)), 1, ATTN_NORM, 0);
 		}
 	}
 
@@ -572,35 +562,30 @@ player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
  * but is called after each death and
  * level change in deathmatch
  */
-void
-InitClientPersistant(gclient_t *client)
+void InitClientPersistant(gclient_t *client)
 {
-	gitem_t *item;
-
 	memset(&client->pers, 0, sizeof(client->pers));
 
-	item = FindItem("Blaster");
-	client->pers.selected_item = ITEM_INDEX(item);
-	client->pers.inventory[client->pers.selected_item] = 1;
-
-	client->pers.weapon = item;
-	client->pers.lastweapon = item;
+	/* No weapons in minimal version */
+	client->pers.selected_item = -1;
+	client->pers.weapon = NULL;
+	client->pers.lastweapon = NULL;
 
 	client->pers.health = 100;
 	client->pers.max_health = 100;
 
-	client->pers.max_bullets = 200;
-	client->pers.max_shells = 100;
-	client->pers.max_rockets = 50;
-	client->pers.max_grenades = 50;
-	client->pers.max_cells = 200;
-	client->pers.max_slugs = 50;
+	/* No ammo in minimal version */
+	client->pers.max_bullets = 0;
+	client->pers.max_shells = 0;
+	client->pers.max_rockets = 0;
+	client->pers.max_grenades = 0;
+	client->pers.max_cells = 0;
+	client->pers.max_slugs = 0;
 
 	client->pers.connected = true;
 }
 
-void
-InitClientResp(gclient_t *client)
+void InitClientResp(gclient_t *client)
 {
 	qboolean id_state = client->resp.id_state;
 
@@ -618,8 +603,7 @@ InitClientResp(gclient_t *client)
  * be mirrored out to the client structure before all the
  * edicts are wiped.
  */
-void
-SaveClientData(void)
+void SaveClientData(void)
 {
 	int i;
 	edict_t *ent;
@@ -645,8 +629,7 @@ SaveClientData(void)
 	}
 }
 
-void
-FetchClientEntData(edict_t *ent)
+void FetchClientEntData(edict_t *ent)
 {
 	ent->health = ent->client->pers.health;
 	ent->max_health = ent->client->pers.max_health;
@@ -664,8 +647,7 @@ FetchClientEntData(edict_t *ent)
  * Returns the distance to the
  * nearest player from the given spot
  */
-float
-PlayersRangeFromSpot(edict_t *spot)
+float PlayersRangeFromSpot(edict_t *spot)
 {
 	edict_t *player;
 	float bestplayerdistance;
@@ -718,7 +700,7 @@ SelectRandomDeathmatchSpawnPoint(void)
 	spot1 = spot2 = NULL;
 
 	while ((spot = G_Find(spot, FOFS(classname),
-					"info_player_deathmatch")) != NULL)
+						  "info_player_deathmatch")) != NULL)
 	{
 		count++;
 		range = PlayersRangeFromSpot(spot);
@@ -761,8 +743,7 @@ SelectRandomDeathmatchSpawnPoint(void)
 		{
 			selection++;
 		}
-	}
-	while (selection--);
+	} while (selection--);
 
 	return spot;
 }
@@ -779,7 +760,7 @@ SelectFarthestDeathmatchSpawnPoint(void)
 	bestdistance = 0;
 
 	while ((spot = G_Find(spot, FOFS(classname),
-					"info_player_deathmatch")) != NULL)
+						  "info_player_deathmatch")) != NULL)
 	{
 		bestplayerdistance = PlayersRangeFromSpot(spot);
 
@@ -868,8 +849,7 @@ SelectCoopSpawnPoint(edict_t *ent)
 /*
  * Chooses a player start, deathmatch start, coop start, etc
  */
-void
-SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
+void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 {
 	edict_t *spot = NULL;
 
@@ -925,8 +905,7 @@ SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 
 /* ====================================================================== */
 
-void
-InitBodyQue(void)
+void InitBodyQue(void)
 {
 	int i;
 	edict_t *ent;
@@ -940,20 +919,19 @@ InitBodyQue(void)
 	}
 }
 
-void
-body_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
-		int damage, vec3_t point)
+void body_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
+			  int damage, vec3_t point)
 {
 	int n;
 
 	if (self->health < -40)
 	{
-		gi.sound(self, CHAN_BODY, gi.soundindex( "misc/udeath.wav"), 1, ATTN_NORM, 0);
+		gi.sound(self, CHAN_BODY, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
 
 		for (n = 0; n < 4; n++)
 		{
 			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2",
-					damage, GIB_ORGANIC);
+					 damage, GIB_ORGANIC);
 		}
 
 		self->s.origin[2] -= 48;
@@ -962,8 +940,7 @@ body_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	}
 }
 
-void
-CopyToBodyQue(edict_t *ent)
+void CopyToBodyQue(edict_t *ent)
 {
 	edict_t *body;
 
@@ -994,8 +971,7 @@ CopyToBodyQue(edict_t *ent)
 	gi.linkentity(body);
 }
 
-void
-respawn(edict_t *self)
+void respawn(edict_t *self)
 {
 	if (deathmatch->value || coop->value)
 	{
@@ -1030,8 +1006,7 @@ respawn(edict_t *self)
  * to a server or respawns in
  * a deathmatch.
  */
-void
-PutClientInServer(edict_t *ent)
+void PutClientInServer(edict_t *ent)
 {
 	vec3_t mins = {-16, -16, -24};
 	vec3_t maxs = {16, 16, 32};
@@ -1156,25 +1131,26 @@ PutClientInServer(edict_t *ent)
 		}
 	}
 
-	client->ps.gunindex = gi.modelindex(client->pers.weapon->view_model);
+	/* No weapon model in minimal version */
+	client->ps.gunindex = 0;
 
 	/* clear entity state values */
 	ent->s.effects = 0;
 	ent->s.skinnum = ent - g_edicts - 1;
 	ent->s.modelindex = 255; /* will use the skin specified model */
-	ent->s.modelindex2 = 255; /* custom gun model */
+	ent->s.modelindex2 = 0;	 /* no custom gun model */
 	ent->s.skinnum = ent - g_edicts - 1;
 
 	ent->s.frame = 0;
 	VectorCopy(spawn_origin, ent->s.origin);
-	ent->s.origin[2] += 1;  /* make sure off ground */
+	ent->s.origin[2] += 1; /* make sure off ground */
 	VectorCopy(ent->s.origin, ent->s.old_origin);
 
 	/* set the delta angle */
 	for (i = 0; i < 3; i++)
 	{
 		client->ps.pmove.delta_angles[i] = ANGLE2SHORT(
-				spawn_angles[i] - client->resp.cmd_angles[i]);
+			spawn_angles[i] - client->resp.cmd_angles[i]);
 	}
 
 	ent->s.angles[PITCH] = 0;
@@ -1190,9 +1166,8 @@ PutClientInServer(edict_t *ent)
 
 	gi.linkentity(ent);
 
-	/* force the current weapon up */
-	client->newweapon = client->pers.weapon;
-	ChangeWeapon(ent);
+	/* No weapon handling in minimal version */
+	client->newweapon = NULL;
 }
 
 /*
@@ -1201,8 +1176,7 @@ PutClientInServer(edict_t *ent)
  * so clear everything out before
  * starting them.
  */
-void
-ClientBeginDeathmatch(edict_t *ent)
+void ClientBeginDeathmatch(edict_t *ent)
 {
 	G_InitEdict(ent);
 
@@ -1234,8 +1208,7 @@ ClientBeginDeathmatch(edict_t *ent)
  * called when a client has finished connecting, and is ready
  * to be placed into the game.  This will happen every level load.
  */
-void
-ClientBegin(edict_t *ent)
+void ClientBegin(edict_t *ent)
 {
 	int i;
 
@@ -1259,7 +1232,7 @@ ClientBegin(edict_t *ent)
 		for (i = 0; i < 3; i++)
 		{
 			ent->client->ps.pmove.delta_angles[i] = ANGLE2SHORT(
-					ent->client->ps.viewangles[i]);
+				ent->client->ps.viewangles[i]);
 		}
 	}
 	else
@@ -1288,7 +1261,7 @@ ClientBegin(edict_t *ent)
 			gi.multicast(ent->s.origin, MULTICAST_PVS);
 
 			gi.bprintf(PRINT_HIGH, "%s entered the game\n",
-					ent->client->pers.netname);
+					   ent->client->pers.netname);
 		}
 	}
 
@@ -1302,8 +1275,7 @@ ClientBegin(edict_t *ent)
  * The game can override any of the settings in place
  * (forcing skins or names, etc) before copying it off.
  */
-void
-ClientUserinfoChanged(edict_t *ent, char *userinfo)
+void ClientUserinfoChanged(edict_t *ent, char *userinfo)
 {
 	char *s;
 	int playernum;
@@ -1325,7 +1297,7 @@ ClientUserinfoChanged(edict_t *ent, char *userinfo)
 
 	/* combine name and skin into a configstring */
 	gi.configstring(CS_PLAYERSKINS + playernum,
-			va("%s\\%s", ent->client->pers.netname, s));
+					va("%s\\%s", ent->client->pers.netname, s));
 
 	/* set player name field (used in id_state view) */
 	gi.configstring(CS_GENERAL + playernum, ent->client->pers.netname);
@@ -1391,7 +1363,7 @@ ClientConnect(edict_t *ent, char *userinfo)
 		strcmp(password->string, value))
 	{
 		Info_SetValueForKey(userinfo, "rejmsg",
-				"Password required or incorrect.");
+							"Password required or incorrect.");
 		return false;
 	}
 
@@ -1428,8 +1400,7 @@ ClientConnect(edict_t *ent, char *userinfo)
  * Called when a player drops from the server.
  * Will not be called between levels.
  */
-void
-ClientDisconnect(edict_t *ent)
+void ClientDisconnect(edict_t *ent)
 {
 	int playernum;
 
@@ -1492,8 +1463,7 @@ CheckBlock(void *b, int c)
 	return v;
 }
 
-void
-PrintPmove(pmove_t *pm)
+void PrintPmove(pmove_t *pm)
 {
 	unsigned c1, c2;
 
@@ -1506,8 +1476,7 @@ PrintPmove(pmove_t *pm)
  * This will be called once for each client frame, which will
  * usually be a couple times for each server frame.
  */
-void
-ClientThink(edict_t *ent, usercmd_t *ucmd)
+void ClientThink(edict_t *ent, usercmd_t *ucmd)
 {
 	gclient_t *client;
 	edict_t *other;
@@ -1673,16 +1642,7 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
 	   standing on for monster sighting AI */
 	ent->light_level = ucmd->lightlevel;
 
-	/* fire weapon from final position if needed */
-	if (client->latched_buttons & BUTTON_ATTACK
-		&& (ent->movetype != MOVETYPE_NOCLIP))
-	{
-		if (!client->weapon_thunk)
-		{
-			client->weapon_thunk = true;
-			Think_Weapon(ent);
-		}
-	}
+	/* No weapon firing in minimal version */
 
 	for (i = 1; i <= maxclients->value; i++)
 	{
@@ -1707,8 +1667,7 @@ ClientThink(edict_t *ent, usercmd_t *ucmd)
  * This will be called once for each server frame,
  * before running any other entities in the world.
  */
-void
-ClientBeginServerFrame(edict_t *ent)
+void ClientBeginServerFrame(edict_t *ent)
 {
 	gclient_t *client;
 	int buttonMask;
@@ -1720,16 +1679,8 @@ ClientBeginServerFrame(edict_t *ent)
 
 	client = ent->client;
 
-	/* run weapon animations if it hasn't been done by a ucmd_t */
-	if (!client->weapon_thunk
-		&& (ent->movetype != MOVETYPE_NOCLIP))
-	{
-		Think_Weapon(ent);
-	}
-	else
-	{
-		client->weapon_thunk = false;
-	}
+	/* No weapon handling in minimal version */
+	client->weapon_thunk = false;
 
 	if (ent->deadflag)
 	{
@@ -1769,4 +1720,3 @@ ClientBeginServerFrame(edict_t *ent)
 
 	client->latched_buttons = 0;
 }
-
