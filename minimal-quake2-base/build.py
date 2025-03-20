@@ -142,6 +142,7 @@ def copy_files():
     files = [
         yquake2_dir / "release" / "q2ded",
         yquake2_dir / "release" / "quake2",
+        yquake2_dir / "release" / "ref_gl3.dylib",
         yquake2_ref_vk_dir / "release" / "ref_vk.dylib",
     ]
 

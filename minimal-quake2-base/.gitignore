@@ -5,3 +5,5 @@ release
 minimal-quake2-base-xcode
 
 autosave
+
+*.zip
