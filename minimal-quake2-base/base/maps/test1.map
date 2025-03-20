@@ -134,25 +134,25 @@
 {
 "classname" "light"
 "origin" "-184 408 216"
-"light" "150"
+"light" "250"
 }
 // entity 2
 {
 "classname" "light"
 "origin" "184 408 216"
-"light" "150"
+"light" "250"
 }
 // entity 3
 {
 "classname" "light"
 "origin" "-184 584 216"
-"light" "150"
+"light" "250"
 }
 // entity 4
 {
 "classname" "light"
 "origin" "184 584 216"
-"light" "150"
+"light" "250"
 }
 // entity 5
 {

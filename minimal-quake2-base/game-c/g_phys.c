@@ -1120,14 +1120,7 @@ void SV_Physics_Step(edict_t *ent)
 			}
 		}
 
-		if (ent->svflags & SVF_MONSTER)
-		{
-			mask = MASK_MONSTERSOLID;
-		}
-		else
-		{
-			mask = MASK_SOLID;
-		}
+		mask = MASK_SOLID;
 
 		SV_FlyMove(ent, FRAMETIME, mask);
 

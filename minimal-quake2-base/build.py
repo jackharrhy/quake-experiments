@@ -181,6 +181,7 @@ def copy_files():
         "pics/quit.pcx",
         "pics/num_*.pcx",
         "pics/anum_*.pcx",
+        "pics/m_cursor*.pcx",
     ]
 
     for path in paths:
@@ -255,6 +256,13 @@ def main():
     subparsers.add_parser("build-maps", help="Build maps")
     subparsers.add_parser("all", help="Do everything")
 
+    build_game_run_parser = subparsers.add_parser(
+        "build-game-and-run", help="Build the game and run it"
+    )
+    build_game_run_parser.add_argument(
+        "args", nargs="*", help="Arguments to pass to Quake2"
+    )
+
     run_parser = subparsers.add_parser("run", help="Run the game")
     run_parser.add_argument("args", nargs="*", help="Arguments to pass to Quake2")
 
@@ -280,6 +288,9 @@ def main():
         build_maps()
     elif args.command == "all":
         all()
+    elif args.command == "build-game-and-run":
+        build()
+        run(args.args)
     elif args.command == "run":
         run(args.args)
     elif args.command == "copy":

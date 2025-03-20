@@ -511,8 +511,7 @@ void G_TouchTriggers(edict_t *ent)
 	int i, num;
 	edict_t *touch[MAX_EDICTS], *hit;
 
-	/* dead things don't activate triggers! */
-	if ((ent->client || (ent->svflags & SVF_MONSTER)) && (ent->health <= 0))
+	if (ent->client && ent->health <= 0)
 	{
 		return;
 	}

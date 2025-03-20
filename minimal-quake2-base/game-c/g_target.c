@@ -448,25 +448,6 @@ void target_laser_think(edict_t *self)
 					 vec3_origin, self->dmg, 1, DAMAGE_ENERGY, MOD_TARGET_LASER);
 		}
 
-		/* if we hit something that's not a monster
-		   or player or is immune to lasers, we're done */
-		if (!(tr.ent->svflags & SVF_MONSTER) && (!tr.ent->client))
-		{
-			if (self->spawnflags & 0x80000000)
-			{
-				self->spawnflags &= ~0x80000000;
-				gi.WriteByte(svc_temp_entity);
-				gi.WriteByte(TE_LASER_SPARKS);
-				gi.WriteByte(count);
-				gi.WritePosition(tr.endpos);
-				gi.WriteDir(tr.plane.normal);
-				gi.WriteByte(self->s.skinnum);
-				gi.multicast(tr.endpos, MULTICAST_PVS);
-			}
-
-			break;
-		}
-
 		ignore = tr.ent;
 		VectorCopy(tr.endpos, start);
 	}
