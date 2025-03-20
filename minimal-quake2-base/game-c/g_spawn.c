@@ -32,11 +32,6 @@ typedef struct
 	void (*spawn)(edict_t *ent);
 } spawn_t;
 
-void SP_item_health(edict_t *self);
-void SP_item_health_small(edict_t *self);
-void SP_item_health_large(edict_t *self);
-void SP_item_health_mega(edict_t *self);
-
 void SP_info_player_start(edict_t *ent);
 void SP_info_player_deathmatch(edict_t *ent);
 void SP_info_player_coop(edict_t *ent);
@@ -65,7 +60,6 @@ void SP_trigger_multiple(edict_t *ent);
 void SP_trigger_relay(edict_t *ent);
 void SP_trigger_push(edict_t *ent);
 void SP_trigger_hurt(edict_t *ent);
-void SP_trigger_key(edict_t *ent);
 void SP_trigger_counter(edict_t *ent);
 void SP_trigger_elevator(edict_t *ent);
 void SP_trigger_gravity(edict_t *ent);
@@ -149,11 +143,6 @@ void SP_turret_base(edict_t *self);
 void SP_turret_driver(edict_t *self);
 
 spawn_t spawns[] = {
-	{"item_health", SP_item_health},
-	{"item_health_small", SP_item_health_small},
-	{"item_health_large", SP_item_health_large},
-	{"item_health_mega", SP_item_health_mega},
-
 	{"info_player_start", SP_info_player_start},
 	{"info_player_deathmatch", SP_info_player_deathmatch},
 	{"info_player_coop", SP_info_player_coop},
@@ -182,7 +171,6 @@ spawn_t spawns[] = {
 	{"trigger_relay", SP_trigger_relay},
 	{"trigger_push", SP_trigger_push},
 	{"trigger_hurt", SP_trigger_hurt},
-	{"trigger_key", SP_trigger_key},
 	{"trigger_counter", SP_trigger_counter},
 	{"trigger_elevator", SP_trigger_elevator},
 	{"trigger_gravity", SP_trigger_gravity},
@@ -246,29 +234,11 @@ spawn_t spawns[] = {
 void ED_CallSpawn(edict_t *ent)
 {
 	spawn_t *s;
-	gitem_t *item;
-	int i;
 
 	if (!ent->classname)
 	{
 		gi.dprintf("ED_CallSpawn: NULL classname\n");
 		return;
-	}
-
-	/* check item spawn functions */
-	for (i = 0, item = itemlist; i < game.num_items; i++, item++)
-	{
-		if (!item->classname)
-		{
-			continue;
-		}
-
-		if (!strcmp(item->classname, ent->classname))
-		{
-			/* found it */
-			SpawnItem(ent, item);
-			return;
-		}
 	}
 
 	/* check normal spawn functions */
@@ -787,9 +757,6 @@ void SP_worldspawn(edict_t *ent)
 	/* reserve some spots for dead player bodies for coop / deathmatch */
 	InitBodyQue();
 
-	/* set configstrings for items */
-	SetItemNames();
-
 	if (st.nextmap)
 	{
 		strcpy(level.nextmap, st.nextmap);
@@ -851,8 +818,6 @@ void SP_worldspawn(edict_t *ent)
 	}
 
 	snd_fry = gi.soundindex("player/fry.wav"); /* standing in lava / slime */
-
-	PrecacheItem(FindItem("Blaster"));
 
 	gi.soundindex("player/lava1.wav");
 	gi.soundindex("player/lava2.wav");

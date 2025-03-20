@@ -340,71 +340,6 @@ void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 
 void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
 
-void TossClientWeapon(edict_t *self)
-{
-	gitem_t *item;
-	edict_t *drop;
-	qboolean quad;
-	float spread;
-
-	if (!deathmatch->value)
-	{
-		return;
-	}
-
-	item = self->client->pers.weapon;
-
-	if (!self->client->pers.inventory[self->client->ammo_index])
-	{
-		item = NULL;
-	}
-
-	if (item && (strcmp(item->pickup_name, "Blaster") == 0))
-	{
-		item = NULL;
-	}
-
-	if (!((int)(dmflags->value) & DF_QUAD_DROP))
-	{
-		quad = false;
-	}
-	else
-	{
-		quad = (self->client->quad_framenum > (level.framenum + 10));
-	}
-
-	if (item && quad)
-	{
-		spread = 22.5;
-	}
-	else
-	{
-		spread = 0.0;
-	}
-
-	if (item)
-	{
-		self->client->v_angle[YAW] -= spread;
-		drop = Drop_Item(self, item);
-		self->client->v_angle[YAW] += spread;
-		drop->spawnflags = DROPPED_PLAYER_ITEM;
-	}
-
-	if (quad)
-	{
-		self->client->v_angle[YAW] += spread;
-		drop = Drop_Item(self, FindItemByClassname("item_quad"));
-		self->client->v_angle[YAW] -= spread;
-		drop->spawnflags |= DROPPED_PLAYER_ITEM;
-
-		drop->touch = Touch_Item;
-		drop->nextthink = level.time + (self->client->quad_framenum -
-										level.framenum) *
-										   FRAMETIME;
-		drop->think = G_FreeEdict;
-	}
-}
-
 void LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
 {
 	vec3_t dir;
@@ -476,22 +411,11 @@ void player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 		self->client->ps.pmove.pm_type = PM_DEAD;
 		ClientObituary(self, inflictor, attacker);
 
-		TossClientWeapon(self);
-
 		if (deathmatch->value && !self->client->showscores)
 		{
 			Cmd_Help_f(self); /* show scores */
 		}
 	}
-
-	/* remove powerups */
-	self->client->quad_framenum = 0;
-	self->client->invincible_framenum = 0;
-	self->client->breather_framenum = 0;
-	self->client->enviro_framenum = 0;
-
-	/* clear inventory */
-	memset(self->client->pers.inventory, 0, sizeof(self->client->pers.inventory));
 
 	if (self->health < -40)
 	{
@@ -566,21 +490,8 @@ void InitClientPersistant(gclient_t *client)
 {
 	memset(&client->pers, 0, sizeof(client->pers));
 
-	/* No weapons in minimal version */
-	client->pers.selected_item = -1;
-	client->pers.weapon = NULL;
-	client->pers.lastweapon = NULL;
-
 	client->pers.health = 100;
 	client->pers.max_health = 100;
-
-	/* No ammo in minimal version */
-	client->pers.max_bullets = 0;
-	client->pers.max_shells = 0;
-	client->pers.max_rockets = 0;
-	client->pers.max_grenades = 0;
-	client->pers.max_cells = 0;
-	client->pers.max_slugs = 0;
 
 	client->pers.connected = true;
 }
@@ -621,11 +532,6 @@ void SaveClientData(void)
 		game.clients[i].pers.max_health = ent->max_health;
 		game.clients[i].pers.savedFlags =
 			(ent->flags & (FL_GODMODE | FL_NOTARGET));
-
-		if (coop->value)
-		{
-			game.clients[i].pers.score = ent->client->resp.score;
-		}
 	}
 }
 
@@ -634,11 +540,6 @@ void FetchClientEntData(edict_t *ent)
 	ent->health = ent->client->pers.health;
 	ent->max_health = ent->client->pers.max_health;
 	ent->flags |= ent->client->pers.savedFlags;
-
-	if (coop->value)
-	{
-		ent->client->resp.score = ent->client->pers.score;
-	}
 }
 
 /* SelectSpawnPoint */
@@ -1037,28 +938,13 @@ void PutClientInServer(edict_t *ent)
 	}
 	else if (coop->value)
 	{
-		int n;
 		char userinfo[MAX_INFO_STRING];
 
 		resp = client->resp;
 		memcpy(userinfo, client->pers.userinfo, sizeof(userinfo));
 
-		/* this is kind of ugly, but it's how we want to handle keys in coop */
-		for (n = 0; n < MAX_ITEMS; n++)
-		{
-			if (itemlist[n].flags & IT_KEY)
-			{
-				resp.coop_respawn.inventory[n] = client->pers.inventory[n];
-			}
-		}
-
 		client->pers = resp.coop_respawn;
 		ClientUserinfoChanged(ent, userinfo);
-
-		if (resp.score > client->pers.score)
-		{
-			client->pers.score = resp.score;
-		}
 	}
 	else
 	{
@@ -1165,9 +1051,6 @@ void PutClientInServer(edict_t *ent)
 	}
 
 	gi.linkentity(ent);
-
-	/* No weapon handling in minimal version */
-	client->newweapon = NULL;
 }
 
 /*
@@ -1379,7 +1262,7 @@ ClientConnect(edict_t *ent, char *userinfo)
 
 		InitClientResp(ent->client);
 
-		if (!game.autosaved || !ent->client->pers.weapon)
+		if (!game.autosaved)
 		{
 			InitClientPersistant(ent->client);
 		}

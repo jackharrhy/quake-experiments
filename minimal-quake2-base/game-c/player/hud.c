@@ -51,12 +51,6 @@ void MoveClientToIntermission(edict_t *ent)
 	ent->client->ps.blend[3] = 0;
 	ent->client->ps.rdflags &= ~RDF_UNDERWATER;
 
-	/* clean up powerup info */
-	ent->client->quad_framenum = 0;
-	ent->client->invincible_framenum = 0;
-	ent->client->breather_framenum = 0;
-	ent->client->enviro_framenum = 0;
-
 	ent->viewheight = 0;
 	ent->s.modelindex = 0;
 	ent->s.modelindex2 = 0;
@@ -69,7 +63,7 @@ void MoveClientToIntermission(edict_t *ent)
 
 void BeginIntermission(edict_t *targ)
 {
-	int i, n;
+	int i;
 	edict_t *ent, *client;
 
 	if (level.intermissiontime)
@@ -109,15 +103,6 @@ void BeginIntermission(edict_t *targ)
 				if (!client->inuse)
 				{
 					continue;
-				}
-
-				/* strip players of all keys between units */
-				for (n = 0; n < MAX_ITEMS; n++)
-				{
-					if (itemlist[n].flags & IT_KEY)
-					{
-						client->client->pers.inventory[n] = 0;
-					}
 				}
 			}
 		}

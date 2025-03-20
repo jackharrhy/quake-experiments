@@ -226,7 +226,6 @@ MQ2B_OBJS_ = \
 	g_cmds.o \
 	g_combat.o \
 	g_func.o \
-	g_items.o \
 	g_main.o \
 	g_misc.o \
 	g_phys.o \
@@ -242,7 +241,7 @@ MQ2B_OBJS_ = \
 	player/hud.o \
 	player/trail.o \
 	player/view.o \
-	player/weapon.o \
+	player/minimal.o \
 	shared/shared.o
 
 # ----------

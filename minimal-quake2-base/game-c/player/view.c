@@ -483,7 +483,6 @@ void SV_CalcBlend(edict_t *ent)
 {
 	int contents;
 	vec3_t vieworg;
-	int remaining;
 
 	ent->client->ps.blend[0] = ent->client->ps.blend[1] =
 		ent->client->ps.blend[2] =
@@ -513,64 +512,6 @@ void SV_CalcBlend(edict_t *ent)
 	else if (contents & CONTENTS_WATER)
 	{
 		SV_AddBlend(0.5, 0.3, 0.2, 0.4, ent->client->ps.blend);
-	}
-
-	/* add for powerups */
-	if (ent->client->quad_framenum > level.framenum)
-	{
-		remaining = ent->client->quad_framenum - level.framenum;
-
-		if (remaining == 30) /* beginning to fade */
-		{
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/damage2.wav"), 1, ATTN_NORM, 0);
-		}
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			SV_AddBlend(0, 0, 1, 0.08, ent->client->ps.blend);
-		}
-	}
-	else if (ent->client->invincible_framenum > level.framenum)
-	{
-		remaining = ent->client->invincible_framenum - level.framenum;
-
-		if (remaining == 30) /* beginning to fade */
-		{
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/protect2.wav"), 1, ATTN_NORM, 0);
-		}
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			SV_AddBlend(1, 1, 0, 0.08, ent->client->ps.blend);
-		}
-	}
-	else if (ent->client->enviro_framenum > level.framenum)
-	{
-		remaining = ent->client->enviro_framenum - level.framenum;
-
-		if (remaining == 30) /* beginning to fade */
-		{
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
-		}
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			SV_AddBlend(0, 1, 0, 0.08, ent->client->ps.blend);
-		}
-	}
-	else if (ent->client->breather_framenum > level.framenum)
-	{
-		remaining = ent->client->breather_framenum - level.framenum;
-
-		if (remaining == 30) /* beginning to fade */
-		{
-			gi.sound(ent, CHAN_ITEM, gi.soundindex("items/airout.wav"), 1, ATTN_NORM, 0);
-		}
-
-		if ((remaining > 30) || (remaining & 4))
-		{
-			SV_AddBlend(0.4, 1, 0.4, 0.04, ent->client->ps.blend);
-		}
 	}
 
 	/* add for damage */
@@ -954,8 +895,6 @@ void G_SetClientEvent(edict_t *ent)
 
 void G_SetClientSound(edict_t *ent)
 {
-	char *weap;
-
 	if (ent->client->resp.game_helpchanged != game.helpchanged)
 	{
 		ent->client->resp.game_helpchanged = game.helpchanged;
@@ -970,30 +909,9 @@ void G_SetClientSound(edict_t *ent)
 		gi.sound(ent, CHAN_VOICE, gi.soundindex("misc/pc_up.wav"), 1, ATTN_STATIC, 0);
 	}
 
-	if (ent->client->pers.weapon)
-	{
-		weap = ent->client->pers.weapon->classname;
-	}
-	else
-	{
-		weap = "";
-	}
-
 	if (ent->waterlevel && (ent->watertype & (CONTENTS_LAVA | CONTENTS_SLIME)))
 	{
 		ent->s.sound = snd_fry;
-	}
-	else if (strcmp(weap, "weapon_railgun") == 0)
-	{
-		ent->s.sound = gi.soundindex("weapons/rg_hum.wav");
-	}
-	else if (strcmp(weap, "weapon_bfg") == 0)
-	{
-		ent->s.sound = gi.soundindex("weapons/bfg_hum.wav");
-	}
-	else if (ent->client->weapon_sound)
-	{
-		ent->s.sound = ent->client->weapon_sound;
 	}
 	else
 	{

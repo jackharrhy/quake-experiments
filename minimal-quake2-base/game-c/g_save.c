@@ -95,7 +95,6 @@ field_t savefields[] = {
 	{"", FOFS(message), F_LSTRING},
 
 	{"", FOFS(client), F_CLIENT},
-	{"", FOFS(item), F_ITEM},
 
 	{"", FOFS(goalentity), F_EDICT},
 	{"", FOFS(movetarget), F_EDICT},
@@ -124,9 +123,6 @@ field_t levelfields[] = {
 	{NULL, 0, F_INT}};
 
 field_t clientfields[] = {
-	{"", CLOFS(pers.weapon), F_ITEM},
-	{"", CLOFS(pers.lastweapon), F_ITEM},
-	{"", CLOFS(newweapon), F_ITEM},
 
 	{NULL, 0, F_INT}};
 
@@ -200,9 +196,6 @@ void InitGame(void)
 	/* others */
 	aimfix = gi.cvar("aimfix", "0", CVAR_ARCHIVE);
 
-	/* items */
-	InitItems();
-
 	Com_sprintf(game.helpmessage1, sizeof(game.helpmessage1), "");
 	Com_sprintf(game.helpmessage2, sizeof(game.helpmessage2), "");
 
@@ -273,19 +266,6 @@ void WriteField1(FILE *f, field_t *field, byte *base)
 		else
 		{
 			index = *(gclient_t **)p - game.clients;
-		}
-
-		*(int *)p = index;
-		break;
-	case F_ITEM:
-
-		if (*(edict_t **)p == NULL)
-		{
-			index = -1;
-		}
-		else
-		{
-			index = *(gitem_t **)p - itemlist;
 		}
 
 		*(int *)p = index;
@@ -388,19 +368,6 @@ void ReadField(FILE *f, field_t *field, byte *base)
 		else
 		{
 			*(gclient_t **)p = &game.clients[index];
-		}
-
-		break;
-	case F_ITEM:
-		index = *(int *)p;
-
-		if (index == -1)
-		{
-			*(gitem_t **)p = NULL;
-		}
-		else
-		{
-			*(gitem_t **)p = &itemlist[index];
 		}
 
 		break;

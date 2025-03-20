@@ -178,6 +178,8 @@ def copy_files():
         "pics/pause.pcx",
         "pics/m_main_*.pcx",
         "pics/quit.pcx",
+        "pics/num_*.pcx",
+        "pics/anum_*.pcx",
     ]
 
     for path in paths:

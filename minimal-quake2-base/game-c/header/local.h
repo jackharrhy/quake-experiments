@@ -177,7 +177,6 @@ typedef enum
 
 /* noise types for PlayerNoise */
 #define PNOISE_SELF 0
-#define PNOISE_WEAPON 1
 #define PNOISE_IMPACT 2
 
 /* edict->movetype values */
@@ -195,66 +194,6 @@ typedef enum
 	MOVETYPE_FLYMISSILE, /* extra size to monsters */
 	MOVETYPE_BOUNCE
 } movetype_t;
-
-typedef struct
-{
-	int base_count;
-	int max_count;
-	float normal_protection;
-	float energy_protection;
-	int armor;
-} gitem_armor_t;
-
-/* gitem_t->flags */
-#define IT_WEAPON 1 /* use makes active weapon */
-#define IT_AMMO 2
-#define IT_ARMOR 4
-#define IT_STAY_COOP 8
-#define IT_KEY 16
-#define IT_POWERUP 32
-#define IT_TECH 64
-
-/* gitem_t->weapmodel for weapons indicates model index */
-#define WEAP_BLASTER 1
-#define WEAP_SHOTGUN 2
-#define WEAP_SUPERSHOTGUN 3
-#define WEAP_MACHINEGUN 4
-#define WEAP_CHAINGUN 5
-#define WEAP_GRENADES 6
-#define WEAP_GRENADELAUNCHER 7
-#define WEAP_ROCKETLAUNCHER 8
-#define WEAP_HYPERBLASTER 9
-#define WEAP_RAILGUN 10
-#define WEAP_BFG 11
-
-typedef struct gitem_s
-{
-	char *classname; /* spawning name */
-	qboolean (*pickup)(struct edict_s *ent, struct edict_s *other);
-	void (*use)(struct edict_s *ent, struct gitem_s *item);
-	void (*drop)(struct edict_s *ent, struct gitem_s *item);
-	void (*weaponthink)(struct edict_s *ent);
-	char *pickup_sound;
-	char *world_model;
-	int world_model_flags;
-	char *view_model;
-
-	/* client side info */
-	char *icon;
-	char *pickup_name; /* for printing on pickup */
-	int count_width;   /* number of digits to display by icon */
-
-	int quantity; /* for ammo how much, for weapons how much is used per shot */
-	char *ammo;	  /* for weapons */
-	int flags;	  /* IT_* flags */
-
-	int weapmodel; /* weapon model index (for weapons) */
-
-	void *info;
-	int tag;
-
-	char *precaches; /* string of all models, sounds, and images this item will use */
-} gitem_t;
 
 /* this structure is left intact through an entire game
    it should be initialized at dll load time, and read/written to
@@ -554,7 +493,6 @@ typedef enum
 	F_VECTOR,
 	F_ANGLEHACK,
 	F_EDICT,  /* index on disk, pointer in memory */
-	F_ITEM,	  /* index on disk, pointer in memory */
 	F_CLIENT, /* index on disk, pointer in memory */
 	F_IGNORE
 } fieldtype_t;
@@ -568,30 +506,11 @@ typedef struct
 } field_t;
 
 extern field_t fields[];
-extern gitem_t itemlist[];
 
 /* g_cmds.c */
 qboolean CheckFlood(edict_t *ent);
 void Cmd_Help_f(edict_t *ent);
 void Cmd_Score_f(edict_t *ent);
-
-/* g_items.c */
-void PrecacheItem(gitem_t *it);
-void InitItems(void);
-void SetItemNames(void);
-gitem_t *FindItem(char *pickup_name);
-gitem_t *FindItemByClassname(char *classname);
-
-#define ITEM_INDEX(x) ((x) - itemlist)
-edict_t *Drop_Item(edict_t *ent, gitem_t *item);
-void SetRespawn(edict_t *ent, float delay);
-void ChangeWeapon(edict_t *ent);
-void SpawnItem(edict_t *ent, gitem_t *item);
-void Think_Weapon(edict_t *ent);
-int ArmorIndex(edict_t *ent);
-gitem_t *GetItemByIndex(int index);
-qboolean Add_Ammo(edict_t *ent, gitem_t *item, int count);
-void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
 
 /* g_utils.c */
 qboolean KillBox(edict_t *ent);
@@ -699,13 +618,10 @@ void G_SetStats(edict_t *ent);
 void ValidateSelectedItem(edict_t *ent);
 void DeathmatchScoreboardMessage(edict_t *client, edict_t *killer);
 
-/* g_pweapon.c */
+/* p_minimal.c */
 void PlayerNoise(edict_t *who, vec3_t where, int type);
 void P_ProjectSource(edict_t *ent, vec3_t distance,
 					 vec3_t forward, vec3_t right, vec3_t result);
-void Weapon_Generic(edict_t *ent, int FRAME_ACTIVATE_LAST, int FRAME_FIRE_LAST,
-					int FRAME_IDLE_LAST, int FRAME_DEACTIVATE_LAST, int *pause_frames,
-					int *fire_frames, void (*fire)(edict_t *ent));
 
 /* m_move.c */
 qboolean M_CheckBottom(edict_t *ent);
@@ -749,23 +665,6 @@ typedef struct
 	int health;
 	int max_health;
 	int savedFlags;
-
-	int selected_item;
-	int inventory[MAX_ITEMS];
-
-	/* ammo capacities */
-	int max_bullets;
-	int max_shells;
-	int max_rockets;
-	int max_grenades;
-	int max_cells;
-	int max_slugs;
-
-	gitem_t *weapon;
-	gitem_t *lastweapon;
-
-	int power_cubes; /* used for tracking the cubes in coop games */
-	int score;		 /* for calculating total unit score in coop games */
 } client_persistant_t;
 
 /* client data that stays across deathmatch respawns */
@@ -813,8 +712,6 @@ struct gclient_s
 
 	qboolean weapon_thunk;
 
-	gitem_t *newweapon;
-
 	/* sum up damage over an entire frame, so
 	   shotgun blasts give a single big kick */
 	int damage_armor;	  /* damage absorbed by armor */
@@ -851,7 +748,6 @@ struct gclient_s
 	qboolean anim_run;
 
 	/* powerup timers */
-	float quad_framenum;
 	float invincible_framenum;
 	float breather_framenum;
 	float enviro_framenum;
@@ -1012,8 +908,6 @@ struct edict_s
 	int light_level;
 
 	int style; /* also used as areaportal number */
-
-	gitem_t *item; /* for bonus items */
 
 	/* common data blocks */
 	moveinfo_t moveinfo;
