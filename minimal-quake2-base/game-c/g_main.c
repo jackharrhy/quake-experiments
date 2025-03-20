@@ -39,20 +39,12 @@ int meansOfDeath;
 edict_t *g_edicts;
 
 cvar_t *deathmatch;
-cvar_t *coop;
 cvar_t *dmflags;
-cvar_t *skill;
-cvar_t *fraglimit;
-cvar_t *timelimit;
-cvar_t *capturelimit;
-cvar_t *instantweap;
 cvar_t *password;
 cvar_t *maxclients;
 cvar_t *maxentities;
 cvar_t *g_select_empty;
 cvar_t *dedicated;
-
-cvar_t *filterban;
 
 cvar_t *sv_maxvelocity;
 cvar_t *sv_gravity;
@@ -183,21 +175,6 @@ void ClientEndServerFrames(void)
 
 		ClientEndServerFrame(ent);
 	}
-}
-
-/*
- * Returns the created target changelevel
- */
-edict_t *
-CreateTargetChangeLevel(char *map)
-{
-	edict_t *ent;
-
-	ent = G_Spawn();
-	ent->classname = "target_changelevel";
-	Com_sprintf(level.nextmap, sizeof(level.nextmap), "%s", map);
-	ent->map = level.nextmap;
-	return ent;
 }
 
 /*

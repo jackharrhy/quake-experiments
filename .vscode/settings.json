@@ -1,6 +1,3 @@
 {
-    "editor.formatOnSave": true,
-    "files.associations": {
-        "local.h": "c"
-    },
+  "editor.formatOnSave": true
 }

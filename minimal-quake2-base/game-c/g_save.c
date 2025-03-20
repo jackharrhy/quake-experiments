@@ -113,7 +113,6 @@ field_t savefields[] = {
 	{NULL, 0, F_INT}};
 
 field_t levelfields[] = {
-	{"", LLOFS(sight_client), F_EDICT},
 	{"", LLOFS(sight_entity), F_EDICT},
 	{"", LLOFS(sound_entity), F_EDICT},
 	{"", LLOFS(sound2_entity), F_EDICT},
@@ -151,8 +150,6 @@ void InitGame(void)
 	gi.cvar("gamedate", BUILD_DATE, CVAR_SERVERINFO | CVAR_LATCH);
 	maxclients = gi.cvar("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH);
 	deathmatch = gi.cvar("deathmatch", "0", CVAR_LATCH);
-	coop = gi.cvar("coop", "0", CVAR_LATCH);
-	skill = gi.cvar("skill", "1", CVAR_LATCH);
 	maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH);
 
 	/* This game.dll only supports deathmatch */
@@ -162,20 +159,9 @@ void InitGame(void)
 		gi.cvar_set("deathmatch", "1");
 	}
 
-	/* force coop off */
-	if (coop->value)
-	{
-		gi.cvar_set("coop", "0");
-	}
-
 	/* change anytime vars */
 	dmflags = gi.cvar("dmflags", "0", CVAR_SERVERINFO);
-	fraglimit = gi.cvar("fraglimit", "0", CVAR_SERVERINFO);
-	timelimit = gi.cvar("timelimit", "0", CVAR_SERVERINFO);
-	capturelimit = gi.cvar("capturelimit", "0", CVAR_SERVERINFO);
-	instantweap = gi.cvar("instantweap", "0", CVAR_SERVERINFO);
 	password = gi.cvar("password", "", CVAR_USERINFO);
-	filterban = gi.cvar("filterban", "1", 0);
 	g_select_empty = gi.cvar("g_select_empty", "0", CVAR_ARCHIVE);
 	run_pitch = gi.cvar("run_pitch", "0.002", 0);
 	run_roll = gi.cvar("run_roll", "0.005", 0);
@@ -193,9 +179,6 @@ void InitGame(void)
 
 	/* others */
 	aimfix = gi.cvar("aimfix", "0", CVAR_ARCHIVE);
-
-	Com_sprintf(game.helpmessage1, sizeof(game.helpmessage1), "");
-	Com_sprintf(game.helpmessage2, sizeof(game.helpmessage2), "");
 
 	/* initialize all entities for this game */
 	game.maxentities = maxentities->value;

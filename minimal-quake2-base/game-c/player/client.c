@@ -35,10 +35,6 @@ void SP_misc_teleporter_dest(edict_t *ent);
  */
 void SP_info_player_start(edict_t *self)
 {
-	if (!coop->value)
-	{
-		return;
-	}
 }
 
 /*
@@ -54,30 +50,6 @@ void SP_info_player_deathmatch(edict_t *self)
 	}
 
 	SP_misc_teleporter_dest(self);
-}
-
-/*
- * QUAKED info_player_coop (1 0 1) (-16 -16 -24) (16 16 32)
- * potential spawning position for coop games
- */
-
-void SP_info_player_coop(edict_t *self)
-{
-	if (!coop->value)
-	{
-		G_FreeEdict(self);
-		return;
-	}
-}
-
-/*
- * QUAKED info_player_intermission (1 0 1) (-16 -16 -24) (16 16 32)
- * The deathmatch intermission point will be at one of these
- * Use 'angles' instead of 'angle', so you can set pitch or
- * roll as well as yaw.  'pitch yaw roll'
- */
-void SP_info_player_intermission(edict_t *ent)
-{
 }
 
 /* ======================================================================= */
@@ -113,16 +85,9 @@ void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 	int mod;
 	char *message;
 	char *message2;
-	qboolean ff;
 
-	if (coop->value && attacker->client)
+	if (deathmatch->value)
 	{
-		meansOfDeath |= MOD_FRIENDLY_FIRE;
-	}
-
-	if (deathmatch->value || coop->value)
-	{
-		ff = meansOfDeath & MOD_FRIENDLY_FIRE;
 		mod = meansOfDeath & ~MOD_FRIENDLY_FIRE;
 		message = NULL;
 		message2 = "";
@@ -223,11 +188,6 @@ void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 					   self->client->pers.netname,
 					   message);
 
-			if (deathmatch->value)
-			{
-				self->client->resp.score--;
-			}
-
 			self->enemy = NULL;
 			return;
 		}
@@ -313,29 +273,12 @@ void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
 				gi.bprintf(PRINT_MEDIUM, "%s %s %s%s\n", self->client->pers.netname,
 						   message, attacker->client->pers.netname, message2);
 
-				if (deathmatch->value)
-				{
-					if (ff)
-					{
-						attacker->client->resp.score--;
-					}
-					else
-					{
-						attacker->client->resp.score++;
-					}
-				}
-
 				return;
 			}
 		}
 	}
 
 	gi.bprintf(PRINT_MEDIUM, "%s died.\n", self->client->pers.netname);
-
-	if (deathmatch->value)
-	{
-		self->client->resp.score--;
-	}
 }
 
 void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
@@ -500,7 +443,6 @@ void InitClientResp(gclient_t *client)
 	client->resp.id_state = id_state;
 
 	client->resp.enterframe = level.framenum;
-	client->resp.coop_respawn = client->pers;
 }
 
 /*
@@ -693,57 +635,8 @@ SelectDeathmatchSpawnPoint(void)
 	}
 }
 
-edict_t *
-SelectCoopSpawnPoint(edict_t *ent)
-{
-	int index;
-	edict_t *spot = NULL;
-	char *target;
-
-	index = ent->client - game.clients;
-
-	/* player 0 starts in normal player spawn point */
-	if (!index)
-	{
-		return NULL;
-	}
-
-	spot = NULL;
-
-	/* assume there are four coop spots at each spawnpoint */
-	while (1)
-	{
-		spot = G_Find(spot, FOFS(classname), "info_player_coop");
-
-		if (!spot)
-		{
-			return NULL; /* we didn't have enough... */
-		}
-
-		target = spot->targetname;
-
-		if (!target)
-		{
-			target = "";
-		}
-
-		if (Q_stricmp(game.spawnpoint, target) == 0)
-		{
-			/* this is a coop spawn point for one of the clients here */
-			index--;
-
-			if (!index)
-			{
-				return spot; /* this is it */
-			}
-		}
-	}
-
-	return spot;
-}
-
 /*
- * Chooses a player start, deathmatch start, coop start, etc
+ * Chooses a player start, deathmatch start, etc
  */
 void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 {
@@ -752,10 +645,6 @@ void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 	if (deathmatch->value)
 	{
 		spot = SelectDeathmatchSpawnPoint();
-	}
-	else if (coop->value)
-	{
-		spot = SelectCoopSpawnPoint(ent);
 	}
 
 	/* find a single player start spot */
@@ -803,7 +692,7 @@ void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 
 void respawn(edict_t *self)
 {
-	if (deathmatch->value || coop->value)
+	if (deathmatch->value)
 	{
 		self->svflags &= ~SVF_NOCLIENT;
 		PutClientInServer(self);
@@ -858,16 +747,6 @@ void PutClientInServer(edict_t *ent)
 		resp = client->resp;
 		memcpy(userinfo, client->pers.userinfo, sizeof(userinfo));
 		InitClientPersistant(client);
-		ClientUserinfoChanged(ent, userinfo);
-	}
-	else if (coop->value)
-	{
-		char userinfo[MAX_INFO_STRING];
-
-		resp = client->resp;
-		memcpy(userinfo, client->pers.userinfo, sizeof(userinfo));
-
-		client->pers = resp.coop_respawn;
 		ClientUserinfoChanged(ent, userinfo);
 	}
 	else
@@ -1141,12 +1020,6 @@ ClientConnect(edict_t *ent, char *userinfo)
 
 	/* check to see if they are on the banned IP list */
 	value = Info_ValueForKey(userinfo, "ip");
-
-	if (SV_FilterPacket(value))
-	{
-		Info_SetValueForKey(userinfo, "rejmsg", "Banned.");
-		return false;
-	}
 
 	/* check for a password */
 	value = Info_ValueForKey(userinfo, "password");

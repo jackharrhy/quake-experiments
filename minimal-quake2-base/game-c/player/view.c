@@ -895,20 +895,6 @@ void G_SetClientEvent(edict_t *ent)
 
 void G_SetClientSound(edict_t *ent)
 {
-	if (ent->client->resp.game_helpchanged != game.helpchanged)
-	{
-		ent->client->resp.game_helpchanged = game.helpchanged;
-		ent->client->resp.helpchanged = 1;
-	}
-
-	/* help beep (no more than three times) */
-	if (ent->client->resp.helpchanged &&
-		(ent->client->resp.helpchanged <= 3) && !(level.framenum & 63))
-	{
-		ent->client->resp.helpchanged++;
-		gi.sound(ent, CHAN_VOICE, gi.soundindex("misc/pc_up.wav"), 1, ATTN_STATIC, 0);
-	}
-
 	if (ent->waterlevel && (ent->watertype & (CONTENTS_LAVA | CONTENTS_SLIME)))
 	{
 		ent->s.sound = snd_fry;

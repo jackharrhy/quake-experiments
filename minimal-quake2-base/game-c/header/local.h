@@ -53,11 +53,7 @@
 #define FALL_TIME 0.3
 
 /* edict->spawnflags */
-#define SPAWNFLAG_NOT_EASY 0x00000100
-#define SPAWNFLAG_NOT_MEDIUM 0x00000200
-#define SPAWNFLAG_NOT_HARD 0x00000400
 #define SPAWNFLAG_NOT_DEATHMATCH 0x00000800
-#define SPAWNFLAG_NOT_COOP 0x00001000
 
 /* edict->flags */
 #define FL_FLY 0x00000001
@@ -171,15 +167,8 @@ typedef enum
    the server.ssv file for savegames */
 typedef struct
 {
-	char helpmessage1[512];
-	char helpmessage2[512];
-	int helpchanged; /* flash F1 icon if non 0, play sound */
-					 /* and increment only if 1, 2, or 3 */
-
 	gclient_t *clients; /* [maxclients] */
 
-	/* can't store spawnpoint in level, because
-	   it would get overwritten by the savegame restore */
 	char spawnpoint[512]; /* needed for coop respawns */
 
 	/* store latched cvars here that we want to get at often */
@@ -198,11 +187,6 @@ typedef struct
 
 	char level_name[MAX_QPATH]; /* the descriptive name (Outer Base, etc) */
 	char mapname[MAX_QPATH];	/* the server name (base1, etc) */
-	char nextmap[MAX_QPATH];	/* go here when fraglimit is hit */
-	char forcemap[MAX_QPATH];	/* go here */
-
-	/* intermission state */
-	edict_t *sight_client; /* changed once each frame for coop games */
 
 	edict_t *sight_entity;
 	int sight_entity_framenum;
@@ -210,8 +194,6 @@ typedef struct
 	int sound_entity_framenum;
 	edict_t *sound2_entity;
 	int sound2_entity_framenum;
-
-	int pic_health;
 
 	edict_t *current_entity; /* entity running from G_RunFrame */
 } level_locals_t;
@@ -349,18 +331,10 @@ extern edict_t *g_edicts;
 
 extern cvar_t *maxentities;
 extern cvar_t *deathmatch;
-extern cvar_t *coop;
 extern cvar_t *dmflags;
-extern cvar_t *skill;
-extern cvar_t *fraglimit;
-extern cvar_t *timelimit;
-extern cvar_t *capturelimit;
-extern cvar_t *instantweap;
 extern cvar_t *password;
 extern cvar_t *g_select_empty;
 extern cvar_t *dedicated;
-
-extern cvar_t *filterban;
 
 extern cvar_t *sv_gravity;
 extern cvar_t *sv_maxvelocity;
@@ -523,9 +497,6 @@ void SaveClientData(void);
 void FetchClientEntData(edict_t *ent);
 void EndDMLevel(void);
 
-/* g_svcmds.c */
-qboolean SV_FilterPacket(char *from);
-
 /* ============================================================================ */
 
 /* client_t->anim_priority */
@@ -556,18 +527,12 @@ typedef struct
 /* client data that stays across deathmatch respawns */
 typedef struct
 {
-	client_persistant_t coop_respawn; /* what to set client->pers to on a respawn */
-	int enterframe;					  /* level.framenum the client entered the game */
-	int score;						  /* frags, etc */
+	int enterframe; /* level.framenum the client entered the game */
 	qboolean id_state;
 	float lastidtime;
-	qboolean voted; /* for elections */
 	qboolean ready;
-	qboolean admin;
 	struct ghost_s *ghost; /* for ghost codes */
 	vec3_t cmd_angles;	   /* angles sent over in the last command */
-	int game_helpchanged;
-	int helpchanged;
 } client_respawn_t;
 
 /* this structure is cleared on each PutClientInServer(),

@@ -34,8 +34,6 @@ typedef struct
 
 void SP_info_player_start(edict_t *ent);
 void SP_info_player_deathmatch(edict_t *ent);
-void SP_info_player_coop(edict_t *ent);
-void SP_info_player_intermission(edict_t *ent);
 
 void SP_func_plat(edict_t *ent);
 void SP_func_rotating(edict_t *ent);
@@ -72,7 +70,6 @@ void SP_target_changelevel(edict_t *ent);
 void SP_target_splash(edict_t *ent);
 void SP_target_spawner(edict_t *ent);
 void SP_target_laser(edict_t *self);
-void SP_target_help(edict_t *ent);
 void SP_target_actor(edict_t *ent);
 void SP_target_lightramp(edict_t *self);
 void SP_target_earthquake(edict_t *ent);
@@ -141,8 +138,6 @@ void SP_turret_driver(edict_t *self);
 spawn_t spawns[] = {
 	{"info_player_start", SP_info_player_start},
 	{"info_player_deathmatch", SP_info_player_deathmatch},
-	{"info_player_coop", SP_info_player_coop},
-	{"info_player_intermission", SP_info_player_intermission},
 
 	{"func_plat", SP_func_plat},
 	{"func_button", SP_func_button},
@@ -179,7 +174,6 @@ spawn_t spawns[] = {
 	{"target_splash", SP_target_splash},
 	{"target_spawner", SP_target_spawner},
 	{"target_laser", SP_target_laser},
-	{"target_help", SP_target_help},
 	{"target_lightramp", SP_target_lightramp},
 	{"target_earthquake", SP_target_earthquake},
 	{"target_character", SP_target_character},
@@ -489,24 +483,6 @@ void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 	int inhibit;
 	char *com_token;
 	int i;
-	float skill_level;
-
-	skill_level = floor(skill->value);
-
-	if (skill_level < 0)
-	{
-		skill_level = 0;
-	}
-
-	if (skill_level > 3)
-	{
-		skill_level = 3;
-	}
-
-	if (skill->value != skill_level)
-	{
-		gi.cvar_forceset("skill", va("%f", skill_level));
-	}
 
 	SaveClientData();
 
@@ -554,17 +530,6 @@ void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 
 		entities = ED_ParseEdict(entities, ent);
 
-		/* yet another map hack */
-		if (!Q_stricmp(level.mapname, "command") &&
-			!Q_stricmp(ent->classname,
-					   "trigger_once") &&
-			!Q_stricmp(ent->model, "*27"))
-		{
-			ent->spawnflags &= ~SPAWNFLAG_NOT_HARD;
-		}
-
-		/* remove things (except the world) from
-		   different skill levels or deathmatch */
 		if (ent != g_edicts)
 		{
 			if (deathmatch->value)
@@ -576,24 +541,8 @@ void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 					continue;
 				}
 			}
-			else
-			{
-				if (((skill->value == 0) &&
-					 (ent->spawnflags & SPAWNFLAG_NOT_EASY)) ||
-					((skill->value == 1) &&
-					 (ent->spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
-					(((skill->value == 2) ||
-					  (skill->value == 3)) &&
-					 (ent->spawnflags & SPAWNFLAG_NOT_HARD)))
-				{
-					G_FreeEdict(ent);
-					inhibit++;
-					continue;
-				}
-			}
 
-			ent->spawnflags &= ~(SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM |
-								 SPAWNFLAG_NOT_HARD | SPAWNFLAG_NOT_COOP | SPAWNFLAG_NOT_DEATHMATCH);
+			ent->spawnflags &= ~SPAWNFLAG_NOT_DEATHMATCH;
 		}
 
 		ED_CallSpawn(ent);
@@ -742,13 +691,6 @@ void SP_worldspawn(edict_t *ent)
 	ent->inuse = true;	   /* since the world doesn't use G_Spawn() */
 	ent->s.modelindex = 1; /* world model is always index 1 */
 
-	/* --------------- */
-
-	if (st.nextmap)
-	{
-		strcpy(level.nextmap, st.nextmap);
-	}
-
 	/* make some data visible to the server */
 	if (ent->message && ent->message[0])
 	{
@@ -788,12 +730,6 @@ void SP_worldspawn(edict_t *ent)
 	}
 
 	/* --------------- */
-
-	/* help icon for statusbar */
-	gi.imageindex("i_help");
-	level.pic_health = gi.imageindex("i_health");
-	gi.imageindex("help");
-	gi.imageindex("field_3");
 
 	if (!st.gravity)
 	{
