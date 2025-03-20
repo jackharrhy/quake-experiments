@@ -108,8 +108,6 @@ void Cmd_PutAway_f(edict_t *ent)
 	{
 		PMenu_Close(ent);
 	}
-
-	ent->client->update_chase = true;
 }
 
 int PlayerSort(void const *a, void const *b)
@@ -360,23 +358,6 @@ void ClientCommand(edict_t *ent)
 	if (Q_stricmp(cmd, "say") == 0)
 	{
 		Cmd_Say_f(ent, false, false);
-		return;
-	}
-
-	if (Q_stricmp(cmd, "score") == 0)
-	{
-		Cmd_Score_f(ent);
-		return;
-	}
-
-	if (Q_stricmp(cmd, "help") == 0)
-	{
-		Cmd_Help_f(ent);
-		return;
-	}
-
-	if (level.intermissiontime)
-	{
 		return;
 	}
 

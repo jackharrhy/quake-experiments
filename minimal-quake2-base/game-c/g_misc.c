@@ -379,23 +379,8 @@ void path_corner_touch(edict_t *self, edict_t *other, cplane_t *plane,
 
 	other->goalentity = other->movetarget = next;
 
-	if (self->wait)
-	{
-		other->monsterinfo.pausetime = level.time + self->wait;
-		other->monsterinfo.stand(other);
-		return;
-	}
-
-	if (!other->movetarget)
-	{
-		other->monsterinfo.pausetime = level.time + 100000000;
-		other->monsterinfo.stand(other);
-	}
-	else
-	{
-		VectorSubtract(other->goalentity->s.origin, other->s.origin, v);
-		other->ideal_yaw = vectoyaw(v);
-	}
+	VectorSubtract(other->goalentity->s.origin, other->s.origin, v);
+	other->ideal_yaw = vectoyaw(v);
 }
 
 void SP_path_corner(edict_t *self)
@@ -446,19 +431,12 @@ void point_combat_touch(edict_t *self, edict_t *other, cplane_t *plane,
 
 		self->target = NULL;
 	}
-	else if ((self->spawnflags & 1) && !(other->flags & (FL_SWIM | FL_FLY)))
-	{
-		other->monsterinfo.pausetime = level.time + 100000000;
-		other->monsterinfo.aiflags |= AI_STAND_GROUND;
-		other->monsterinfo.stand(other);
-	}
 
 	if (other->movetarget == self)
 	{
 		other->target = NULL;
 		other->movetarget = NULL;
 		other->goalentity = other->enemy;
-		other->monsterinfo.aiflags &= ~AI_COMBAT_POINT;
 	}
 
 	if (self->pathtarget)
@@ -1111,7 +1089,6 @@ void SP_misc_explobox(edict_t *self)
 
 	self->die = barrel_delay;
 	self->takedamage = DAMAGE_YES;
-	self->monsterinfo.aiflags = AI_NOSTEP;
 
 	self->touch = barrel_touch;
 
@@ -1389,7 +1366,6 @@ void SP_misc_deadsoldier(edict_t *ent)
 	ent->takedamage = DAMAGE_YES;
 	ent->svflags |= SVF_MONSTER | SVF_DEADMONSTER;
 	ent->die = misc_deadsoldier_die;
-	ent->monsterinfo.aiflags |= AI_GOOD_GUY;
 
 	gi.linkentity(ent);
 }

@@ -113,8 +113,6 @@ field_t savefields[] = {
 	{NULL, 0, F_INT}};
 
 field_t levelfields[] = {
-	{"", LLOFS(changemap), F_LSTRING},
-
 	{"", LLOFS(sight_client), F_EDICT},
 	{"", LLOFS(sight_entity), F_EDICT},
 	{"", LLOFS(sound_entity), F_EDICT},

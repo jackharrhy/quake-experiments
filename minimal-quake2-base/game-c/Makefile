@@ -221,8 +221,6 @@ build/%.o: %.c
 # ----------
 
 MQ2B_OBJS_ = \
-	g_ai.o \
-	g_chase.o \
 	g_cmds.o \
 	g_combat.o \
 	g_func.o \
@@ -239,7 +237,6 @@ MQ2B_OBJS_ = \
 	monster/move.o \
 	player/client.o \
 	player/hud.o \
-	player/trail.o \
 	player/view.o \
 	player/minimal.o \
 	shared/shared.o

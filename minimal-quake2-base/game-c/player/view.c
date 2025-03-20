@@ -864,7 +864,7 @@ void G_SetClientEffects(edict_t *ent)
 	ent->s.effects = 0;
 	ent->s.renderfx = 0;
 
-	if ((ent->health <= 0) || level.intermissiontime)
+	if (ent->health <= 0)
 	{
 		return;
 	}
@@ -1070,16 +1070,6 @@ void ClientEndServerFrame(edict_t *ent)
 		current_client->ps.pmove.velocity[i] = ent->velocity[i] * 8.0;
 	}
 
-	/* If the end of unit layout is displayed, don't give
-	   the player any normal movement attributes */
-	if (level.intermissiontime)
-	{
-		current_client->ps.blend[3] = 0;
-		current_client->ps.fov = 90;
-		G_SetStats(ent);
-		return;
-	}
-
 	AngleVectors(ent->client->v_angle, forward, right, up);
 
 	/* burn from lava, etc */
@@ -1154,27 +1144,6 @@ void ClientEndServerFrame(edict_t *ent)
 	   accurately determined */
 	SV_CalcBlend(ent);
 
-	if (!ent->client->chase_target)
-	{
-		G_SetStats(ent);
-	}
-
-	/* update chasecam follower stats */
-	for (i = 1; i <= maxclients->value; i++)
-	{
-		edict_t *e = g_edicts + i;
-
-		if (!e->inuse || (e->client->chase_target != ent))
-		{
-			continue;
-		}
-
-		memcpy(e->client->ps.stats, ent->client->ps.stats,
-			   sizeof(ent->client->ps.stats));
-		e->client->ps.stats[STAT_LAYOUTS] = 1;
-		break;
-	}
-
 	G_SetClientEvent(ent);
 
 	G_SetClientEffects(ent);
@@ -1198,10 +1167,6 @@ void ClientEndServerFrame(edict_t *ent)
 			PMenu_Do_Update(ent);
 			ent->client->menudirty = false;
 			ent->client->menutime = level.time;
-		}
-		else
-		{
-			DeathmatchScoreboardMessage(ent, ent->enemy);
 		}
 
 		gi.unicast(ent, false);

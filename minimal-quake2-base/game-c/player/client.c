@@ -410,11 +410,6 @@ void player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 		LookAtKiller(self, inflictor, attacker);
 		self->client->ps.pmove.pm_type = PM_DEAD;
 		ClientObituary(self, inflictor, attacker);
-
-		if (deathmatch->value && !self->client->showscores)
-		{
-			Cmd_Help_f(self); /* show scores */
-		}
 	}
 
 	if (self->health < -40)
@@ -806,81 +801,10 @@ void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 
 /* ====================================================================== */
 
-void InitBodyQue(void)
-{
-	int i;
-	edict_t *ent;
-
-	level.body_que = 0;
-
-	for (i = 0; i < BODY_QUEUE_SIZE; i++)
-	{
-		ent = G_Spawn();
-		ent->classname = "bodyque";
-	}
-}
-
-void body_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
-			  int damage, vec3_t point)
-{
-	int n;
-
-	if (self->health < -40)
-	{
-		gi.sound(self, CHAN_BODY, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
-
-		for (n = 0; n < 4; n++)
-		{
-			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2",
-					 damage, GIB_ORGANIC);
-		}
-
-		self->s.origin[2] -= 48;
-		ThrowClientHead(self, damage);
-		self->takedamage = DAMAGE_NO;
-	}
-}
-
-void CopyToBodyQue(edict_t *ent)
-{
-	edict_t *body;
-
-	/* grab a body que and cycle to the next one */
-	body = &g_edicts[(int)maxclients->value + level.body_que + 1];
-	level.body_que = (level.body_que + 1) % BODY_QUEUE_SIZE;
-
-	gi.unlinkentity(ent);
-
-	gi.unlinkentity(body);
-	body->s = ent->s;
-	body->s.number = body - g_edicts;
-
-	body->svflags = ent->svflags;
-	VectorCopy(ent->mins, body->mins);
-	VectorCopy(ent->maxs, body->maxs);
-	VectorCopy(ent->absmin, body->absmin);
-	VectorCopy(ent->absmax, body->absmax);
-	VectorCopy(ent->size, body->size);
-	body->solid = ent->solid;
-	body->clipmask = ent->clipmask;
-	body->owner = ent->owner;
-	body->movetype = ent->movetype;
-
-	body->die = body_die;
-	body->takedamage = DAMAGE_YES;
-
-	gi.linkentity(body);
-}
-
 void respawn(edict_t *self)
 {
 	if (deathmatch->value || coop->value)
 	{
-		if (self->movetype != MOVETYPE_NOCLIP)
-		{
-			CopyToBodyQue(self);
-		}
-
 		self->svflags &= ~SVF_NOCLIENT;
 		PutClientInServer(self);
 
@@ -1068,18 +992,10 @@ void ClientBeginDeathmatch(edict_t *ent)
 	/* locate ent at a spawn point */
 	PutClientInServer(ent);
 
-	if (level.intermissiontime)
-	{
-		MoveClientToIntermission(ent);
-	}
-	else
-	{
-		/* send effect */
-		gi.WriteByte(svc_muzzleflash);
-		gi.WriteShort(ent - g_edicts);
-		gi.WriteByte(MZ_LOGIN);
-		gi.multicast(ent->s.origin, MULTICAST_PVS);
-	}
+	gi.WriteByte(svc_muzzleflash);
+	gi.WriteShort(ent - g_edicts);
+	gi.WriteByte(MZ_LOGIN);
+	gi.multicast(ent->s.origin, MULTICAST_PVS);
 
 	gi.bprintf(PRINT_HIGH, "%s entered the game\n", ent->client->pers.netname);
 
@@ -1129,23 +1045,16 @@ void ClientBegin(edict_t *ent)
 		PutClientInServer(ent);
 	}
 
-	if (level.intermissiontime)
+	/* send effect if in a multiplayer game */
+	if (game.maxclients > 1)
 	{
-		MoveClientToIntermission(ent);
-	}
-	else
-	{
-		/* send effect if in a multiplayer game */
-		if (game.maxclients > 1)
-		{
-			gi.WriteByte(svc_muzzleflash);
-			gi.WriteShort(ent - g_edicts);
-			gi.WriteByte(MZ_LOGIN);
-			gi.multicast(ent->s.origin, MULTICAST_PVS);
+		gi.WriteByte(svc_muzzleflash);
+		gi.WriteShort(ent - g_edicts);
+		gi.WriteByte(MZ_LOGIN);
+		gi.multicast(ent->s.origin, MULTICAST_PVS);
 
-			gi.bprintf(PRINT_HIGH, "%s entered the game\n",
-					   ent->client->pers.netname);
-		}
+		gi.bprintf(PRINT_HIGH, "%s entered the game\n",
+				   ent->client->pers.netname);
 	}
 
 	/* make sure all view stuff is valid */
@@ -1369,29 +1278,7 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	level.current_entity = ent;
 	client = ent->client;
 
-	if (level.intermissiontime)
-	{
-		client->ps.pmove.pm_type = PM_FREEZE;
-
-		/* can exit intermission after five seconds */
-		if ((level.time > level.intermissiontime + 5.0) &&
-			(ucmd->buttons & BUTTON_ANY))
-		{
-			level.exitintermission = true;
-		}
-
-		return;
-	}
-
 	pm_passent = ent;
-
-	if (ent->client->chase_target)
-	{
-		client->resp.cmd_angles[0] = SHORT2ANGLE(ucmd->angles[0]);
-		client->resp.cmd_angles[1] = SHORT2ANGLE(ucmd->angles[1]);
-		client->resp.cmd_angles[2] = SHORT2ANGLE(ucmd->angles[2]);
-		return;
-	}
 
 	/* set up for pmove */
 	memset(&pm, 0, sizeof(pm));
@@ -1525,18 +1412,6 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	   standing on for monster sighting AI */
 	ent->light_level = ucmd->lightlevel;
 
-	/* No weapon firing in minimal version */
-
-	for (i = 1; i <= maxclients->value; i++)
-	{
-		other = g_edicts + i;
-
-		if (other->inuse && (other->client->chase_target == ent))
-		{
-			UpdateChaseCam(other);
-		}
-	}
-
 	if (client->menudirty && (client->menutime <= level.time))
 	{
 		PMenu_Do_Update(ent);
@@ -1554,11 +1429,6 @@ void ClientBeginServerFrame(edict_t *ent)
 {
 	gclient_t *client;
 	int buttonMask;
-
-	if (level.intermissiontime)
-	{
-		return;
-	}
 
 	client = ent->client;
 
@@ -1590,15 +1460,6 @@ void ClientBeginServerFrame(edict_t *ent)
 		}
 
 		return;
-	}
-
-	/* add player trail so monsters can follow */
-	if (!deathmatch->value)
-	{
-		if (!visible(ent, PlayerTrail_LastSpot()))
-		{
-			PlayerTrail_Add(ent->s.old_origin);
-		}
 	}
 
 	client->latched_buttons = 0;

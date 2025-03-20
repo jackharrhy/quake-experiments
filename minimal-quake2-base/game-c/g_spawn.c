@@ -69,8 +69,6 @@ void SP_target_temp_entity(edict_t *ent);
 void SP_target_speaker(edict_t *ent);
 void SP_target_explosion(edict_t *ent);
 void SP_target_changelevel(edict_t *ent);
-void SP_target_secret(edict_t *ent);
-void SP_target_goal(edict_t *ent);
 void SP_target_splash(edict_t *ent);
 void SP_target_spawner(edict_t *ent);
 void SP_target_crosslevel_trigger(edict_t *ent);
@@ -180,8 +178,6 @@ spawn_t spawns[] = {
 	{"target_speaker", SP_target_speaker},
 	{"target_explosion", SP_target_explosion},
 	{"target_changelevel", SP_target_changelevel},
-	{"target_secret", SP_target_secret},
-	{"target_goal", SP_target_goal},
 	{"target_splash", SP_target_splash},
 	{"target_spawner", SP_target_spawner},
 	{"target_crosslevel_trigger", SP_target_crosslevel_trigger},
@@ -610,8 +606,6 @@ void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 	gi.dprintf("%i entities inhibited.\n", inhibit);
 
 	G_FindTeams();
-
-	PlayerTrail_Init();
 }
 
 /* =================================================================== */
@@ -753,9 +747,6 @@ void SP_worldspawn(edict_t *ent)
 	ent->s.modelindex = 1; /* world model is always index 1 */
 
 	/* --------------- */
-
-	/* reserve some spots for dead player bodies for coop / deathmatch */
-	InitBodyQue();
 
 	if (st.nextmap)
 	{

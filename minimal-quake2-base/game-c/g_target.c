@@ -190,97 +190,6 @@ void SP_target_help(edict_t *ent)
 	ent->use = Use_Target_Help;
 }
 
-/* ========================================================== */
-
-/*
- * QUAKED target_secret (1 0 1) (-8 -8 -8) (8 8 8)
- * Counts a secret found.
- * These are single use targets.
- */
-void use_target_secret(edict_t *ent, edict_t *other, edict_t *activator)
-{
-	gi.sound(ent, CHAN_VOICE, ent->noise_index, 1, ATTN_NORM, 0);
-
-	level.found_secrets++;
-
-	G_UseTargets(ent, activator);
-	G_FreeEdict(ent);
-}
-
-void SP_target_secret(edict_t *ent)
-{
-	if (deathmatch->value)
-	{
-		/* auto-remove for deathmatch */
-		G_FreeEdict(ent);
-		return;
-	}
-
-	ent->use = use_target_secret;
-
-	if (!st.noise)
-	{
-		st.noise = "misc/secret.wav";
-	}
-
-	ent->noise_index = gi.soundindex(st.noise);
-	ent->svflags = SVF_NOCLIENT;
-	level.total_secrets++;
-
-	/* map bug hack */
-	if (!Q_stricmp(level.mapname, "mine3") && (ent->s.origin[0] == 280) &&
-		(ent->s.origin[1] == -2048) &&
-		(ent->s.origin[2] == -624))
-	{
-		ent->message = "You have found a secret area.";
-	}
-}
-
-/* ========================================================== */
-
-/*
- * QUAKED target_goal (1 0 1) (-8 -8 -8) (8 8 8)
- * Counts a goal completed.
- * These are single use targets.
- */
-void use_target_goal(edict_t *ent, edict_t *other, edict_t *activator)
-{
-	gi.sound(ent, CHAN_VOICE, ent->noise_index, 1, ATTN_NORM, 0);
-
-	level.found_goals++;
-
-	if (level.found_goals == level.total_goals)
-	{
-		gi.configstring(CS_CDTRACK, "0");
-	}
-
-	G_UseTargets(ent, activator);
-	G_FreeEdict(ent);
-}
-
-void SP_target_goal(edict_t *ent)
-{
-	if (deathmatch->value)
-	{
-		/* auto-remove for deathmatch */
-		G_FreeEdict(ent);
-		return;
-	}
-
-	ent->use = use_target_goal;
-
-	if (!st.noise)
-	{
-		st.noise = "misc/secret.wav";
-	}
-
-	ent->noise_index = gi.soundindex(st.noise);
-	ent->svflags = SVF_NOCLIENT;
-	level.total_goals++;
-}
-
-/* ========================================================== */
-
 /*
  * QUAKED target_explosion (1 0 0) (-8 -8 -8) (8 8 8)
  * Spawns an explosion temporary entity when used.
@@ -334,11 +243,6 @@ void SP_target_explosion(edict_t *ent)
  */
 void use_target_changelevel(edict_t *self, edict_t *other, edict_t *activator)
 {
-	if (level.intermissiontime)
-	{
-		return; /* allready activated */
-	}
-
 	if (!deathmatch->value && !coop->value)
 	{
 		if (g_edicts[1].health <= 0)
@@ -372,8 +276,6 @@ void use_target_changelevel(edict_t *self, edict_t *other, edict_t *activator)
 	{
 		game.serverflags &= ~(SFL_CROSS_TRIGGER_MASK);
 	}
-
-	BeginIntermission(self);
 }
 
 void SP_target_changelevel(edict_t *ent)

@@ -237,12 +237,6 @@ typedef struct
 	char forcemap[MAX_QPATH];	/* go here */
 
 	/* intermission state */
-	float intermissiontime; /* time the intermission was started */
-	char *changemap;
-	int exitintermission;
-	vec3_t intermission_origin;
-	vec3_t intermission_angle;
-
 	edict_t *sight_client; /* changed once each frame for coop games */
 
 	edict_t *sight_entity;
@@ -254,19 +248,7 @@ typedef struct
 
 	int pic_health;
 
-	int total_secrets;
-	int found_secrets;
-
-	int total_goals;
-	int found_goals;
-
-	int total_monsters;
-	int killed_monsters;
-
 	edict_t *current_entity; /* entity running from G_RunFrame */
-	int body_que;			 /* dead bodies */
-
-	int power_cubes; /* ugly necessity for coop */
 } level_locals_t;
 
 /* spawn_temp_t is only used to hold entity field values that
@@ -338,37 +320,6 @@ typedef struct
 	mframe_t *frame;
 	void (*endfunc)(edict_t *self);
 } mmove_t;
-
-typedef struct
-{
-	mmove_t *currentmove;
-	int aiflags;
-	int nextframe;
-	float scale;
-
-	void (*stand)(edict_t *self);
-	void (*idle)(edict_t *self);
-	void (*search)(edict_t *self);
-	void (*walk)(edict_t *self);
-	void (*run)(edict_t *self);
-	void (*dodge)(edict_t *self, edict_t *other, float eta);
-	void (*attack)(edict_t *self);
-	void (*melee)(edict_t *self);
-	void (*sight)(edict_t *self, edict_t *other);
-	qboolean (*checkattack)(edict_t *self);
-
-	float pausetime;
-	float attack_finished;
-
-	vec3_t saved_goal;
-	float search_time;
-	float trail_time;
-	vec3_t last_sighting;
-	int attack_state;
-	int lefty;
-	float idle_time;
-	int linkcount;
-} monsterinfo_t;
 
 extern game_locals_t game;
 extern level_locals_t level;
@@ -509,8 +460,6 @@ extern field_t fields[];
 
 /* g_cmds.c */
 qboolean CheckFlood(edict_t *ent);
-void Cmd_Help_f(edict_t *ent);
-void Cmd_Score_f(edict_t *ent);
 
 /* g_utils.c */
 qboolean KillBox(edict_t *ent);
@@ -567,37 +516,11 @@ void ThrowClientHead(edict_t *self, int damage);
 void ThrowGib(edict_t *self, char *gibname, int damage, int type);
 void BecomeExplosion1(edict_t *self);
 
-/* g_ai.c */
-void AI_SetSightClient(void);
-
-void ai_stand(edict_t *self, float dist);
-void ai_move(edict_t *self, float dist);
-void ai_walk(edict_t *self, float dist);
-void ai_turn(edict_t *self, float dist);
-void ai_run(edict_t *self, float dist);
-void ai_charge(edict_t *self, float dist);
-int range(edict_t *self, edict_t *other);
-
-void FoundTarget(edict_t *self);
-qboolean infront(edict_t *self, edict_t *other);
-qboolean visible(edict_t *self, edict_t *other);
-qboolean FacingIdeal(edict_t *self);
-
-/* g_ptrail.c */
-void PlayerTrail_Init(void);
-void PlayerTrail_Add(vec3_t spot);
-void PlayerTrail_New(vec3_t spot);
-edict_t *PlayerTrail_PickFirst(edict_t *self);
-edict_t *PlayerTrail_PickNext(edict_t *self);
-edict_t *PlayerTrail_LastSpot(void);
-
 /* g_client.c */
 void respawn(edict_t *ent);
-void BeginIntermission(edict_t *targ);
 void PutClientInServer(edict_t *ent);
 void InitClientPersistant(gclient_t *client);
 void InitClientResp(gclient_t *client);
-void InitBodyQue(void);
 void ClientBeginServerFrame(edict_t *ent);
 void ClientUserinfoChanged(edict_t *ent, char *userinfo);
 
@@ -616,7 +539,6 @@ void ClientEndServerFrame(edict_t *ent);
 void MoveClientToIntermission(edict_t *client);
 void G_SetStats(edict_t *ent);
 void ValidateSelectedItem(edict_t *ent);
-void DeathmatchScoreboardMessage(edict_t *client, edict_t *killer);
 
 /* p_minimal.c */
 void PlayerNoise(edict_t *who, vec3_t where, int type);
@@ -626,7 +548,6 @@ void P_ProjectSource(edict_t *ent, vec3_t distance,
 /* m_move.c */
 qboolean M_CheckBottom(edict_t *ent);
 qboolean M_walkmove(edict_t *ent, float yaw, float dist);
-void M_MoveToGoal(edict_t *ent, float dist);
 void M_ChangeYaw(edict_t *ent);
 
 /* g_phys.c */
@@ -765,8 +686,6 @@ struct gclient_s
 
 	float respawn_time; /* can respawn when time > this */
 
-	edict_t *chase_target;
-	qboolean update_chase;
 	float menutime; /* time to update menu */
 	qboolean menudirty;
 };
@@ -911,12 +830,6 @@ struct edict_s
 
 	/* common data blocks */
 	moveinfo_t moveinfo;
-	monsterinfo_t monsterinfo;
 };
-
-/* g_chase.c */
-void ChaseNext(edict_t *ent);
-void ChasePrev(edict_t *ent);
-void UpdateChaseCam(edict_t *ent);
 
 #endif /* MQ2B_LOCAL_H */
