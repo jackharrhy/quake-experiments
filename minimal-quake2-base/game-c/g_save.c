@@ -209,95 +209,6 @@ void InitGame(void)
 	globals.num_edicts = game.maxclients + 1;
 }
 
-/* ========================================================= */
-
-void WriteField1(FILE *f, field_t *field, byte *base)
-{
-	void *p;
-	int len;
-	int index;
-
-	p = (void *)(base + field->ofs);
-
-	switch (field->type)
-	{
-	case F_INT:
-	case F_FLOAT:
-	case F_ANGLEHACK:
-	case F_VECTOR:
-	case F_IGNORE:
-		break;
-
-	case F_LSTRING:
-	case F_GSTRING:
-
-		if (*(char **)p)
-		{
-			len = strlen(*(char **)p) + 1;
-		}
-		else
-		{
-			len = 0;
-		}
-
-		*(int *)p = len;
-		break;
-	case F_EDICT:
-
-		if (*(edict_t **)p == NULL)
-		{
-			index = -1;
-		}
-		else
-		{
-			index = *(edict_t **)p - g_edicts;
-		}
-
-		*(int *)p = index;
-		break;
-	case F_CLIENT:
-
-		if (*(gclient_t **)p == NULL)
-		{
-			index = -1;
-		}
-		else
-		{
-			index = *(gclient_t **)p - game.clients;
-		}
-
-		*(int *)p = index;
-		break;
-
-	default:
-		gi.error("WriteEdict: unknown field type");
-	}
-}
-
-void WriteField2(FILE *f, field_t *field, byte *base)
-{
-	int len;
-	void *p;
-
-	p = (void *)(base + field->ofs);
-
-	switch (field->type)
-	{
-	case F_LSTRING:
-	case F_GSTRING:
-
-		if (*(char **)p)
-		{
-			len = strlen(*(char **)p) + 1;
-			fwrite(*(char **)p, len, 1, f);
-		}
-
-		break;
-	default:
-		break;
-	}
-}
-
 void ReadField(FILE *f, field_t *field, byte *base)
 {
 	void *p;
@@ -375,195 +286,26 @@ void ReadField(FILE *f, field_t *field, byte *base)
 	}
 }
 
-/* ========================================================= */
-
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
-void WriteClient(FILE *f, gclient_t *client)
-{
-	field_t *field;
-	gclient_t temp;
-
-	/* all of the ints, floats, and vectors stay as they are */
-	temp = *client;
-
-	/* change the pointers to lengths or indexes */
-	for (field = clientfields; field->name; field++)
-	{
-		WriteField1(f, field, (byte *)&temp);
-	}
-
-	/* write the block */
-	fwrite(&temp, sizeof(temp), 1, f);
-
-	/* now write any allocated data following the edict */
-	for (field = clientfields; field->name; field++)
-	{
-		WriteField2(f, field, (byte *)client);
-	}
-}
-
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
-void ReadClient(FILE *f, gclient_t *client)
-{
-	field_t *field;
-
-	fread(client, sizeof(*client), 1, f);
-
-	for (field = clientfields; field->name; field++)
-	{
-		ReadField(f, field, (byte *)client);
-	}
-}
-
-/*
- * This will be called whenever the game goes to a new level,
- * and when the user explicitly saves the game.
- *
- * Game information include cross level data, like multi level
- * triggers, help computer info, and all client states.
- *
- * A single player death will automatically restore from the
- * last save position.
- */
 void WriteGame(char *filename, qboolean autosave)
 {
-	FILE *f;
-	int i;
-	char str[16];
+	// stub
+}
 
-	if (!autosave)
-	{
-		SaveClientData();
-	}
-
-	f = fopen(filename, "wb");
-
-	if (!f)
-	{
-		gi.error("Couldn't open %s", filename);
-	}
-
-	memset(str, 0, sizeof(str));
-	strcpy(str, BUILD_DATE);
-	fwrite(str, sizeof(str), 1, f);
-
-	game.autosaved = autosave;
-	fwrite(&game, sizeof(game), 1, f);
-	game.autosaved = false;
-
-	for (i = 0; i < game.maxclients; i++)
-	{
-		WriteClient(f, &game.clients[i]);
-	}
-
-	fclose(f);
+void WriteLevel(char *filename)
+{
+	// stub
 }
 
 void ReadGame(char *filename)
 {
-	FILE *f;
-	int i;
-	char str[16];
-
 	gi.FreeTags(TAG_GAME);
-
-	f = fopen(filename, "rb");
-
-	if (!f)
-	{
-		gi.error("Couldn't open %s", filename);
-	}
-
-	fread(str, sizeof(str), 1, f);
-
-	if (strcmp(str, BUILD_DATE))
-	{
-		fclose(f);
-		gi.error("Savegame from an older version.\n");
-	}
 
 	g_edicts = gi.TagMalloc(game.maxentities * sizeof(g_edicts[0]), TAG_GAME);
 	globals.edicts = g_edicts;
 
-	fread(&game, sizeof(game), 1, f);
 	game.clients = gi.TagMalloc(game.maxclients * sizeof(game.clients[0]), TAG_GAME);
-
-	for (i = 0; i < game.maxclients; i++)
-	{
-		ReadClient(f, &game.clients[i]);
-	}
-
-	fclose(f);
 }
 
-/* ========================================================== */
-
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
-void WriteEdict(FILE *f, edict_t *ent)
-{
-	field_t *field;
-	edict_t temp;
-
-	/* all of the ints, floats, and vectors stay as they are */
-	temp = *ent;
-
-	/* change the pointers to lengths or indexes */
-	for (field = savefields; field->name; field++)
-	{
-		WriteField1(f, field, (byte *)&temp);
-	}
-
-	/* write the block */
-	fwrite(&temp, sizeof(temp), 1, f);
-
-	/* now write any allocated data following the edict */
-	for (field = savefields; field->name; field++)
-	{
-		WriteField2(f, field, (byte *)ent);
-	}
-}
-
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
-void WriteLevelLocals(FILE *f)
-{
-	field_t *field;
-	level_locals_t temp;
-
-	/* all of the ints, floats, and vectors stay as they are */
-	temp = level;
-
-	/* change the pointers to lengths or indexes */
-	for (field = levelfields; field->name; field++)
-	{
-		WriteField1(f, field, (byte *)&temp);
-	}
-
-	/* write the block */
-	fwrite(&temp, sizeof(temp), 1, f);
-
-	/* now write any allocated data following the edict */
-	for (field = levelfields; field->name; field++)
-	{
-		WriteField2(f, field, (byte *)&level);
-	}
-}
-
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
 void ReadEdict(FILE *f, edict_t *ent)
 {
 	field_t *field;
@@ -576,10 +318,6 @@ void ReadEdict(FILE *f, edict_t *ent)
 	}
 }
 
-/*
- * All pointer variables (except function
- * pointers) must be handled specially.
- */
 void ReadLevelLocals(FILE *f)
 {
 	field_t *field;
@@ -592,63 +330,6 @@ void ReadLevelLocals(FILE *f)
 	}
 }
 
-void WriteLevel(char *filename)
-{
-	int i;
-	edict_t *ent;
-	FILE *f;
-	void *base;
-
-	f = fopen(filename, "wb");
-
-	if (!f)
-	{
-		gi.error("Couldn't open %s", filename);
-	}
-
-	/* write out edict size for checking */
-	i = sizeof(edict_t);
-	fwrite(&i, sizeof(i), 1, f);
-
-	/* write out a function pointer for checking */
-	base = (void *)InitGame;
-	fwrite(&base, sizeof(base), 1, f);
-
-	/* write out level_locals_t */
-	WriteLevelLocals(f);
-
-	/* write out all the entities */
-	for (i = 0; i < globals.num_edicts; i++)
-	{
-		ent = &g_edicts[i];
-
-		if (!ent->inuse)
-		{
-			continue;
-		}
-
-		fwrite(&i, sizeof(i), 1, f);
-		WriteEdict(f, ent);
-	}
-
-	i = -1;
-	fwrite(&i, sizeof(i), 1, f);
-
-	fclose(f);
-}
-
-/*
- * SpawnEntities will allready have been called on the
- * level the same way it was when the level was saved.
- *
- * That is necessary to get the baselines
- * set up identically.
- *
- * The server will have cleared all of the world links before
- * calling ReadLevel.
- *
- * No clients are connected yet.
- */
 void ReadLevel(char *filename)
 {
 	int entnum;
@@ -664,15 +345,11 @@ void ReadLevel(char *filename)
 		gi.error("Couldn't open %s", filename);
 	}
 
-	/* free any dynamic memory allocated by
-	   loading the level base state */
 	gi.FreeTags(TAG_LEVEL);
 
-	/* wipe all the entities */
 	memset(g_edicts, 0, game.maxentities * sizeof(g_edicts[0]));
 	globals.num_edicts = maxclients->value + 1;
 
-	/* check edict size */
 	fread(&i, sizeof(i), 1, f);
 
 	if (i != sizeof(edict_t))
@@ -681,7 +358,6 @@ void ReadLevel(char *filename)
 		gi.error("ReadLevel: mismatched edict size");
 	}
 
-	/* check function pointer base address */
 	fread(&base, sizeof(base), 1, f);
 
 	if (base != (void *)InitGame)
@@ -690,10 +366,8 @@ void ReadLevel(char *filename)
 		gi.error("ReadLevel: function pointers have moved");
 	}
 
-	/* load the level locals */
 	ReadLevelLocals(f);
 
-	/* load all the entities */
 	while (1)
 	{
 		if (fread(&entnum, sizeof(entnum), 1, f) != 1)
@@ -715,14 +389,12 @@ void ReadLevel(char *filename)
 		ent = &g_edicts[entnum];
 		ReadEdict(f, ent);
 
-		/* let the server rebuild world links for this ent */
 		memset(&ent->area, 0, sizeof(ent->area));
 		gi.linkentity(ent);
 	}
 
 	fclose(f);
 
-	/* mark all clients as unconnected */
 	for (i = 0; i < maxclients->value; i++)
 	{
 		ent = &g_edicts[i + 1];
@@ -730,7 +402,6 @@ void ReadLevel(char *filename)
 		ent->client->pers.connected = false;
 	}
 
-	/* do any load time things at this point */
 	for (i = 0; i < globals.num_edicts; i++)
 	{
 		ent = &g_edicts[i];
@@ -738,15 +409,6 @@ void ReadLevel(char *filename)
 		if (!ent->inuse)
 		{
 			continue;
-		}
-
-		/* fire any cross-level triggers */
-		if (ent->classname)
-		{
-			if (strcmp(ent->classname, "target_crosslevel_target") == 0)
-			{
-				ent->nextthink = level.time + ent->delay;
-			}
 		}
 	}
 }

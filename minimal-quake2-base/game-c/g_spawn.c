@@ -814,9 +814,6 @@ void SP_worldspawn(edict_t *ent)
 
 	gi.soundindex("misc/udeath.wav");
 
-	/* gibs */
-	gi.soundindex("items/respawn1.wav");
-
 	/* sexed sounds */
 	gi.soundindex("*death1.wav");
 	gi.soundindex("*death2.wav");
@@ -862,14 +859,8 @@ void SP_worldspawn(edict_t *ent)
 	gi.soundindex("player/u_breath1.wav");
 	gi.soundindex("player/u_breath2.wav");
 
-	gi.soundindex("items/pkup.wav");   /* bonus item pickup */
 	gi.soundindex("world/land.wav");   /* landing thud */
 	gi.soundindex("misc/h2ohit1.wav"); /* landing splash */
-
-	gi.soundindex("items/damage.wav");
-	gi.soundindex("items/protect.wav");
-	gi.soundindex("items/protect4.wav");
-	gi.soundindex("weapons/noammo.wav");
 
 	gi.soundindex("infantry/inflies1.wav");
 

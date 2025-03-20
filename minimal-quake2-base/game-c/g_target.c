@@ -403,16 +403,6 @@ void target_laser_think(edict_t *self)
 	trace_t tr;
 	vec3_t point;
 	vec3_t last_movedir;
-	int count;
-
-	if (self->spawnflags & 0x80000000)
-	{
-		count = 8;
-	}
-	else
-	{
-		count = 4;
-	}
 
 	if (self->enemy)
 	{

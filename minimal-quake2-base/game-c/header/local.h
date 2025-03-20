@@ -91,24 +91,6 @@ typedef enum
 	DAMAGE_AIM	/* auto targeting recognizes this */
 } damage_t;
 
-typedef enum
-{
-	WEAPON_READY,
-	WEAPON_ACTIVATING,
-	WEAPON_DROPPING,
-	WEAPON_FIRING
-} weaponstate_t;
-
-typedef enum
-{
-	AMMO_BULLETS,
-	AMMO_SHELLS,
-	AMMO_ROCKETS,
-	AMMO_GRENADES,
-	AMMO_CELLS,
-	AMMO_SLUGS
-} ammo_t;
-
 /* Maximum debris / gibs per frame */
 #define MAX_GIBS 20
 #define MAX_DEBRIS 20
@@ -626,7 +608,6 @@ struct gclient_s
 
 	float killer_yaw; /* when dead, look at killer */
 
-	weaponstate_t weaponstate;
 	vec3_t kick_angles; /* weapon kicks */
 	vec3_t kick_origin;
 	float v_dmg_roll, v_dmg_pitch, v_dmg_time; /* damage kicks */

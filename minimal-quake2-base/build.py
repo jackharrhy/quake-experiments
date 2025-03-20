@@ -72,10 +72,18 @@ def build_game_odin():
 def build_game_c():
     print("Building game-c")
     (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
+    subprocess.run(["make", "clean"], check=True, cwd=game_c_dir)
     subprocess.run(["make", "DEBUG=0"], check=True, cwd=game_c_dir)
     game_lib_src = game_c_dir / "release" / "game.dylib"
     game_lib_dst = release_dir / "baseq2" / "game.dylib"
     shutil.copy2(game_lib_src, game_lib_dst)
+
+
+def build_game():
+    if build_odin:
+        build_game_odin()
+    else:
+        build_game_c()
 
 
 def build_maps():
@@ -195,11 +203,7 @@ def build():
     build_yquake2_ref_vk()
     build_maps()
     copy_files()
-
-    if build_odin:
-        build_game_odin()
-    else:
-        build_game_c()
+    build_game()
 
 
 def run(args: list[str] = []):
@@ -289,7 +293,7 @@ def main():
     elif args.command == "all":
         all()
     elif args.command == "build-game-and-run":
-        build()
+        build_game()
         run(args.args)
     elif args.command == "run":
         run(args.args)
