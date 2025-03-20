@@ -164,17 +164,6 @@ typedef enum
 #define LEFT_HANDED 1
 #define CENTER_HANDED 2
 
-/* game.serverflags values */
-#define SFL_CROSS_TRIGGER_1 0x00000001
-#define SFL_CROSS_TRIGGER_2 0x00000002
-#define SFL_CROSS_TRIGGER_3 0x00000004
-#define SFL_CROSS_TRIGGER_4 0x00000008
-#define SFL_CROSS_TRIGGER_5 0x00000010
-#define SFL_CROSS_TRIGGER_6 0x00000020
-#define SFL_CROSS_TRIGGER_7 0x00000040
-#define SFL_CROSS_TRIGGER_8 0x00000080
-#define SFL_CROSS_TRIGGER_MASK 0x000000ff
-
 /* noise types for PlayerNoise */
 #define PNOISE_SELF 0
 #define PNOISE_IMPACT 2
@@ -214,12 +203,6 @@ typedef struct
 	/* store latched cvars here that we want to get at often */
 	int maxclients;
 	int maxentities;
-
-	/* cross level triggers */
-	int serverflags;
-
-	/* items */
-	int num_items;
 
 	qboolean autosaved;
 } game_locals_t;

@@ -71,8 +71,6 @@ void SP_target_explosion(edict_t *ent);
 void SP_target_changelevel(edict_t *ent);
 void SP_target_splash(edict_t *ent);
 void SP_target_spawner(edict_t *ent);
-void SP_target_crosslevel_trigger(edict_t *ent);
-void SP_target_crosslevel_target(edict_t *ent);
 void SP_target_laser(edict_t *self);
 void SP_target_help(edict_t *ent);
 void SP_target_actor(edict_t *ent);
@@ -180,8 +178,6 @@ spawn_t spawns[] = {
 	{"target_changelevel", SP_target_changelevel},
 	{"target_splash", SP_target_splash},
 	{"target_spawner", SP_target_spawner},
-	{"target_crosslevel_trigger", SP_target_crosslevel_trigger},
-	{"target_crosslevel_target", SP_target_crosslevel_target},
 	{"target_laser", SP_target_laser},
 	{"target_help", SP_target_help},
 	{"target_lightramp", SP_target_lightramp},

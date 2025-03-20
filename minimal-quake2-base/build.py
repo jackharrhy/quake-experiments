@@ -201,10 +201,10 @@ def build():
         build_game_c()
 
 
-def run():
+def run(args: list[str] = []):
     env = os.environ.copy()
     env["DYLD_LIBRARY_PATH"] = "/opt/homebrew/opt/molten-vk/lib"
-    subprocess.run(["./quake2"], check=True, cwd=release_dir, env=env)
+    subprocess.run(["./quake2", *args], check=True, cwd=release_dir, env=env)
 
 
 def all():
@@ -254,9 +254,17 @@ def main():
     subparsers.add_parser("build", help="Build targets")
     subparsers.add_parser("build-maps", help="Build maps")
     subparsers.add_parser("all", help="Do everything")
-    subparsers.add_parser("run", help="Run the game")
+
+    run_parser = subparsers.add_parser("run", help="Run the game")
+    run_parser.add_argument("args", nargs="*", help="Arguments to pass to Quake2")
+
     subparsers.add_parser("copy", help="Copy files")
-    subparsers.add_parser("copy-and-run", help="Copy files and run the game")
+
+    copy_run_parser = subparsers.add_parser(
+        "copy-and-run", help="Copy files and run the game"
+    )
+    copy_run_parser.add_argument("args", nargs="*", help="Arguments to pass to Quake2")
+
     subparsers.add_parser("setup-trenchbroom", help="Setup Trenchbroom")
     subparsers.add_parser(
         "loc-metrics", help="Get metrics on how much code is in game-c"
@@ -273,12 +281,12 @@ def main():
     elif args.command == "all":
         all()
     elif args.command == "run":
-        run()
+        run(args.args)
     elif args.command == "copy":
         copy_files()
     elif args.command == "copy-and-run":
         copy_files()
-        run()
+        run(args.args)
     elif args.command == "setup-trenchbroom":
         setup_trenchbroom()
     elif args.command == "loc-metrics":
