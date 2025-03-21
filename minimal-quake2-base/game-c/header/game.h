@@ -40,10 +40,8 @@
 #define GAME_API_VERSION 3
 
 /* edict->svflags */
-#define SVF_NOCLIENT 0x00000001	   /* don't send entity to clients, even if it has effects */
-#define SVF_DEADMONSTER 0x00000002 /* treat as CONTENTS_DEADMONSTER for collision */
-#define SVF_MONSTER 0x00000004	   /* treat as CONTENTS_MONSTER for collision */
-#define SVF_PROJECTILE 0x00000008  /* entity is simple projectile, used for network optimization */
+#define SVF_NOCLIENT 0x00000001	  /* don't send entity to clients, even if it has effects */
+#define SVF_PROJECTILE 0x00000008 /* entity is simple projectile, used for network optimization */
 
 /* edict->solid values */
 typedef enum

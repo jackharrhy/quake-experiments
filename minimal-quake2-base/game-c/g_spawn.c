@@ -45,7 +45,6 @@ void SP_func_water(edict_t *ent);
 void SP_func_train(edict_t *ent);
 void SP_func_conveyor(edict_t *self);
 void SP_func_wall(edict_t *self);
-void SP_func_object(edict_t *self);
 void SP_func_explosive(edict_t *self);
 void SP_func_timer(edict_t *self);
 void SP_func_areaportal(edict_t *ent);
@@ -151,7 +150,6 @@ spawn_t spawns[] = {
 	{"func_areaportal", SP_func_areaportal},
 	{"func_clock", SP_func_clock},
 	{"func_wall", SP_func_wall},
-	{"func_object", SP_func_object},
 	{"func_timer", SP_func_timer},
 	{"func_explosive", SP_func_explosive},
 	{"func_killbox", SP_func_killbox},
@@ -406,74 +404,6 @@ ED_ParseEdict(char *data, edict_t *ent)
 }
 
 /*
- * Chain together all entities with a matching team field.
- *
- * All but the first will have the FL_TEAMSLAVE flag set.
- * All but the last will have the teamchain field set to the next one
- */
-void G_FindTeams(void)
-{
-	edict_t *e, *e2, *chain;
-	int i, j;
-	int c, c2;
-
-	c = 0;
-	c2 = 0;
-
-	for (i = 1, e = g_edicts + i; i < globals.num_edicts; i++, e++)
-	{
-		if (!e->inuse)
-		{
-			continue;
-		}
-
-		if (!e->team)
-		{
-			continue;
-		}
-
-		if (e->flags & FL_TEAMSLAVE)
-		{
-			continue;
-		}
-
-		chain = e;
-		e->teammaster = e;
-		c++;
-		c2++;
-
-		for (j = i + 1, e2 = e + 1; j < globals.num_edicts; j++, e2++)
-		{
-			if (!e2->inuse)
-			{
-				continue;
-			}
-
-			if (!e2->team)
-			{
-				continue;
-			}
-
-			if (e2->flags & FL_TEAMSLAVE)
-			{
-				continue;
-			}
-
-			if (!strcmp(e->team, e2->team))
-			{
-				c2++;
-				chain->teamchain = e2;
-				e2->teammaster = e;
-				chain = e2;
-				e2->flags |= FL_TEAMSLAVE;
-			}
-		}
-	}
-
-	gi.dprintf("%i teams with %i entities.\n", c, c2);
-}
-
-/*
  * Creates a server's entity / program execution context by
  * parsing textual entity definitions out of an ent file.
  */
@@ -549,8 +479,6 @@ void SpawnEntities(char *mapname, char *entities, char *spawnpoint)
 	}
 
 	gi.dprintf("%i entities inhibited.\n", inhibit);
-
-	G_FindTeams();
 }
 
 /*QUAKED worldspawn (0 0 0) ?

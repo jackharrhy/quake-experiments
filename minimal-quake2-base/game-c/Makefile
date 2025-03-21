@@ -222,7 +222,6 @@ build/%.o: %.c
 
 MQ2B_OBJS_ = \
 	g_cmds.o \
-	g_combat.o \
 	g_func.o \
 	g_main.o \
 	g_misc.o \

@@ -491,22 +491,6 @@ retry:
 	VectorCopy(trace.endpos, ent->s.origin);
 	gi.linkentity(ent);
 
-	/* Push slightly away from non-horizontal surfaces,
-	   prevent origin stuck in the plane which causes
-	   the entity to be rendered in full black. */
-	if (trace.plane.type != 2)
-	{
-		/* Limit the fix to gibs, debris and dead monsters.
-		   Everything else may break existing maps. Items
-		   may slide to unreachable locations, monsters may
-		   get stuck, etc. */
-		if (((strncmp(ent->classname, "monster_", 8) == 0) && ent->health < 1) ||
-			(strcmp(ent->classname, "debris") == 0) || (ent->s.effects & EF_GIB))
-		{
-			VectorAdd(ent->s.origin, trace.plane.normal, ent->s.origin);
-		}
-	}
-
 	if (trace.fraction != 1.0)
 	{
 		SV_Impact(ent, &trace);
@@ -732,12 +716,6 @@ void SV_Physics_Pusher(edict_t *ent)
 {
 	vec3_t move, amove;
 	edict_t *part, *mv;
-
-	/* if not a team captain, so movement will be handled elsewhere */
-	if (ent->flags & FL_TEAMSLAVE)
-	{
-		return;
-	}
 
 	/* make sure all team slaves can move before commiting any moves
 	   or calling any think functions if the move is blocked, all
@@ -1091,35 +1069,6 @@ void SV_Physics_Step(edict_t *ent)
 
 	if (ent->velocity[2] || ent->velocity[1] || ent->velocity[0])
 	{
-		/* apply friction let dead monsters who
-		   aren't completely onground slide */
-		if ((wasonground) || (ent->flags & (FL_SWIM | FL_FLY)))
-		{
-			if (!((ent->health <= 0.0) && !M_CheckBottom(ent)))
-			{
-				vel = ent->velocity;
-				speed = sqrt(vel[0] * vel[0] + vel[1] * vel[1]);
-
-				if (speed)
-				{
-					friction = sv_friction;
-
-					control = speed < sv_stopspeed ? sv_stopspeed : speed;
-					newspeed = speed - FRAMETIME * control * friction;
-
-					if (newspeed < 0)
-					{
-						newspeed = 0;
-					}
-
-					newspeed /= speed;
-
-					vel[0] *= newspeed;
-					vel[1] *= newspeed;
-				}
-			}
-		}
-
 		mask = MASK_SOLID;
 
 		SV_FlyMove(ent, FRAMETIME, mask);

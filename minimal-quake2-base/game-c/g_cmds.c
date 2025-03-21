@@ -27,34 +27,6 @@
 #include "header/local.h"
 #include "monster/player.h"
 
-/*
- * Sets client to notarget
- */
-void Cmd_Notarget_f(edict_t *ent)
-{
-	char *msg;
-
-	if (deathmatch->value && !sv_cheats->value)
-	{
-		gi.cprintf(ent, PRINT_HIGH,
-				   "You must run the server with '+set cheats 1' to enable this command.\n");
-		return;
-	}
-
-	ent->flags ^= FL_NOTARGET;
-
-	if (!(ent->flags & FL_NOTARGET))
-	{
-		msg = "notarget OFF\n";
-	}
-	else
-	{
-		msg = "notarget ON\n";
-	}
-
-	gi.cprintf(ent, PRINT_HIGH, msg);
-}
-
 void Cmd_Noclip_f(edict_t *ent)
 {
 	char *msg;
@@ -78,24 +50,6 @@ void Cmd_Noclip_f(edict_t *ent)
 	}
 
 	gi.cprintf(ent, PRINT_HIGH, msg);
-}
-
-void Cmd_Kill_f(edict_t *ent)
-{
-	if (ent->solid == SOLID_NOT)
-	{
-		return;
-	}
-
-	if ((level.time - ent->client->respawn_time) < 5)
-	{
-		return;
-	}
-
-	ent->flags &= ~FL_GODMODE;
-	ent->health = 0;
-	meansOfDeath = MOD_SUICIDE;
-	player_die(ent, ent, ent, 100000, vec3_origin);
 }
 
 void Cmd_PutAway_f(edict_t *ent)

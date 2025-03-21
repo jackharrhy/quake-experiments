@@ -639,12 +639,6 @@ void P_FallingDamage(edict_t *ent)
 		}
 
 		VectorSet(dir, 0, 0, 1);
-
-		if (!deathmatch->value || !((int)dmflags->value & DF_NO_FALLING))
-		{
-			T_Damage(ent, world, world, dir, ent->s.origin, vec3_origin,
-					 damage, 0, 0, MOD_FALLING);
-		}
 	}
 	else
 	{
@@ -661,7 +655,6 @@ void P_WorldEffects(void)
 
 	if (current_player->movetype == MOVETYPE_NOCLIP)
 	{
-		current_player->air_finished = level.time + 12; /* don't need air */
 		return;
 	}
 
@@ -705,157 +698,6 @@ void P_WorldEffects(void)
 		PlayerNoise(current_player, current_player->s.origin, PNOISE_SELF);
 		gi.sound(current_player, CHAN_BODY, gi.soundindex("player/watr_out.wav"), 1, ATTN_NORM, 0);
 		current_player->flags &= ~FL_INWATER;
-	}
-
-	/* check for head just going under water */
-	if ((old_waterlevel != 3) && (waterlevel == 3))
-	{
-		gi.sound(current_player, CHAN_BODY, gi.soundindex("player/watr_un.wav"), 1, ATTN_NORM, 0);
-	}
-
-	/* check for head just coming out of water */
-	if ((old_waterlevel == 3) && (waterlevel != 3))
-	{
-		if (current_player->air_finished < level.time)
-		{
-			/* gasp for air */
-			gi.sound(current_player, CHAN_VOICE,
-					 gi.soundindex("player/gasp1.wav"), 1, ATTN_NORM, 0);
-			PlayerNoise(current_player, current_player->s.origin, PNOISE_SELF);
-		}
-		else if (current_player->air_finished < level.time + 11)
-		{
-			/* just break surface */
-			gi.sound(current_player, CHAN_VOICE,
-					 gi.soundindex("player/gasp2.wav"), 1, ATTN_NORM, 0);
-		}
-	}
-
-	/* check for drowning */
-	if (waterlevel == 3)
-	{
-		/* breather or envirosuit give air */
-		if (breather || envirosuit)
-		{
-			current_player->air_finished = level.time + 10;
-
-			if (((int)(current_client->breather_framenum -
-					   level.framenum) %
-				 25) == 0)
-			{
-				if (!current_client->breather_sound)
-				{
-					gi.sound(current_player, CHAN_AUTO,
-							 gi.soundindex("player/u_breath1.wav"), 1, ATTN_NORM, 0);
-				}
-				else
-				{
-					gi.sound(current_player, CHAN_AUTO,
-							 gi.soundindex("player/u_breath2.wav"), 1, ATTN_NORM, 0);
-				}
-
-				current_client->breather_sound ^= 1;
-				PlayerNoise(current_player, current_player->s.origin,
-							PNOISE_SELF);
-			}
-		}
-
-		/* if out of air, start drowning */
-		if (current_player->air_finished < level.time)
-		{
-			/* drown! */
-			if ((current_player->client->next_drown_time < level.time) &&
-				(current_player->health > 0))
-			{
-				current_player->client->next_drown_time = level.time + 1;
-
-				/* take more damage the longer underwater */
-				current_player->dmg += 2;
-
-				if (current_player->dmg > 15)
-				{
-					current_player->dmg = 15;
-				}
-
-				/* play a gurp sound instead of a normal pain sound */
-				if (current_player->health <= current_player->dmg)
-				{
-					gi.sound(current_player, CHAN_VOICE,
-							 gi.soundindex("player/drown1.wav"), 1, ATTN_NORM, 0);
-				}
-				else if (rand() & 1)
-				{
-					gi.sound(current_player, CHAN_VOICE,
-							 gi.soundindex("*gurp1.wav"), 1, ATTN_NORM, 0);
-				}
-				else
-				{
-					gi.sound(current_player, CHAN_VOICE,
-							 gi.soundindex("*gurp2.wav"), 1, ATTN_NORM, 0);
-				}
-
-				current_player->pain_debounce_time = level.time;
-
-				T_Damage(current_player, world, world, vec3_origin,
-						 current_player->s.origin, vec3_origin,
-						 current_player->dmg, 0, DAMAGE_NO_ARMOR,
-						 MOD_WATER);
-			}
-		}
-	}
-	else
-	{
-		current_player->air_finished = level.time + 12;
-		current_player->dmg = 2;
-	}
-
-	/* check for sizzle damage */
-	if (waterlevel && (current_player->watertype & (CONTENTS_LAVA | CONTENTS_SLIME)))
-	{
-		if (current_player->watertype & CONTENTS_LAVA)
-		{
-			if ((current_player->health > 0) &&
-				(current_player->pain_debounce_time <= level.time) &&
-				(current_client->invincible_framenum < level.framenum))
-			{
-				if (rand() & 1)
-				{
-					gi.sound(current_player, CHAN_VOICE,
-							 gi.soundindex("player/burn1.wav"), 1, ATTN_NORM, 0);
-				}
-				else
-				{
-					gi.sound(current_player, CHAN_VOICE,
-							 gi.soundindex("player/burn2.wav"), 1, ATTN_NORM, 0);
-				}
-
-				current_player->pain_debounce_time = level.time + 1;
-			}
-
-			if (envirosuit) /* take 1/3 damage with envirosuit */
-			{
-				T_Damage(current_player, world, world, vec3_origin,
-						 current_player->s.origin, vec3_origin,
-						 1 * waterlevel, 0, 0, MOD_LAVA);
-			}
-			else
-			{
-				T_Damage(current_player, world, world, vec3_origin,
-						 current_player->s.origin, vec3_origin,
-						 3 * waterlevel, 0, 0, MOD_LAVA);
-			}
-		}
-
-		if (current_player->watertype & CONTENTS_SLIME)
-		{
-			if (!envirosuit)
-			{
-				/* no damage from slime with envirosuit */
-				T_Damage(current_player, world, world, vec3_origin,
-						 current_player->s.origin, vec3_origin,
-						 1 * waterlevel, 0, 0, MOD_SLIME);
-			}
-		}
 	}
 }
 

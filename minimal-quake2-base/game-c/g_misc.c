@@ -681,95 +681,6 @@ void SP_func_wall(edict_t *self)
 }
 
 /*
- * QUAKED func_object (0 .5 .8) ? TRIGGER_SPAWN ANIMATED ANIMATED_FAST
- * This is solid bmodel that will fall if it's support it removed.
- */
-
-void func_object_touch(edict_t *self, edict_t *other, cplane_t *plane,
-					   csurface_t *surf)
-{
-	/* only squash thing we fall on top of */
-	if (!plane)
-	{
-		return;
-	}
-
-	if (plane->normal[2] < 1.0)
-	{
-		return;
-	}
-
-	if (other->takedamage == DAMAGE_NO)
-	{
-		return;
-	}
-
-	T_Damage(other, self, self, vec3_origin, self->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
-}
-
-void func_object_release(edict_t *self)
-{
-	self->movetype = MOVETYPE_TOSS;
-	self->touch = func_object_touch;
-}
-
-void func_object_use(edict_t *self, edict_t *other, edict_t *activator)
-{
-	self->solid = SOLID_BSP;
-	self->svflags &= ~SVF_NOCLIENT;
-	self->use = NULL;
-	KillBox(self);
-	func_object_release(self);
-}
-
-void SP_func_object(edict_t *self)
-{
-	gi.setmodel(self, self->model);
-
-	self->mins[0] += 1;
-	self->mins[1] += 1;
-	self->mins[2] += 1;
-	self->maxs[0] -= 1;
-	self->maxs[1] -= 1;
-	self->maxs[2] -= 1;
-
-	if (!self->dmg)
-	{
-		self->dmg = 100;
-	}
-
-	if (self->spawnflags == 0)
-	{
-		self->solid = SOLID_BSP;
-		self->movetype = MOVETYPE_PUSH;
-		self->think = func_object_release;
-		self->nextthink = level.time + 2 * FRAMETIME;
-	}
-	else
-	{
-		self->solid = SOLID_NOT;
-		self->movetype = MOVETYPE_PUSH;
-		self->use = func_object_use;
-		self->svflags |= SVF_NOCLIENT;
-	}
-
-	if (self->spawnflags & 2)
-	{
-		self->s.effects |= EF_ANIM_ALL;
-	}
-
-	if (self->spawnflags & 4)
-	{
-		self->s.effects |= EF_ANIM_ALLFAST;
-	}
-
-	self->clipmask = MASK_MONSTERSOLID;
-
-	gi.linkentity(self);
-}
-
-/*
  * QUAKED func_explosive (0 .5 .8) ? Trigger_Spawn ANIMATED ANIMATED_FAST
  * Any brush that you want to explode or break apart.  If you want an
  * explosion, set dmg and it will do a radius explosion of that amount
@@ -796,14 +707,6 @@ void func_explosive_explode(edict_t *self, edict_t *inflictor, edict_t *attacker
 	VectorScale(self->size, 0.5, size);
 	VectorAdd(self->absmin, size, origin);
 	VectorCopy(origin, self->s.origin);
-
-	self->takedamage = DAMAGE_NO;
-
-	if (self->dmg)
-	{
-		T_RadiusDamage(self, attacker, self->dmg, NULL,
-					   self->dmg + 40, MOD_EXPLOSIVE);
-	}
 
 	VectorSubtract(self->s.origin, inflictor->s.origin, self->velocity);
 	VectorNormalize(self->velocity);
@@ -1362,11 +1265,6 @@ void SP_misc_deadsoldier(edict_t *ent)
 
 	VectorSet(ent->mins, -16, -16, 0);
 	VectorSet(ent->maxs, 16, 16, 16);
-	ent->deadflag = DEAD_DEAD;
-	ent->takedamage = DAMAGE_YES;
-	ent->svflags |= SVF_MONSTER | SVF_DEADMONSTER;
-	ent->die = misc_deadsoldier_die;
-
 	gi.linkentity(ent);
 }
 
@@ -1606,74 +1504,6 @@ void SP_light_mine2(edict_t *ent)
 	ent->s.modelindex = gi.modelindex("models/objects/minelite/light2/tris.md2");
 	gi.linkentity(ent);
 }
-
-/*
- * QUAKED misc_gib_arm (1 0 0) (-8 -8 -8) (8 8 8)
- * Intended for use with the target_spawner
- */
-void SP_misc_gib_arm(edict_t *ent)
-{
-	gi.setmodel(ent, "models/objects/gibs/arm/tris.md2");
-	ent->solid = SOLID_BBOX;
-	ent->s.effects |= EF_GIB;
-	ent->takedamage = DAMAGE_YES;
-	ent->die = gib_die;
-	ent->movetype = MOVETYPE_TOSS;
-	ent->svflags |= SVF_MONSTER;
-	ent->deadflag = DEAD_DEAD;
-	ent->avelocity[0] = random() * 200;
-	ent->avelocity[1] = random() * 200;
-	ent->avelocity[2] = random() * 200;
-	ent->think = G_FreeEdict;
-	ent->nextthink = level.time + 30;
-	gi.linkentity(ent);
-}
-
-/*
- * QUAKED misc_gib_leg (1 0 0) (-8 -8 -8) (8 8 8)
- * Intended for use with the target_spawner
- */
-void SP_misc_gib_leg(edict_t *ent)
-{
-	gi.setmodel(ent, "models/objects/gibs/leg/tris.md2");
-	ent->solid = SOLID_BBOX;
-	ent->s.effects |= EF_GIB;
-	ent->takedamage = DAMAGE_YES;
-	ent->die = gib_die;
-	ent->movetype = MOVETYPE_TOSS;
-	ent->svflags |= SVF_MONSTER;
-	ent->deadflag = DEAD_DEAD;
-	ent->avelocity[0] = random() * 200;
-	ent->avelocity[1] = random() * 200;
-	ent->avelocity[2] = random() * 200;
-	ent->think = G_FreeEdict;
-	ent->nextthink = level.time + 30;
-	gi.linkentity(ent);
-}
-
-/*
- * QUAKED misc_gib_head (1 0 0) (-8 -8 -8) (8 8 8)
- * Intended for use with the target_spawner
- */
-void SP_misc_gib_head(edict_t *ent)
-{
-	gi.setmodel(ent, "models/objects/gibs/head/tris.md2");
-	ent->solid = SOLID_BBOX;
-	ent->s.effects |= EF_GIB;
-	ent->takedamage = DAMAGE_YES;
-	ent->die = gib_die;
-	ent->movetype = MOVETYPE_TOSS;
-	ent->svflags |= SVF_MONSTER;
-	ent->deadflag = DEAD_DEAD;
-	ent->avelocity[0] = random() * 200;
-	ent->avelocity[1] = random() * 200;
-	ent->avelocity[2] = random() * 200;
-	ent->think = G_FreeEdict;
-	ent->nextthink = level.time + 30;
-	gi.linkentity(ent);
-}
-
-/* ===================================================== */
 
 /*
  * QUAKED target_character (0 0 1) ?

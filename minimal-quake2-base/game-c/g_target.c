@@ -212,16 +212,6 @@ void use_target_changelevel(edict_t *self, edict_t *other, edict_t *activator)
 		}
 	}
 
-	/* if noexit, do a ton of damage to other */
-	if (deathmatch->value && !((int)dmflags->value & DF_ALLOW_EXIT) &&
-		(other != world))
-	{
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, 10 * other->max_health, 1000, 0,
-				 MOD_EXIT);
-		return;
-	}
-
 	/* if multiplayer, let everyone know who hit the exit */
 	if (deathmatch->value)
 	{
@@ -390,13 +380,6 @@ void target_laser_think(edict_t *self)
 		if (!tr.ent)
 		{
 			break;
-		}
-
-		/* hurt it if we can */
-		if ((tr.ent->takedamage) && !(tr.ent->flags & FL_IMMUNE_LASER))
-		{
-			T_Damage(tr.ent, self, self->activator, self->movedir, tr.endpos,
-					 vec3_origin, self->dmg, 1, DAMAGE_ENERGY, MOD_TARGET_LASER);
 		}
 
 		ignore = tr.ent;

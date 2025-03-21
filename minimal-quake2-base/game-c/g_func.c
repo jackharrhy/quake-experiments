@@ -462,10 +462,6 @@ void plat_blocked(edict_t *self, edict_t *other)
 {
 	if (!(other->svflags & SVF_MONSTER) && (!other->client))
 	{
-		/* give it a chance to go away on it's own terms (like gibs) */
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, 100000, 1, 0, MOD_CRUSH);
-
 		/* if it's still there, nuke it */
 		if (other)
 		{
@@ -476,9 +472,6 @@ void plat_blocked(edict_t *self, edict_t *other)
 
 		return;
 	}
-
-	T_Damage(other, self, self, vec3_origin, other->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
 
 	if (self->moveinfo.state == STATE_UP)
 	{
@@ -698,21 +691,6 @@ void SP_func_plat(edict_t *ent)
  * STOP mean it will stop moving instead of pushing entities
  */
 
-void rotating_blocked(edict_t *self, edict_t *other)
-{
-	T_Damage(other, self, self, vec3_origin, other->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
-}
-
-void rotating_touch(edict_t *self, edict_t *other, cplane_t *plane, csurface_t *surf)
-{
-	if (self->avelocity[0] || self->avelocity[1] || self->avelocity[2])
-	{
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
-	}
-}
-
 void rotating_use(edict_t *self, edict_t *other, edict_t *activator)
 {
 	if (!VectorCompare(self->avelocity, vec3_origin))
@@ -725,11 +703,6 @@ void rotating_use(edict_t *self, edict_t *other, edict_t *activator)
 	{
 		self->s.sound = self->moveinfo.sound_middle;
 		VectorScale(self->movedir, self->speed, self->avelocity);
-
-		if (self->spawnflags & 16)
-		{
-			self->touch = rotating_touch;
-		}
 	}
 }
 
@@ -779,11 +752,6 @@ void SP_func_rotating(edict_t *ent)
 	}
 
 	ent->use = rotating_use;
-
-	if (ent->dmg)
-	{
-		ent->blocked = rotating_blocked;
-	}
 
 	if (ent->spawnflags & 1)
 	{
@@ -972,13 +940,7 @@ void SP_func_button(edict_t *ent)
 	ent->use = button_use;
 	ent->s.effects |= EF_ANIM01;
 
-	if (ent->health)
-	{
-		ent->max_health = ent->health;
-		ent->die = button_killed;
-		ent->takedamage = DAMAGE_YES;
-	}
-	else if (!ent->targetname)
+	if (!ent->targetname)
 	{
 		ent->touch = button_touch;
 	}
@@ -1343,10 +1305,6 @@ void door_blocked(edict_t *self, edict_t *other)
 
 	if (!(other->svflags & SVF_MONSTER) && (!other->client))
 	{
-		/* give it a chance to go away on it's own terms (like gibs) */
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, 100000, 1, 0, MOD_CRUSH);
-
 		/* if it's still there, nuke it */
 		if (other)
 		{
@@ -1357,9 +1315,6 @@ void door_blocked(edict_t *self, edict_t *other)
 
 		return;
 	}
-
-	T_Damage(other, self, self, vec3_origin, other->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
 
 	if (self->spawnflags & DOOR_CRUSHER)
 	{
@@ -1391,12 +1346,6 @@ void door_killed(edict_t *self, edict_t *inflictor, edict_t *attacker,
 				 int damage, vec3_t point)
 {
 	edict_t *ent;
-
-	for (ent = self->teammaster; ent; ent = ent->teamchain)
-	{
-		ent->health = ent->max_health;
-		ent->takedamage = DAMAGE_NO;
-	}
 
 	door_use(self->teammaster, attacker, attacker);
 }
@@ -1492,13 +1441,7 @@ void SP_func_door(edict_t *ent)
 
 	ent->moveinfo.state = STATE_BOTTOM;
 
-	if (ent->health)
-	{
-		ent->takedamage = DAMAGE_YES;
-		ent->die = door_killed;
-		ent->max_health = ent->health;
-	}
-	else if (ent->targetname && ent->message)
+	if (ent->targetname && ent->message)
 	{
 		gi.soundindex("misc/talk.wav");
 		ent->touch = door_touch;
@@ -1533,7 +1476,7 @@ void SP_func_door(edict_t *ent)
 
 	ent->nextthink = level.time + FRAMETIME;
 
-	if (ent->health || ent->targetname)
+	if (ent->targetname)
 	{
 		ent->think = Think_CalcMoveSpeed;
 	}
@@ -1659,13 +1602,6 @@ void SP_func_door_rotating(edict_t *ent)
 		VectorNegate(ent->movedir, ent->movedir);
 	}
 
-	if (ent->health)
-	{
-		ent->takedamage = DAMAGE_YES;
-		ent->die = door_killed;
-		ent->max_health = ent->health;
-	}
-
 	if (ent->targetname && ent->message)
 	{
 		gi.soundindex("misc/talk.wav");
@@ -1697,7 +1633,7 @@ void SP_func_door_rotating(edict_t *ent)
 
 	ent->nextthink = level.time + FRAMETIME;
 
-	if (ent->health || ent->targetname)
+	if (ent->targetname)
 	{
 		ent->think = Think_CalcMoveSpeed;
 	}
@@ -1819,10 +1755,6 @@ void train_blocked(edict_t *self, edict_t *other)
 {
 	if (!(other->svflags & SVF_MONSTER) && (!other->client))
 	{
-		/* give it a chance to go away on it's own terms (like gibs) */
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, 100000, 1, 0, MOD_CRUSH);
-
 		/* if it's still there, nuke it */
 		if (other)
 		{
@@ -1839,14 +1771,7 @@ void train_blocked(edict_t *self, edict_t *other)
 		return;
 	}
 
-	if (!self->dmg)
-	{
-		return;
-	}
-
 	self->touch_debounce_time = level.time + 0.5;
-	T_Damage(other, self, self, vec3_origin, other->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
 }
 
 void train_wait(edict_t *self)
@@ -1946,17 +1871,14 @@ again:
 	self->moveinfo.wait = ent->wait;
 	self->target_ent = ent;
 
-	if (!(self->flags & FL_TEAMSLAVE))
+	if (self->moveinfo.sound_start)
 	{
-		if (self->moveinfo.sound_start)
-		{
-			gi.sound(self, CHAN_NO_PHS_ADD + CHAN_VOICE,
-					 self->moveinfo.sound_start, 1, ATTN_STATIC,
-					 0);
-		}
-
-		self->s.sound = self->moveinfo.sound_middle;
+		gi.sound(self, CHAN_NO_PHS_ADD + CHAN_VOICE,
+				 self->moveinfo.sound_start, 1, ATTN_STATIC,
+				 0);
 	}
+
+	self->s.sound = self->moveinfo.sound_middle;
 
 	VectorSubtract(ent->s.origin, self->mins, dest);
 	self->moveinfo.state = STATE_TOP;
@@ -2052,18 +1974,6 @@ void SP_func_train(edict_t *self)
 
 	VectorClear(self->s.angles);
 	self->blocked = train_blocked;
-
-	if (self->spawnflags & TRAIN_BLOCK_STOPS)
-	{
-		self->dmg = 0;
-	}
-	else
-	{
-		if (!self->dmg)
-		{
-			self->dmg = 100;
-		}
-	}
 
 	self->solid = SOLID_BSP;
 	gi.setmodel(self, self->model);
@@ -2366,10 +2276,6 @@ void door_secret_blocked(edict_t *self, edict_t *other)
 {
 	if (!(other->svflags & SVF_MONSTER) && (!other->client))
 	{
-		/* give it a chance to go away on it's own terms (like gibs) */
-		T_Damage(other, self, self, vec3_origin, other->s.origin,
-				 vec3_origin, 100000, 1, 0, MOD_CRUSH);
-
 		/* if it's still there, nuke it */
 		if (other)
 		{
@@ -2387,9 +2293,6 @@ void door_secret_blocked(edict_t *self, edict_t *other)
 	}
 
 	self->touch_debounce_time = level.time + 0.5;
-
-	T_Damage(other, self, self, vec3_origin, other->s.origin,
-			 vec3_origin, self->dmg, 1, 0, MOD_CRUSH);
 }
 
 void door_secret_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
@@ -2416,18 +2319,6 @@ void SP_func_door_secret(edict_t *ent)
 
 	ent->blocked = door_secret_blocked;
 	ent->use = door_secret_use;
-
-	if (!(ent->targetname) || (ent->spawnflags & SECRET_ALWAYS_SHOOT))
-	{
-		ent->health = 0;
-		ent->takedamage = DAMAGE_YES;
-		ent->die = door_secret_die;
-	}
-
-	if (!ent->dmg)
-	{
-		ent->dmg = 2;
-	}
 
 	if (!ent->wait)
 	{
@@ -2463,13 +2354,7 @@ void SP_func_door_secret(edict_t *ent)
 
 	VectorMA(ent->pos1, length, forward, ent->pos2);
 
-	if (ent->health)
-	{
-		ent->takedamage = DAMAGE_YES;
-		ent->die = door_killed;
-		ent->max_health = ent->health;
-	}
-	else if (ent->targetname && ent->message)
+	if (ent->targetname && ent->message)
 	{
 		gi.soundindex("misc/talk.wav");
 		ent->touch = door_touch;

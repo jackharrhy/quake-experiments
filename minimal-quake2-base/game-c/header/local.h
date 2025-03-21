@@ -66,7 +66,6 @@
 #define FL_IMMUNE_LAVA 0x00000080
 #define FL_PARTIALGROUND 0x00000100 /* not all corners are valid */
 #define FL_WATERJUMP 0x00000200		/* player jumping out of water */
-#define FL_TEAMSLAVE 0x00000400		/* not the first on the team */
 #define FL_NO_KNOCKBACK 0x00000800
 #define FL_RESPAWN 0x80000000 /* used for item respawning */
 
@@ -80,22 +79,9 @@
 
 #define BODY_QUEUE_SIZE 8
 
-typedef enum
-{
-	DAMAGE_NO,
-	DAMAGE_YES, /* will take damage if hit */
-	DAMAGE_AIM	/* auto targeting recognizes this */
-} damage_t;
-
 /* Maximum debris / gibs per frame */
 #define MAX_GIBS 20
 #define MAX_DEBRIS 20
-
-/* deadflag */
-#define DEAD_NO 0
-#define DEAD_DYING 1
-#define DEAD_DEAD 2
-#define DEAD_RESPAWNABLE 3
 
 /* range */
 #define RANGE_MELEE 0
@@ -174,8 +160,6 @@ typedef struct
 	/* store latched cvars here that we want to get at often */
 	int maxclients;
 	int maxentities;
-
-	qboolean autosaved;
 } game_locals_t;
 
 /* this structure is cleared as each map is entered
@@ -426,14 +410,6 @@ char *vtos(vec3_t v);
 float vectoyaw(vec3_t vec);
 void vectoangles(vec3_t vec, vec3_t angles);
 
-/* g_combat.c */
-qboolean CanDamage(edict_t *targ, edict_t *inflictor);
-void T_Damage(edict_t *targ, edict_t *inflictor, edict_t *attacker,
-			  vec3_t dir, vec3_t point, vec3_t normal, int damage, int knockback,
-			  int dflags, int mod);
-void T_RadiusDamage(edict_t *inflictor, edict_t *attacker, float damage,
-					edict_t *ignore, float radius, int mod);
-
 /* damage flags */
 #define DAMAGE_RADIUS 0x00000001		/* damage was indirect */
 #define DAMAGE_NO_ARMOR 0x00000002		/* armour does not protect from this damage */
@@ -495,7 +471,6 @@ void G_RunEntity(edict_t *ent);
 
 /* g_main.c */
 void SaveClientData(void);
-void FetchClientEntData(edict_t *ent);
 void EndDMLevel(void);
 
 /* ============================================================================ */
@@ -518,11 +493,6 @@ typedef struct
 
 	qboolean connected; /* a loadgame will leave valid entities that
 						   just don't have a connection yet */
-
-	/* values saved and restored from edicts when changing levels */
-	int health;
-	int max_health;
-	int savedFlags;
 } client_persistant_t;
 
 /* client data that stays across deathmatch respawns */
@@ -549,28 +519,9 @@ struct gclient_s
 	client_respawn_t resp;
 	pmove_state_t old_pmove; /* for detecting out-of-pmove changes */
 
-	qboolean showscores;	/* set layout stat */
-	qboolean inmenu;		/* in menu */
-	pmenuhnd_t *menu;		/* current menu */
-	qboolean showinventory; /* set layout stat */
-	qboolean showhelp;
-	qboolean showhelpicon;
-
-	int ammo_index;
-
 	int buttons;
 	int oldbuttons;
 	int latched_buttons;
-
-	/* sum up damage over an entire frame, so
-	   shotgun blasts give a single big kick */
-	int damage_armor;	  /* damage absorbed by armor */
-	int damage_parmor;	  /* damage absorbed by power armor */
-	int damage_blood;	  /* damage taken out of health */
-	int damage_knockback; /* impact damage */
-	vec3_t damage_from;	  /* origin for vector calculation */
-
-	float killer_yaw; /* when dead, look at killer */
 
 	vec3_t kick_angles; /* weapon kicks */
 	vec3_t kick_origin;
@@ -643,7 +594,6 @@ struct edict_s
 
 	/* ================================ */
 	int movetype;
-	int flags;
 
 	char *model;
 	float freetime; /* sv.time when the object was freed */
@@ -672,7 +622,6 @@ struct edict_s
 	vec3_t velocity;
 	vec3_t avelocity;
 	int mass;
-	float air_finished;
 	float gravity;
 	float client_local_gravity;
 
@@ -688,30 +637,15 @@ struct edict_s
 	void (*touch)(edict_t *self, edict_t *other, cplane_t *plane,
 				  csurface_t *surf);
 	void (*use)(edict_t *self, edict_t *other, edict_t *activator);
-	void (*pain)(edict_t *self, edict_t *other, float kick, int damage);
-	void (*die)(edict_t *self, edict_t *inflictor, edict_t *attacker,
-				int damage, vec3_t point);
 
-	float touch_debounce_time; /* are all these legit?  do we need more/less of them? */
-	float pain_debounce_time;
-	float damage_debounce_time;
+	float touch_debounce_time;	   /* are all these legit?  do we need more/less of them? */
 	float fly_sound_debounce_time; /* move to clientinfo */
 	float last_move_time;
-
-	int health;
-	int max_health;
-	int gib_health;
-	int deadflag;
-	int show_hostile;
 
 	char *map; /* target_changelevel */
 
 	int viewheight; /* height above origin where eyesight is determined */
-	int takedamage;
-	int dmg;
-	int radius_dmg;
-	float dmg_radius;
-	int sounds; /* make this a spawntemp var? */
+	int sounds;		/* make this a spawntemp var? */
 	int count;
 
 	edict_t *chain;
@@ -720,8 +654,6 @@ struct edict_s
 	edict_t *activator;
 	edict_t *groundentity;
 	int groundentity_linkcount;
-	edict_t *teamchain;
-	edict_t *teammaster;
 
 	edict_t *mynoise; /* can go in client only */
 	edict_t *mynoise2;

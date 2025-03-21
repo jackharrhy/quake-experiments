@@ -511,7 +511,7 @@ void G_TouchTriggers(edict_t *ent)
 	int i, num;
 	edict_t *touch[MAX_EDICTS], *hit;
 
-	if (ent->client && ent->health <= 0)
+	if (ent->client)
 	{
 		return;
 	}
@@ -600,11 +600,6 @@ KillBox(edict_t *ent)
 		{
 			break;
 		}
-
-		/* nail it */
-		T_Damage(tr.ent, ent, ent, vec3_origin, ent->s.origin,
-				 vec3_origin, 100000, 0, DAMAGE_NO_PROTECTION,
-				 MOD_TELEFRAG);
 
 		/* if we didn't kill it, fail */
 		if (tr.ent->solid)

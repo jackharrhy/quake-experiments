@@ -103,8 +103,6 @@ field_t savefields[] = {
 	{"", FOFS(oldenemy), F_EDICT},
 	{"", FOFS(activator), F_EDICT},
 	{"", FOFS(groundentity), F_EDICT},
-	{"", FOFS(teamchain), F_EDICT},
-	{"", FOFS(teammaster), F_EDICT},
 	{"", FOFS(owner), F_EDICT},
 	{"", FOFS(mynoise), F_EDICT},
 	{"", FOFS(mynoise2), F_EDICT},

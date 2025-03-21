@@ -427,9 +427,6 @@ void InitClientPersistant(gclient_t *client)
 {
 	memset(&client->pers, 0, sizeof(client->pers));
 
-	client->pers.health = 100;
-	client->pers.max_health = 100;
-
 	client->pers.connected = true;
 }
 
@@ -463,22 +460,8 @@ void SaveClientData(void)
 		{
 			continue;
 		}
-
-		game.clients[i].pers.health = ent->health;
-		game.clients[i].pers.max_health = ent->max_health;
-		game.clients[i].pers.savedFlags =
-			(ent->flags & (FL_GODMODE | FL_NOTARGET));
 	}
 }
-
-void FetchClientEntData(edict_t *ent)
-{
-	ent->health = ent->client->pers.health;
-	ent->max_health = ent->client->pers.max_health;
-	ent->flags |= ent->client->pers.savedFlags;
-}
-
-/* SelectSpawnPoint */
 
 /*
  * Returns the distance to the
@@ -758,36 +741,27 @@ void PutClientInServer(edict_t *ent)
 	memset(client, 0, sizeof(*client));
 	client->pers = saved;
 
-	if (client->pers.health <= 0)
+	if (!client->pers.connected)
 	{
 		InitClientPersistant(client);
 	}
 
 	client->resp = resp;
 
-	/* copy some data from the client to the entity */
-	FetchClientEntData(ent);
-
 	/* clear entity values */
 	ent->groundentity = NULL;
 	ent->client = &game.clients[index];
-	ent->takedamage = DAMAGE_AIM;
 	ent->movetype = MOVETYPE_WALK;
 	ent->viewheight = 22;
 	ent->inuse = true;
 	ent->classname = "player";
 	ent->mass = 200;
 	ent->solid = SOLID_BBOX;
-	ent->deadflag = DEAD_NO;
-	ent->air_finished = level.time + 12;
 	ent->clipmask = MASK_PLAYERSOLID;
 	ent->model = "players/male/tris.md2";
-	ent->pain = player_pain;
-	ent->die = player_die;
 	ent->waterlevel = 0;
 	ent->watertype = 0;
 	ent->flags &= ~FL_NO_KNOCKBACK;
-	ent->svflags &= ~SVF_DEADMONSTER;
 
 	VectorCopy(mins, ent->mins);
 	VectorCopy(maxs, ent->maxs);
@@ -1043,10 +1017,7 @@ ClientConnect(edict_t *ent, char *userinfo)
 
 		InitClientResp(ent->client);
 
-		if (!game.autosaved)
-		{
-			InitClientPersistant(ent->client);
-		}
+		InitClientPersistant(ent->client);
 	}
 
 	ClientUserinfoChanged(ent, userinfo);
