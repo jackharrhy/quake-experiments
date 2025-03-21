@@ -53,10 +53,8 @@ field_t fields[] = {
 	{"move_angles", FOFS(move_angles), F_VECTOR},
 	{"style", FOFS(style), F_INT},
 	{"count", FOFS(count), F_INT},
-	{"health", FOFS(health), F_INT},
 	{"sounds", FOFS(sounds), F_INT},
 	{"light", 0, F_IGNORE},
-	{"dmg", FOFS(dmg), F_INT},
 	{"angles", FOFS(s.angles), F_VECTOR},
 	{"angle", FOFS(s.angles), F_ANGLEHACK},
 	{"mass", FOFS(mass), F_INT},
@@ -159,7 +157,6 @@ void InitGame(void)
 	}
 
 	/* change anytime vars */
-	dmflags = gi.cvar("dmflags", "0", CVAR_SERVERINFO);
 	password = gi.cvar("password", "", CVAR_USERINFO);
 	g_select_empty = gi.cvar("g_select_empty", "0", CVAR_ARCHIVE);
 	run_pitch = gi.cvar("run_pitch", "0.002", 0);

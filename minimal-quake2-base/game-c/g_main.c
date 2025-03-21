@@ -39,7 +39,6 @@ int meansOfDeath;
 edict_t *g_edicts;
 
 cvar_t *deathmatch;
-cvar_t *dmflags;
 cvar_t *password;
 cvar_t *maxclients;
 cvar_t *maxentities;
@@ -187,9 +186,6 @@ void G_RunFrame(void)
 
 	level.framenum++;
 	level.time = level.framenum * FRAMETIME;
-
-	gibsthisframe = 0;
-	debristhisframe = 0;
 
 	/* treat each object in turn even
 	   the world gets a chance to think */

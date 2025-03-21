@@ -52,18 +52,6 @@ void Cmd_Noclip_f(edict_t *ent)
 	gi.cprintf(ent, PRINT_HIGH, msg);
 }
 
-void Cmd_PutAway_f(edict_t *ent)
-{
-	ent->client->showscores = false;
-	ent->client->showhelp = false;
-	ent->client->showinventory = false;
-
-	if (ent->client->menu)
-	{
-		PMenu_Close(ent);
-	}
-}
-
 int PlayerSort(void const *a, void const *b)
 {
 	int anum, bnum;
@@ -137,7 +125,6 @@ void Cmd_Wave_f(edict_t *ent)
 
 	i = atoi(gi.argv(1));
 
-	/* can't wave when ducked */
 	if (ent->client->ps.pmove.pm_flags & PMF_DUCKED)
 	{
 		return;
@@ -315,17 +302,9 @@ void ClientCommand(edict_t *ent)
 		return;
 	}
 
-	if (Q_stricmp(cmd, "notarget") == 0)
-	{
-		Cmd_Notarget_f(ent);
-	}
-	else if (Q_stricmp(cmd, "noclip") == 0)
+	if (Q_stricmp(cmd, "noclip") == 0)
 	{
 		Cmd_Noclip_f(ent);
-	}
-	else if (Q_stricmp(cmd, "kill") == 0)
-	{
-		Cmd_Kill_f(ent);
 	}
 	else if (Q_stricmp(cmd, "wave") == 0)
 	{

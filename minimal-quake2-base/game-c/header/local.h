@@ -79,10 +79,6 @@
 
 #define BODY_QUEUE_SIZE 8
 
-/* Maximum debris / gibs per frame */
-#define MAX_GIBS 20
-#define MAX_DEBRIS 20
-
 /* range */
 #define RANGE_MELEE 0
 #define RANGE_NEAR 1
@@ -137,15 +133,10 @@ typedef enum
 {
 	MOVETYPE_NONE,	 /* never moves */
 	MOVETYPE_NOCLIP, /* origin and angles change with no interaction */
-	MOVETYPE_PUSH,	 /* no clip to world, push on box contact */
-	MOVETYPE_STOP,	 /* no clip to world, stops on box contact */
 
 	MOVETYPE_WALK, /* gravity */
 	MOVETYPE_STEP, /* gravity, special edge handling */
-	MOVETYPE_FLY,
-	MOVETYPE_TOSS,		 /* gravity */
-	MOVETYPE_FLYMISSILE, /* extra size to monsters */
-	MOVETYPE_BOUNCE
+	MOVETYPE_TOSS, /* gravity */
 } movetype_t;
 
 /* this structure is left intact through an entire game
@@ -262,9 +253,6 @@ extern spawn_temp_t st;
 extern int sm_meat_index;
 extern int snd_fry;
 
-extern int debristhisframe;
-extern int gibsthisframe;
-
 /* means of death */
 #define MOD_UNKNOWN 0
 #define MOD_BLASTER 1
@@ -316,7 +304,6 @@ extern edict_t *g_edicts;
 
 extern cvar_t *maxentities;
 extern cvar_t *deathmatch;
-extern cvar_t *dmflags;
 extern cvar_t *password;
 extern cvar_t *g_select_empty;
 extern cvar_t *dedicated;
@@ -469,12 +456,6 @@ void M_ChangeYaw(edict_t *ent);
 /* g_phys.c */
 void G_RunEntity(edict_t *ent);
 
-/* g_main.c */
-void SaveClientData(void);
-void EndDMLevel(void);
-
-/* ============================================================================ */
-
 /* client_t->anim_priority */
 #define ANIM_BASIC 0 /* stand / run */
 #define ANIM_WAVE 1
@@ -545,21 +526,11 @@ struct gclient_s
 	qboolean anim_duck;
 	qboolean anim_run;
 
-	/* powerup timers */
-	float invincible_framenum;
-	float breather_framenum;
-	float enviro_framenum;
-
 	float pickup_msg_time;
 
 	float flood_locktill; /* locked from talking */
 	float flood_when[10]; /* when messages were said */
 	int flood_whenhead;	  /* head pointer for when said */
-
-	float respawn_time; /* can respawn when time > this */
-
-	float menutime; /* time to update menu */
-	qboolean menudirty;
 };
 
 struct edict_s

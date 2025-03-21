@@ -30,11 +30,6 @@ void PlayerNoise(edict_t *who, vec3_t where, int type)
         return;
     }
 
-    if (who->flags & FL_NOTARGET)
-    {
-        return;
-    }
-
     if (!who->mynoise)
     {
         noise = G_Spawn();

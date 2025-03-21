@@ -25,404 +25,23 @@
  */
 
 #include "../header/local.h"
-#include "../monster/player.h"
 
-void SP_misc_teleporter_dest(edict_t *ent);
+void SP_CreateUnnamedSpawn(edict_t *self)
+{
+	edict_t *spot = G_Spawn();
+}
 
-/*
- * QUAKED info_player_start (1 0 0) (-16 -16 -24) (16 16 32)
- * The normal starting point for a level.
- */
 void SP_info_player_start(edict_t *self)
 {
-}
-
-/*
- * QUAKED info_player_deathmatch (1 0 1) (-16 -16 -24) (16 16 32)
- * potential spawning position for deathmatch games
- */
-void SP_info_player_deathmatch(edict_t *self)
-{
-	if (!deathmatch->value)
+	if (!self)
 	{
-		G_FreeEdict(self);
 		return;
 	}
 
-	SP_misc_teleporter_dest(self);
+	self->think = SP_CreateUnnamedSpawn;
+	self->nextthink = level.time + FRAMETIME;
 }
 
-/* ======================================================================= */
-
-void player_pain(edict_t *self, edict_t *other, float kick, int damage)
-{
-	/* player pain is handled at the
-	   end of the frame in P_DamageFeedback */
-}
-
-qboolean
-IsFemale(edict_t *ent)
-{
-	char *info;
-
-	if (!ent->client)
-	{
-		return false;
-	}
-
-	info = Info_ValueForKey(ent->client->pers.userinfo, "skin");
-
-	if ((info[0] == 'f') || (info[0] == 'F'))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void ClientObituary(edict_t *self, edict_t *inflictor, edict_t *attacker)
-{
-	int mod;
-	char *message;
-	char *message2;
-
-	if (deathmatch->value)
-	{
-		mod = meansOfDeath & ~MOD_FRIENDLY_FIRE;
-		message = NULL;
-		message2 = "";
-
-		switch (mod)
-		{
-		case MOD_SUICIDE:
-			message = "suicides";
-			break;
-		case MOD_FALLING:
-			message = "cratered";
-			break;
-		case MOD_CRUSH:
-			message = "was squished";
-			break;
-		case MOD_WATER:
-			message = "sank like a rock";
-			break;
-		case MOD_SLIME:
-			message = "melted";
-			break;
-		case MOD_LAVA:
-			message = "does a back flip into the lava";
-			break;
-		case MOD_EXPLOSIVE:
-		case MOD_BARREL:
-			message = "blew up";
-			break;
-		case MOD_EXIT:
-			message = "found a way out";
-			break;
-		case MOD_TARGET_LASER:
-			message = "saw the light";
-			break;
-		case MOD_TARGET_BLASTER:
-			message = "got blasted";
-			break;
-		case MOD_BOMB:
-		case MOD_SPLASH:
-		case MOD_TRIGGER_HURT:
-			message = "was in the wrong place";
-			break;
-		}
-
-		if (attacker == self)
-		{
-			switch (mod)
-			{
-			case MOD_HELD_GRENADE:
-				message = "tried to put the pin back in";
-				break;
-			case MOD_HG_SPLASH:
-			case MOD_G_SPLASH:
-
-				if (IsFemale(self))
-				{
-					message = "tripped on her own grenade";
-				}
-				else
-				{
-					message = "tripped on his own grenade";
-				}
-
-				break;
-			case MOD_R_SPLASH:
-
-				if (IsFemale(self))
-				{
-					message = "blew herself up";
-				}
-				else
-				{
-					message = "blew himself up";
-				}
-
-				break;
-			case MOD_BFG_BLAST:
-				message = "should have used a smaller gun";
-				break;
-			default:
-
-				if (IsFemale(self))
-				{
-					message = "killed herself";
-				}
-				else
-				{
-					message = "killed himself";
-				}
-
-				break;
-			}
-		}
-
-		if (message)
-		{
-			gi.bprintf(PRINT_MEDIUM, "%s %s.\n",
-					   self->client->pers.netname,
-					   message);
-
-			self->enemy = NULL;
-			return;
-		}
-
-		self->enemy = attacker;
-
-		if (attacker && attacker->client)
-		{
-			switch (mod)
-			{
-			case MOD_BLASTER:
-				message = "was blasted by";
-				break;
-			case MOD_SHOTGUN:
-				message = "was gunned down by";
-				break;
-			case MOD_SSHOTGUN:
-				message = "was blown away by";
-				message2 = "'s super shotgun";
-				break;
-			case MOD_MACHINEGUN:
-				message = "was machinegunned by";
-				break;
-			case MOD_CHAINGUN:
-				message = "was cut in half by";
-				message2 = "'s chaingun";
-				break;
-			case MOD_GRENADE:
-				message = "was popped by";
-				message2 = "'s grenade";
-				break;
-			case MOD_G_SPLASH:
-				message = "was shredded by";
-				message2 = "'s shrapnel";
-				break;
-			case MOD_ROCKET:
-				message = "ate";
-				message2 = "'s rocket";
-				break;
-			case MOD_R_SPLASH:
-				message = "almost dodged";
-				message2 = "'s rocket";
-				break;
-			case MOD_HYPERBLASTER:
-				message = "was melted by";
-				message2 = "'s hyperblaster";
-				break;
-			case MOD_RAILGUN:
-				message = "was railed by";
-				break;
-			case MOD_BFG_LASER:
-				message = "saw the pretty lights from";
-				message2 = "'s BFG";
-				break;
-			case MOD_BFG_BLAST:
-				message = "was disintegrated by";
-				message2 = "'s BFG blast";
-				break;
-			case MOD_BFG_EFFECT:
-				message = "couldn't hide from";
-				message2 = "'s BFG";
-				break;
-			case MOD_HANDGRENADE:
-				message = "caught";
-				message2 = "'s handgrenade";
-				break;
-			case MOD_HG_SPLASH:
-				message = "didn't see";
-				message2 = "'s handgrenade";
-				break;
-			case MOD_HELD_GRENADE:
-				message = "feels";
-				message2 = "'s pain";
-				break;
-			case MOD_TELEFRAG:
-				message = "tried to invade";
-				message2 = "'s personal space";
-				break;
-			}
-
-			if (message)
-			{
-				gi.bprintf(PRINT_MEDIUM, "%s %s %s%s\n", self->client->pers.netname,
-						   message, attacker->client->pers.netname, message2);
-
-				return;
-			}
-		}
-	}
-
-	gi.bprintf(PRINT_MEDIUM, "%s died.\n", self->client->pers.netname);
-}
-
-void Touch_Item(edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
-
-void LookAtKiller(edict_t *self, edict_t *inflictor, edict_t *attacker)
-{
-	vec3_t dir;
-
-	if (attacker && (attacker != world) && (attacker != self))
-	{
-		VectorSubtract(attacker->s.origin, self->s.origin, dir);
-	}
-	else if (inflictor && (inflictor != world) && (inflictor != self))
-	{
-		VectorSubtract(inflictor->s.origin, self->s.origin, dir);
-	}
-	else
-	{
-		self->client->killer_yaw = self->s.angles[YAW];
-		return;
-	}
-
-	if (dir[0])
-	{
-		self->client->killer_yaw = 180 / M_PI * atan2(dir[1], dir[0]);
-	}
-	else
-	{
-		self->client->killer_yaw = 0;
-
-		if (dir[1] > 0)
-		{
-			self->client->killer_yaw = 90;
-		}
-		else if (dir[1] < 0)
-		{
-			self->client->killer_yaw = -90;
-		}
-	}
-
-	if (self->client->killer_yaw < 0)
-	{
-		self->client->killer_yaw += 360;
-	}
-}
-
-void player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
-				int damage, vec3_t point)
-{
-	int n;
-
-	VectorClear(self->avelocity);
-
-	self->takedamage = DAMAGE_YES;
-	self->movetype = MOVETYPE_TOSS;
-
-	self->s.modelindex2 = 0; /* remove linked weapon model */
-
-	self->s.angles[0] = 0;
-	self->s.angles[2] = 0;
-
-	self->s.sound = 0;
-
-	self->maxs[2] = -8;
-
-	self->svflags |= SVF_DEADMONSTER;
-
-	if (!self->deadflag)
-	{
-		self->client->respawn_time = level.time + 1.0;
-		LookAtKiller(self, inflictor, attacker);
-		self->client->ps.pmove.pm_type = PM_DEAD;
-		ClientObituary(self, inflictor, attacker);
-	}
-
-	if (self->health < -40)
-	{
-		/* gib */
-		gi.sound(self, CHAN_BODY, gi.soundindex("misc/udeath.wav"), 1, ATTN_NORM, 0);
-
-		for (n = 0; n < 4; n++)
-		{
-			ThrowGib(self, "models/objects/gibs/sm_meat/tris.md2",
-					 damage, GIB_ORGANIC);
-		}
-
-		ThrowClientHead(self, damage);
-		self->client->anim_priority = ANIM_DEATH;
-		self->client->anim_end = 0;
-		self->takedamage = DAMAGE_NO;
-	}
-	else
-	{
-		/* normal death */
-		if (!self->deadflag)
-		{
-			static int i;
-
-			i = (i + 1) % 3;
-
-			/* start a death animation */
-			self->client->anim_priority = ANIM_DEATH;
-
-			if (self->client->ps.pmove.pm_flags & PMF_DUCKED)
-			{
-				self->s.frame = FRAME_crdeath1 - 1;
-				self->client->anim_end = FRAME_crdeath5;
-			}
-			else
-			{
-				switch (i)
-				{
-				case 0:
-					self->s.frame = FRAME_death101 - 1;
-					self->client->anim_end = FRAME_death106;
-					break;
-				case 1:
-					self->s.frame = FRAME_death201 - 1;
-					self->client->anim_end = FRAME_death206;
-					break;
-				case 2:
-					self->s.frame = FRAME_death301 - 1;
-					self->client->anim_end = FRAME_death308;
-					break;
-				}
-			}
-
-			gi.sound(self, CHAN_VOICE, gi.soundindex(va("*death%i.wav", (rand() % 4) + 1)), 1, ATTN_NORM, 0);
-		}
-	}
-
-	self->deadflag = DEAD_DEAD;
-
-	gi.linkentity(self);
-}
-
-/* ======================================================================= */
-
-/*
- * This is only called when the game
- * first initializes in single player,
- * but is called after each death and
- * level change in deathmatch
- */
 void InitClientPersistant(gclient_t *client)
 {
 	memset(&client->pers, 0, sizeof(client->pers));
@@ -439,28 +58,6 @@ void InitClientResp(gclient_t *client)
 	client->resp.id_state = id_state;
 
 	client->resp.enterframe = level.framenum;
-}
-
-/*
- * Some information that should be persistant, like health,
- * is still stored in the edict structure, so it needs to
- * be mirrored out to the client structure before all the
- * edicts are wiped.
- */
-void SaveClientData(void)
-{
-	int i;
-	edict_t *ent;
-
-	for (i = 0; i < game.maxclients; i++)
-	{
-		ent = &g_edicts[1 + i];
-
-		if (!ent->inuse)
-		{
-			continue;
-		}
-	}
 }
 
 /*
@@ -486,11 +83,6 @@ float PlayersRangeFromSpot(edict_t *spot)
 			continue;
 		}
 
-		if (player->health <= 0)
-		{
-			continue;
-		}
-
 		VectorSubtract(spot->s.origin, player->s.origin, v);
 		playerdistance = VectorLength(v);
 
@@ -504,164 +96,41 @@ float PlayersRangeFromSpot(edict_t *spot)
 }
 
 /*
- * go to a random point, but NOT the two
- * points closest to other players
- */
-edict_t *
-SelectRandomDeathmatchSpawnPoint(void)
-{
-	edict_t *spot, *spot1, *spot2;
-	int count = 0;
-	int selection;
-	float range, range1, range2;
-
-	spot = NULL;
-	range1 = range2 = 99999;
-	spot1 = spot2 = NULL;
-
-	while ((spot = G_Find(spot, FOFS(classname),
-						  "info_player_deathmatch")) != NULL)
-	{
-		count++;
-		range = PlayersRangeFromSpot(spot);
-
-		if (range < range1)
-		{
-			range1 = range;
-			spot1 = spot;
-		}
-		else if (range < range2)
-		{
-			range2 = range;
-			spot2 = spot;
-		}
-	}
-
-	if (!count)
-	{
-		return NULL;
-	}
-
-	if (count <= 2)
-	{
-		spot1 = spot2 = NULL;
-	}
-	else
-	{
-		count -= 2;
-	}
-
-	selection = rand() % count;
-
-	spot = NULL;
-
-	do
-	{
-		spot = G_Find(spot, FOFS(classname), "info_player_deathmatch");
-
-		if ((spot == spot1) || (spot == spot2))
-		{
-			selection++;
-		}
-	} while (selection--);
-
-	return spot;
-}
-
-edict_t *
-SelectFarthestDeathmatchSpawnPoint(void)
-{
-	edict_t *bestspot;
-	float bestdistance, bestplayerdistance;
-	edict_t *spot;
-
-	spot = NULL;
-	bestspot = NULL;
-	bestdistance = 0;
-
-	while ((spot = G_Find(spot, FOFS(classname),
-						  "info_player_deathmatch")) != NULL)
-	{
-		bestplayerdistance = PlayersRangeFromSpot(spot);
-
-		if (bestplayerdistance > bestdistance)
-		{
-			bestspot = spot;
-			bestdistance = bestplayerdistance;
-		}
-	}
-
-	if (bestspot)
-	{
-		return bestspot;
-	}
-
-	/* if there is a player just spawned on
-	   each and every start spot we have no
-	   choice to turn one into a telefrag meltdown */
-	spot = G_Find(NULL, FOFS(classname), "info_player_deathmatch");
-
-	return spot;
-}
-
-edict_t *
-SelectDeathmatchSpawnPoint(void)
-{
-	if ((int)(dmflags->value) & DF_SPAWN_FARTHEST)
-	{
-		return SelectFarthestDeathmatchSpawnPoint();
-	}
-	else
-	{
-		return SelectRandomDeathmatchSpawnPoint();
-	}
-}
-
-/*
  * Chooses a player start, deathmatch start, etc
  */
 void SelectSpawnPoint(edict_t *ent, vec3_t origin, vec3_t angles)
 {
 	edict_t *spot = NULL;
 
-	if (deathmatch->value)
+	while ((spot = G_Find(spot, FOFS(classname), "info_player_start")) != NULL)
 	{
-		spot = SelectDeathmatchSpawnPoint();
+		if (!game.spawnpoint[0] && !spot->targetname)
+		{
+			break;
+		}
+
+		if (!game.spawnpoint[0] || !spot->targetname)
+		{
+			continue;
+		}
+
+		if (Q_stricmp(game.spawnpoint, spot->targetname) == 0)
+		{
+			break;
+		}
 	}
 
-	/* find a single player start spot */
 	if (!spot)
 	{
-		while ((spot = G_Find(spot, FOFS(classname), "info_player_start")) != NULL)
+		if (!game.spawnpoint[0])
 		{
-			if (!game.spawnpoint[0] && !spot->targetname)
-			{
-				break;
-			}
-
-			if (!game.spawnpoint[0] || !spot->targetname)
-			{
-				continue;
-			}
-
-			if (Q_stricmp(game.spawnpoint, spot->targetname) == 0)
-			{
-				break;
-			}
+			/* there wasn't a spawnpoint without a target, so use any */
+			spot = G_Find(spot, FOFS(classname), "info_player_start");
 		}
 
 		if (!spot)
 		{
-			if (!game.spawnpoint[0])
-			{
-				/* there wasn't a spawnpoint without a target, so use any */
-				spot = G_Find(spot, FOFS(classname), "info_player_start");
-			}
-
-			if (!spot)
-			{
-				gi.error("Couldn't find spawn point %s\n", game.spawnpoint);
-			}
+			gi.error("Couldn't find spawn point %s\n", game.spawnpoint);
 		}
 	}
 
@@ -685,8 +154,6 @@ void respawn(edict_t *self)
 		/* hold in place briefly */
 		self->client->ps.pmove.pm_flags = PMF_TIME_TELEPORT;
 		self->client->ps.pmove.pm_time = 14;
-
-		self->client->respawn_time = level.time;
 
 		return;
 	}
@@ -761,7 +228,6 @@ void PutClientInServer(edict_t *ent)
 	ent->model = "players/male/tris.md2";
 	ent->waterlevel = 0;
 	ent->watertype = 0;
-	ent->flags &= ~FL_NO_KNOCKBACK;
 
 	VectorCopy(mins, ent->mins);
 	VectorCopy(maxs, ent->maxs);
@@ -775,22 +241,15 @@ void PutClientInServer(edict_t *ent)
 	client->ps.pmove.origin[2] = spawn_origin[2] * 8;
 	client->ps.pmove.pm_flags &= ~PMF_NO_PREDICTION;
 
-	if (deathmatch->value && ((int)dmflags->value & DF_FIXED_FOV))
+	client->ps.fov = atoi(Info_ValueForKey(client->pers.userinfo, "fov"));
+
+	if (client->ps.fov < 1)
 	{
 		client->ps.fov = 90;
 	}
-	else
+	else if (client->ps.fov > 160)
 	{
-		client->ps.fov = atoi(Info_ValueForKey(client->pers.userinfo, "fov"));
-
-		if (client->ps.fov < 1)
-		{
-			client->ps.fov = 90;
-		}
-		else if (client->ps.fov > 160)
-		{
-			client->ps.fov = 160;
-		}
+		client->ps.fov = 160;
 	}
 
 	/* No weapon model in minimal version */
@@ -946,23 +405,15 @@ void ClientUserinfoChanged(edict_t *ent, char *userinfo)
 	/* set player name field (used in id_state view) */
 	gi.configstring(CS_GENERAL + playernum, ent->client->pers.netname);
 
-	/* fov */
-	if (deathmatch->value && ((int)dmflags->value & DF_FIXED_FOV))
+	ent->client->ps.fov = atoi(Info_ValueForKey(userinfo, "fov"));
+
+	if (ent->client->ps.fov < 1)
 	{
 		ent->client->ps.fov = 90;
 	}
-	else
+	else if (ent->client->ps.fov > 160)
 	{
-		ent->client->ps.fov = atoi(Info_ValueForKey(userinfo, "fov"));
-
-		if (ent->client->ps.fov < 1)
-		{
-			ent->client->ps.fov = 90;
-		}
-		else if (ent->client->ps.fov > 160)
-		{
-			ent->client->ps.fov = 160;
-		}
+		ent->client->ps.fov = 160;
 	}
 
 	/* handedness */
@@ -1073,14 +524,7 @@ edict_t *pm_passent;
 trace_t
 PM_trace(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
 {
-	if (pm_passent->health > 0)
-	{
-		return gi.trace(start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
-	}
-	else
-	{
-		return gi.trace(start, mins, maxs, end, pm_passent, MASK_DEADSOLID);
-	}
+	return gi.trace(start, mins, maxs, end, pm_passent, MASK_PLAYERSOLID);
 }
 
 unsigned
@@ -1133,10 +577,6 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	else if (ent->s.modelindex != 255)
 	{
 		client->ps.pmove.pm_type = PM_GIB;
-	}
-	else if (ent->deadflag)
-	{
-		client->ps.pmove.pm_type = PM_DEAD;
 	}
 	else
 	{
@@ -1210,17 +650,8 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 		ent->groundentity_linkcount = pm.groundentity->linkcount;
 	}
 
-	if (ent->deadflag)
-	{
-		client->ps.viewangles[ROLL] = 40;
-		client->ps.viewangles[PITCH] = -15;
-		client->ps.viewangles[YAW] = client->killer_yaw;
-	}
-	else
-	{
-		VectorCopy(pm.viewangles, client->v_angle);
-		VectorCopy(pm.viewangles, client->ps.viewangles);
-	}
+	VectorCopy(pm.viewangles, client->v_angle);
+	VectorCopy(pm.viewangles, client->ps.viewangles);
 
 	gi.linkentity(ent);
 
@@ -1259,17 +690,7 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 	client->buttons = ucmd->buttons;
 	client->latched_buttons |= client->buttons & ~client->oldbuttons;
 
-	/* save light level the player is
-	   standing on for monster sighting AI */
 	ent->light_level = ucmd->lightlevel;
-
-	if (client->menudirty && (client->menutime <= level.time))
-	{
-		PMenu_Do_Update(ent);
-		gi.unicast(ent, true);
-		client->menutime = level.time;
-		client->menudirty = false;
-	}
 }
 
 /*
@@ -1282,33 +703,6 @@ void ClientBeginServerFrame(edict_t *ent)
 	int buttonMask;
 
 	client = ent->client;
-
-	if (ent->deadflag)
-	{
-		/* wait for any button just going down */
-		if (level.time > client->respawn_time)
-		{
-			/* in deathmatch, only wait for attack button */
-			if (deathmatch->value)
-			{
-				buttonMask = BUTTON_ATTACK;
-			}
-			else
-			{
-				buttonMask = -1;
-			}
-
-			if ((client->latched_buttons & buttonMask) ||
-				(deathmatch->value &&
-				 ((int)dmflags->value & DF_FORCE_RESPAWN)))
-			{
-				respawn(ent);
-				client->latched_buttons = 0;
-			}
-		}
-
-		return;
-	}
 
 	client->latched_buttons = 0;
 }
