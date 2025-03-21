@@ -26,11 +26,6 @@
 
 #include "../header/local.h"
 
-void SP_CreateUnnamedSpawn(edict_t *self)
-{
-	edict_t *spot = G_Spawn();
-}
-
 void SP_info_player_start(edict_t *self)
 {
 	if (!self)
@@ -38,7 +33,7 @@ void SP_info_player_start(edict_t *self)
 		return;
 	}
 
-	self->think = SP_CreateUnnamedSpawn;
+	self->think = NULL;
 	self->nextthink = level.time + FRAMETIME;
 }
 
@@ -700,7 +695,6 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 void ClientBeginServerFrame(edict_t *ent)
 {
 	gclient_t *client;
-	int buttonMask;
 
 	client = ent->client;
 

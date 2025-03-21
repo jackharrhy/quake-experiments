@@ -214,10 +214,7 @@ void G_RunFrame(void)
 			ClientBeginServerFrame(ent);
 			continue;
 		}
-
-		G_RunEntity(ent);
 	}
 
-	/* build the playerstate_t structures for all players */
 	ClientEndServerFrames();
 }

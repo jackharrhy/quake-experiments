@@ -34,15 +34,12 @@ typedef struct
 
 void SP_info_player_start(edict_t *ent);
 
-void SP_trigger_gravity(edict_t *ent);
-
 void SP_worldspawn(edict_t *ent);
 
 void SP_light(edict_t *self);
 
 spawn_t spawns[] = {
 	{"info_player_start", SP_info_player_start},
-	{"trigger_gravity", SP_trigger_gravity},
 	{"worldspawn", SP_worldspawn},
 	{"light", SP_light},
 

@@ -224,11 +224,9 @@ MQ2B_OBJS_ = \
 	g_cmds.o \
 	g_main.o \
 	g_misc.o \
-	g_phys.o \
 	g_save.o \
 	g_spawn.o \
 	g_svcmds.o \
-	g_trigger.o \
 	g_utils.o \
 	player/client.o \
 	player/hud.o \

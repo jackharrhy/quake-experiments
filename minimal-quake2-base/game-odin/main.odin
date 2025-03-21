@@ -2,6 +2,7 @@ package game
 
 import "base:runtime"
 import "core:fmt"
+import "core:mem"
 
 GAME_API_VERSION: i32 = 3
 
@@ -19,13 +20,18 @@ MAX_STATS :: 32
 FRAMETIME :: 0.1
 
 MAX_QPATH :: 64 // max length of a quake game pathname
+MAX_ENT_CLUSTERS :: 16
 
 gi: Game_Import
 globals: Game_Export
 
 g_edicts: [^]Edict
 g_clients: [^]Client
-g_level_locals: Level_Locals
+g_level: Level_Locals
+
+g_maxclients: i32
+g_maxentities: i32
+g_spawnpoint: string
 
 cvar_maxentities: ^Cvar
 cvar_maxclients: ^Cvar
@@ -33,13 +39,8 @@ cvar_maxclients: ^Cvar
 Level_Locals :: struct {
 	framenum:       i32,
 	time:           f32,
-
-	// TODO should we just make these cstrings?
-	// maybe even just convert them to odin strings
-	// on load, especially if they're not updated
-	// after initialization
-	level_name:     [MAX_QPATH]u8,
-	mapname:        [MAX_QPATH]u8,
+	level_name:     string,
+	mapname:        string,
 	current_entity: ^Edict,
 }
 
@@ -77,8 +78,9 @@ Player_State :: struct {
 }
 
 Client :: struct {
-	ps:   Player_State,
-	ping: i32,
+	ps:      Player_State,
+	ping:    i32,
+	v_angle: [3]f32,
 }
 
 Entity_State :: struct {
@@ -99,9 +101,55 @@ Entity_State :: struct {
 	event:       i32,
 }
 
+Link :: struct {
+	prev: ^Link,
+	next: ^Link,
+}
+
+Solid :: enum i32 {
+	NOT     = 0,
+	TRIGGER = 1,
+	BBOX    = 2,
+	BSP     = 3,
+}
+
+Movetype :: enum i32 {
+	NONE   = 0,
+	NOCLIP = 1,
+	WALK   = 2,
+	STEP   = 3,
+	TOSS   = 4,
+}
+
+Angle_Index :: enum {
+	PITCH = 0, /* up / down */
+	YAW   = 1, /* left / right */
+	ROLL  = 2, /* fall over */
+}
+
 Edict :: struct {
-	s:      Entity_State,
-	client: ^Client,
+	s:            Entity_State,
+	client:       ^Client,
+	inuse:        bool,
+	linkcount:    i32,
+	area:         Link,
+	num_clusters: i32,
+	clusternums:  [MAX_ENT_CLUSTERS]i32,
+	headnode:     i32,
+	areanum:      i32,
+	areanum2:     i32,
+	svflags:      i32,
+	mins:         [3]f32,
+	maxs:         [3]f32,
+	absmin:       [3]f32,
+	absmax:       [3]f32,
+	size:         [3]f32,
+	solid:        Solid,
+	clipmask:     i32,
+	owner:        ^Edict,
+	// Don't touch anything above this!
+	// The server expects the fields in this order!
+	movetype:     i32,
 }
 
 Usercmd :: struct {}
@@ -232,9 +280,18 @@ Game_Export :: struct {
 	max_edicts:            i32,
 }
 
-jack_log :: proc(text: string) {
-	c_text := fmt.ctprintf("Jack Log: %s\n", text)
+log :: proc(text: string) {
+	c_text := fmt.ctprintf("%s\n", text)
 	gi.dprintf(c_text)
+}
+
+prefixed_log :: proc(prefix: string, text: string) {
+	c_text := fmt.ctprintf("%s: %s\n", prefix, text)
+	gi.dprintf(c_text)
+}
+
+debug_log :: proc(text: string, args: ..any) {
+	fmt.eprintfln(text, ..args)
 }
 
 @(export)
@@ -246,12 +303,12 @@ GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
 	globals.apiversion = GAME_API_VERSION
 	globals.Init = InitGame
 	globals.Shutdown = ShutdownGame
-	globals.SpawnEntities = SpawnEntities_f
+	globals.SpawnEntities = SpawnEntities
 
-	globals.WriteGame = WriteGame_f
-	globals.ReadGame = ReadGame_f
-	globals.WriteLevel = WriteLevel_f
-	globals.ReadLevel = ReadLevel_f
+	globals.WriteGame = WriteGame
+	globals.ReadGame = ReadGame
+	globals.WriteLevel = WriteLevel
+	globals.ReadLevel = ReadLevel
 
 	globals.ClientThink = ClientThink
 	globals.ClientConnect = ClientConnect
@@ -266,7 +323,7 @@ GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
 
 	globals.edict_size = size_of(Edict)
 
-	jack_log("GetGameAPI")
+	debug_log("GetGameAPI")
 
 	return &globals
 }
@@ -274,63 +331,80 @@ GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
 InitGame :: proc "c" () {
 	context = runtime.default_context()
 
-	jack_log("InitGame")
+	log("Game is starting up.")
 
 	cvar_maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH)
 	cvar_maxclients = gi.cvar("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH)
 
-	maxentities: i32 = auto_cast cvar_maxentities.value
-	jack_log(fmt.tprintf("maxentities: %d", maxentities))
-
-	g_edicts = auto_cast gi.TagMalloc(maxentities * size_of(Edict), TAG_GAME)
+	g_maxentities = auto_cast cvar_maxentities.value
+	g_edicts = auto_cast gi.TagMalloc(g_maxentities * size_of(Edict), TAG_GAME)
 	globals.edicts = g_edicts
-	globals.max_edicts = maxentities
+	globals.max_edicts = g_maxentities
 
-	maxclients: i32 = auto_cast cvar_maxclients.value
-	jack_log(fmt.tprintf("maxclients: %d", maxclients))
+	g_maxclients = auto_cast cvar_maxclients.value
+	g_clients = auto_cast gi.TagMalloc(g_maxclients * size_of(Client), TAG_GAME)
 
-	g_clients = auto_cast gi.TagMalloc(maxclients * size_of(Client), TAG_GAME)
-
-	globals.num_edicts = maxclients + 1
+	globals.num_edicts = g_maxclients + 1
 }
 
 ShutdownGame :: proc "c" () {
 	context = runtime.default_context()
 
-	jack_log("ShutdownGame")
+	debug_log("ShutdownGame")
 
 	gi.FreeTags(TAG_GAME)
 	gi.FreeTags(TAG_LEVEL)
 }
 
-SpawnEntities_f :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
+SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
 
-	jack_log("SpawnEntities_f")
+	debug_log(
+		"SpawnEntities: mapname: %s, entities: %s, spawnpoint: %s",
+		mapname,
+		entities,
+		spawnpoint,
+	)
+
+	gi.FreeTags(TAG_LEVEL)
+
+	mem.zero_slice(g_edicts[:globals.max_edicts])
+
+	g_level = {
+		mapname = string(mapname),
+	}
+
+	g_spawnpoint = string(spawnpoint)
+
+	for i in 0 ..< g_maxclients {
+		g_edicts[i + 1].client = &g_clients[i]
+	}
+
+	debug_log("SpawnEntities")
 }
 
-WriteGame_f :: proc "c" (filename: cstring, autosave: bool) {
+WriteGame :: proc "c" (filename: cstring, autosave: bool) {
 	context = runtime.default_context()
 
-	jack_log("WriteGame_f")
+	debug_log("WriteGame")
 }
 
-ReadGame_f :: proc "c" (filename: cstring) {
+ReadGame :: proc "c" (filename: cstring) {
 	context = runtime.default_context()
 
-	jack_log("ReadGame_f")
+	debug_log("ReadGame")
 }
 
-WriteLevel_f :: proc "c" (filename: cstring) {
+WriteLevel :: proc "c" (filename: cstring) {
 	context = runtime.default_context()
 
-	jack_log("WriteLevel_f")
+	debug_log("WriteLevel")
 }
 
-ReadLevel_f :: proc "c" (filename: cstring) {
+ReadLevel :: proc "c" (filename: cstring) {
 	context = runtime.default_context()
 
-	jack_log("ReadLevel_f")
+	debug_log("ReadLevel")
 }
 
 ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
@@ -340,28 +414,38 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	context = runtime.default_context()
 
+	// TODO parse user info into something useful
+	// like, getting their ip, seeing if the password
+	// they have provided is correct, etc.
+
+	debug_log(fmt.tprintf("ClientConnect: ent: %p, userinfo: %s", ent, userinfo))
+
 	if ent == nil || userinfo == nil {
 		return false
 	}
 
-	// TODO this needs to be dynamic, for now
-	// we hard code one client
-	ent.client = &g_clients[0]
+	ent_index := uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0]))
+	client_index := ent_index / size_of(Edict) - 1
 
-	jack_log("ClientConnect")
+	debug_log(
+		fmt.tprintf("ClientConnect: ent_index: %d, client_index: %d", ent_index, client_index),
+	)
+
+	ent.client = &g_clients[client_index]
+
 	return true
 }
 
 ClientUserinfoChanged :: proc "c" (ent: ^Edict, userinfo: cstring) {
 	context = runtime.default_context()
 
-	jack_log("ClientUserinfoChanged")
+	debug_log("ClientUserinfoChanged")
 }
 
 ClientDisconnect :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 
-	jack_log("ClientDisconnect")
+	debug_log("ClientDisconnect")
 }
 
 ClientBegin :: proc "c" (ent: ^Edict) {
@@ -370,17 +454,35 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 	ent.client.ps.pmove.origin = [3]i16{0, 10, 0}
 	ent.client.ps.fov = 90
 
-	jack_log("ClientBegin")
+	debug_log("ClientBegin")
 }
 
 ClientCommand :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 
-	jack_log("ClientCommand")
+	debug_log("ClientCommand")
 }
 
 G_RunFrame :: proc "c" () {
 	context = runtime.default_context()
+
+	g_level.framenum += 1
+	g_level.time = f32(g_level.framenum) * FRAMETIME
+
+	for i: i32 = 0; i < globals.num_edicts; i += 1 {
+		ent := &g_edicts[i]
+
+		g_level.current_entity = ent
+
+		ent.s.old_origin = ent.s.origin
+
+		if i > 0 && i <= i32(cvar_maxclients.value) {
+			ClientBeginServerFrame(ent)
+			continue
+		}
+	}
+
+	ClientEndServerFrames()
 
 	free_all(context.temp_allocator)
 }
@@ -388,5 +490,27 @@ G_RunFrame :: proc "c" () {
 ServerCommand :: proc "c" () {
 	context = runtime.default_context()
 
-	jack_log("ServerCommand")
+	debug_log("ServerCommand")
+}
+
+ClientBeginServerFrame :: proc "c" (ent: ^Edict) {
+	context = runtime.default_context()
+}
+
+ClientEndServerFrames :: proc "c" () {
+	context = runtime.default_context()
+
+	for i: i32 = 0; i < globals.num_edicts; i += 1 {
+		ent := &g_edicts[i]
+
+		if ent.client == nil {
+			continue
+		}
+
+		if ent.client.v_angle[Angle_Index.PITCH] > 180 {
+			ent.s.angles[Angle_Index.PITCH] = (-360 + ent.client.v_angle[Angle_Index.PITCH]) / 3
+		} else {
+			ent.s.angles[Angle_Index.PITCH] = ent.client.v_angle[Angle_Index.PITCH] / 3
+		}
+	}
 }

@@ -133,10 +133,9 @@ typedef enum
 {
 	MOVETYPE_NONE,	 /* never moves */
 	MOVETYPE_NOCLIP, /* origin and angles change with no interaction */
-
-	MOVETYPE_WALK, /* gravity */
-	MOVETYPE_STEP, /* gravity, special edge handling */
-	MOVETYPE_TOSS, /* gravity */
+	MOVETYPE_WALK,	 /* gravity */
+	MOVETYPE_STEP,	 /* gravity, special edge handling */
+	MOVETYPE_TOSS,	 /* gravity */
 } movetype_t;
 
 /* this structure is left intact through an entire game
@@ -452,9 +451,6 @@ void P_ProjectSource(edict_t *ent, vec3_t distance,
 qboolean M_CheckBottom(edict_t *ent);
 qboolean M_walkmove(edict_t *ent, float yaw, float dist);
 void M_ChangeYaw(edict_t *ent);
-
-/* g_phys.c */
-void G_RunEntity(edict_t *ent);
 
 /* client_t->anim_priority */
 #define ANIM_BASIC 0 /* stand / run */
