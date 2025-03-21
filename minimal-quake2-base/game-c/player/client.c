@@ -341,7 +341,6 @@ void player_die(edict_t *self, edict_t *inflictor, edict_t *attacker,
 	self->s.angles[2] = 0;
 
 	self->s.sound = 0;
-	self->client->weapon_sound = 0;
 
 	self->maxs[2] = -8;
 
@@ -1173,7 +1172,15 @@ void ClientThink(edict_t *ent, usercmd_t *ucmd)
 		client->ps.pmove.pm_type = PM_NORMAL;
 	}
 
-	client->ps.pmove.gravity = sv_gravity->value;
+	if (ent->client_local_gravity != 0)
+	{
+		client->ps.pmove.gravity = ent->client_local_gravity;
+	}
+	else
+	{
+		client->ps.pmove.gravity = sv_gravity->value;
+	}
+
 	pm.s = client->ps.pmove;
 
 	for (i = 0; i < 3; i++)
@@ -1304,9 +1311,6 @@ void ClientBeginServerFrame(edict_t *ent)
 	int buttonMask;
 
 	client = ent->client;
-
-	/* No weapon handling in minimal version */
-	client->weapon_thunk = false;
 
 	if (ent->deadflag)
 	{

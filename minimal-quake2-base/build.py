@@ -257,6 +257,7 @@ def main():
 
     subparsers.add_parser("clone", help="Clone repositories")
     subparsers.add_parser("build", help="Build targets")
+    subparsers.add_parser("build-game", help="Build game")
     subparsers.add_parser("build-maps", help="Build maps")
     subparsers.add_parser("all", help="Do everything")
 
@@ -288,6 +289,8 @@ def main():
         clone()
     elif args.command == "build":
         build()
+    elif args.command == "build-game":
+        build_game()
     elif args.command == "build-maps":
         build_maps()
     elif args.command == "all":

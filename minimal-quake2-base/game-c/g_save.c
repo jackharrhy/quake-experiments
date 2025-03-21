@@ -72,6 +72,7 @@ field_t fields[] = {
 	{"pausetime", STOFS(pausetime), F_FLOAT, FFL_SPAWNTEMP},
 	{"item", STOFS(item), F_LSTRING, FFL_SPAWNTEMP},
 	{"gravity", STOFS(gravity), F_LSTRING, FFL_SPAWNTEMP},
+	{"client_local_gravity", STOFS(client_local_gravity), F_LSTRING, FFL_SPAWNTEMP},
 	{"sky", STOFS(sky), F_LSTRING, FFL_SPAWNTEMP},
 	{"skyrotate", STOFS(skyrotate), F_FLOAT, FFL_SPAWNTEMP},
 	{"skyaxis", STOFS(skyaxis), F_VECTOR, FFL_SPAWNTEMP},

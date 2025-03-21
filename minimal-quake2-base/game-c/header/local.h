@@ -216,6 +216,7 @@ typedef struct
 	float pausetime;
 	char *item;
 	char *gravity;
+	char *client_local_gravity;
 
 	float minyaw;
 	float maxyaw;
@@ -561,8 +562,6 @@ struct gclient_s
 	int oldbuttons;
 	int latched_buttons;
 
-	qboolean weapon_thunk;
-
 	/* sum up damage over an entire frame, so
 	   shotgun blasts give a single big kick */
 	int damage_armor;	  /* damage absorbed by armor */
@@ -589,8 +588,6 @@ struct gclient_s
 	int old_waterlevel;
 	int breather_sound;
 
-	int machinegun_shots; /* for weapon raising */
-
 	/* animation vars */
 	int anim_end;
 	int anim_priority;
@@ -601,11 +598,6 @@ struct gclient_s
 	float invincible_framenum;
 	float breather_framenum;
 	float enviro_framenum;
-
-	qboolean grenade_blew_up;
-	float grenade_time;
-	int silencer_shots;
-	int weapon_sound;
 
 	float pickup_msg_time;
 
@@ -681,8 +673,8 @@ struct edict_s
 	vec3_t avelocity;
 	int mass;
 	float air_finished;
-	float gravity; /* per entity gravity multiplier (1.0 is normal)
-					  use for lowgrav artifact, flares */
+	float gravity;
+	float client_local_gravity;
 
 	edict_t *goalentity;
 	edict_t *movetarget;
