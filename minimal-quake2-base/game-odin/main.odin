@@ -10,11 +10,14 @@ import "core:unicode"
 
 GAME_API_VERSION: i32 = 3
 
-CVAR_ARCHIVE: i32 = 1 // Set to cause it to be saved to vars.rc.
-CVAR_USERINFO: i32 = 2 // Added to userinfo when changed.
-CVAR_SERVERINFO: i32 = 4 // Added to serverinfo when changed.
-CVAR_NOSET: i32 = 8 // Don't allow change from console at all, but can be set from the command line.
-CVAR_LATCH: i32 = 16 // Save changes until server restart.
+Cvar_Flag :: enum i32 {
+	ARCHIVE    = 1, // set to cause it to be saved to vars.rc
+	USERINFO   = 2, // added to userinfo  when changed
+	SERVERINFO = 4, // added to serverinfo when changed
+	NOSET      = 8, // don't allow change from console at all, but can be set from the command line
+	LATCH      = 16, // save changes until server restart
+}
+
 
 TAG_GAME :: 765 // Clear when unloading the dll.
 TAG_LEVEL :: 766 // Clear when loading a new level.
@@ -30,6 +33,12 @@ MAX_INFO_KEY :: 64
 MAX_INFO_VALUE :: 64
 MAX_INFO_STRING :: 512
 
+FALL_TIME :: 0.3
+
+PITCH :: 0 // up / down
+YAW :: 1 // left / right
+ROLL :: 2 // fall over
+
 gi: Game_Import
 globals: Game_Export
 
@@ -43,6 +52,14 @@ g_spawnpoint: string
 
 cvar_maxentities: ^Cvar
 cvar_maxclients: ^Cvar
+
+cvar_sv_rollspeed: ^Cvar
+cvar_sv_rollangle: ^Cvar
+cvar_run_pitch: ^Cvar
+cvar_run_roll: ^Cvar
+cvar_bob_up: ^Cvar
+cvar_bob_pitch: ^Cvar
+cvar_bob_roll: ^Cvar
 
 // Destination class for gi.multicast()
 Multicast :: enum i32 {
@@ -109,6 +126,28 @@ Muzzle_Flash :: enum i32 {
 	NUKE8            = 39,
 }
 
+PMF :: enum i32 {
+	DUCKED         = 1,
+	JUMP_HELD      = 2,
+	ON_GROUND      = 4,
+	TIME_WATERJUMP = 8, // pm_time is waterjump
+	TIME_LAND      = 16, // pm_time is time before rejump
+	TIME_TELEPORT  = 32, // pm_time is non-moving time
+	NO_PREDICTION  = 64, // temporarily disables prediction (used for grappling hook)
+}
+
+// Entity events for effects that take place relative to an existing entity's origin
+Entity_Event :: enum i32 {
+	NONE            = 0,
+	ITEM_RESPAWN    = 1,
+	FOOTSTEP        = 2,
+	FALLSHORT       = 3,
+	FALL            = 4,
+	FALLFAR         = 5,
+	PLAYER_TELEPORT = 6,
+	OTHER_TELEPORT  = 7,
+}
+
 
 Level_Locals :: struct {
 	framenum:       i32,
@@ -158,12 +197,19 @@ Client_Persistant :: struct {
 }
 
 Client :: struct {
-	ps:      Player_State,
-	ping:    i32,
+	ps:            Player_State,
+	ping:          i32,
 	// --
-	pers:    Client_Persistant,
+	pers:          Client_Persistant,
 	// --
-	v_angle: [3]f32,
+	kick_angles:   [3]f32,
+	kick_origin:   [3]f32,
+	v_angle:       [3]f32,
+	fall_time:     f32,
+	fall_value:    f32,
+	bobtime:       f32,
+	oldvelocity:   [3]f32,
+	oldviewangles: [3]f32,
 }
 
 Entity_State :: struct {
@@ -234,8 +280,10 @@ Edict :: struct {
 	// The server expects the fields in this order!
 	classname:    string,
 	gravity:      f32,
-	velocity:     [3]f32,
 	model:        string,
+	velocity:     [3]f32,
+	viewheight:   i32,
+	groundentity: ^Edict,
 }
 
 Usercmd :: struct {}
@@ -416,8 +464,16 @@ InitGame :: proc "c" () {
 
 	log("Game is starting up.")
 
-	cvar_maxentities = gi.cvar("maxentities", "1024", CVAR_LATCH)
-	cvar_maxclients = gi.cvar("maxclients", "4", CVAR_SERVERINFO | CVAR_LATCH)
+	cvar_maxentities = gi.cvar("maxentities", "1024", i32(Cvar_Flag.LATCH))
+	cvar_maxclients = gi.cvar("maxclients", "4", i32(Cvar_Flag.SERVERINFO | Cvar_Flag.LATCH))
+
+	cvar_sv_rollspeed = gi.cvar("sv_rollspeed", "2", 0)
+	cvar_sv_rollangle = gi.cvar("sv_rollangle", "2", 0)
+	cvar_run_pitch = gi.cvar("run_pitch", "0.002", 0)
+	cvar_run_roll = gi.cvar("run_roll", "0.005", 0)
+	cvar_bob_up = gi.cvar("bob_up", "0.005", 0)
+	cvar_bob_pitch = gi.cvar("bob_pitch", "0.002", 0)
+	cvar_bob_roll = gi.cvar("bob_roll", "0.002", 0)
 
 	g_maxentities = auto_cast cvar_maxentities.value
 	g_edicts = auto_cast gi.TagMalloc(g_maxentities * size_of(Edict), TAG_GAME)
