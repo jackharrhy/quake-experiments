@@ -234,6 +234,7 @@ Edict :: struct {
 	// The server expects the fields in this order!
 	classname:    string,
 	gravity:      f32,
+	velocity:     [3]f32,
 	model:        string,
 }
 
@@ -528,10 +529,12 @@ Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
 
 		switch key {
 		case "classname":
-			debug_log(fmt.tprintf("Parse_Entity: classname: %s", value))
-			entity.classname = value
+			// TODO this has to be a clone so it lives longer than this scope
+			// but, it should get cleaned up when we clean up the edict, so for
+			// now, lets clone it here and worry about freeing it later
+			entity.classname = strings.clone(value)
 		case "model":
-			entity.model = value
+			entity.model = strings.clone(value)
 		case "origin":
 			parts := strings.split(value, " ")
 			if len(parts) >= 3 {
