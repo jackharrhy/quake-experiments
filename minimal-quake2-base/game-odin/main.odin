@@ -26,6 +26,10 @@ FRAMETIME :: 0.1 // Time between server frames in seconds.
 MAX_QPATH :: 64 // Max length of a quake game pathname.
 MAX_ENT_CLUSTERS :: 16
 
+MAX_INFO_KEY :: 64
+MAX_INFO_VALUE :: 64
+MAX_INFO_STRING :: 512
+
 gi: Game_Import
 globals: Game_Export
 
@@ -147,9 +151,18 @@ Player_State :: struct {
 	stats:       [MAX_STATS]i16,
 }
 
+Client_Persistant :: struct {
+	userinfo:  [MAX_INFO_STRING]u8,
+	netname:   [16]u8,
+	connected: bool,
+}
+
 Client :: struct {
 	ps:      Player_State,
 	ping:    i32,
+	// --
+	pers:    Client_Persistant,
+	// --
 	v_angle: [3]f32,
 }
 
@@ -413,6 +426,7 @@ InitGame :: proc "c" () {
 	globals.max_edicts = g_maxentities
 
 	g_maxclients = auto_cast cvar_maxclients.value
+	debug_log(fmt.tprintf("InitGame: g_maxclients: %d", g_maxclients))
 	g_clients = auto_cast gi.TagMalloc(g_maxclients * size_of(Client), TAG_GAME)
 
 	globals.num_edicts = g_maxclients + 1
@@ -514,6 +528,7 @@ Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
 
 		switch key {
 		case "classname":
+			debug_log(fmt.tprintf("Parse_Entity: classname: %s", value))
 			entity.classname = value
 		case "model":
 			entity.model = value
@@ -549,6 +564,14 @@ FindEntityByClassName :: proc(match: string) -> ^Edict {
 		if ent.classname == "" {
 			continue
 		}
+
+		debug_log(
+			fmt.tprintf(
+				"FindEntityByClassName: ent.classname: %s, match: %s",
+				ent.classname,
+				match,
+			),
+		)
 
 		if strings.equal_fold(ent.classname, match) {
 			return ent
@@ -623,7 +646,8 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 //
 // Quake II did this by some pointer arithmetic, ew!, so we're doing it the same way.
 ent_index_from_edict :: proc "c" (ent: ^Edict) -> int {
-	return int(uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0])) / size_of(Edict))
+	offset := uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0]))
+	return int(offset / size_of(Edict))
 }
 
 ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
@@ -642,7 +666,18 @@ ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	client_index := ent_index_from_edict(ent) - 1
 	ent.client = &g_clients[client_index]
 
+	if (ent.inuse == false) {
+		debug_log("Putting client into a new entity")
+		InitClientPersistant(ent.client)
+	} else {
+		debug_log("Putting client into an existing entity")
+	}
+
 	return true
+}
+
+InitClientPersistant :: proc(client: ^Client) {
+	debug_log("InitClientPersistant")
 }
 
 ClientUserinfoChanged :: proc "c" (ent: ^Edict, userinfo: cstring) {
@@ -657,45 +692,38 @@ ClientDisconnect :: proc "c" (ent: ^Edict) {
 	debug_log("ClientDisconnect")
 }
 
+PutClientInServer :: proc(ent: ^Edict) {
+	spawn_point := FindEntityByClassName("info_player_start")
+
+	if spawn_point == nil {
+		gi.error("PutClientInServer: no spawn point found")
+	}
+
+	ent.s.origin = spawn_point.s.origin
+	ent.s.angles = spawn_point.s.angles
+}
+
 ClientBegin :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 
-	// In ClientConnect, we're setting the entities client
-	// but for some reason in the Quake II code, they do it again
-	// here, I'm going to see if we can just not do that and if
-	// it breaks anything.
+	InitEdict(ent)
 
-	client_index := ent_index_from_edict(ent) - 1
-	ent.client = &g_clients[client_index]
+	ent.classname = "player"
+	ent.client.ps.fov = 90 // TODO get from userinfo
 
-	if (ent.inuse) {
-		// This would be from a loadgame, not sure if i should handle this yet.
-		gi.error("ClientBegin: ent is in use, oh no!")
-	} else {
-		InitEdict(ent)
-		ent.classname = "player"
-		LoginEffect(ent)
-	}
+	PutClientInServer(ent)
 
-	ent.client.ps.pmove.origin = [3]i16{0, 10, 0}
-	ent.client.ps.fov = 90
+	/*
+	gi.WriteByte(i32(Svc.MUZZLEFLASH))
+	gi.WriteShort(i32(ent_index_from_edict(ent)))
+	gi.WriteByte(i32(Muzzle_Flash.LOGIN))
+	gi.multicast(ent.s.origin, .PVS)
+	*/
+
+	message := "A player has joined the game"
+	gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s\n", message))
 
 	ClientEndServerFrame(ent)
-}
-
-// LoginEffect sends a visual effect when a player connects to the server,
-// if we don't have more than one client, it doesn't send anything.
-LoginEffect :: proc(ent: ^Edict) {
-	if g_maxclients > 1 {
-		gi.WriteByte(i32(Svc.MUZZLEFLASH))
-		gi.WriteShort(i32(ent_index_from_edict(ent)))
-		gi.WriteByte(i32(Muzzle_Flash.LOGIN))
-		gi.multicast(ent.s.origin, .PVS)
-
-		// name := ent.client.pers.netname if ent.client != nil else "unknown"
-		message := "A player has joined the game"
-		gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s", message))
-	}
 }
 
 ClientCommand :: proc "c" (ent: ^Edict) {
@@ -744,20 +772,10 @@ ClientEndServerFrames :: proc "c" () {
 	for i: i32 = 0; i < globals.num_edicts; i += 1 {
 		ent := &g_edicts[i]
 
-		if ent.client == nil {
+		if ent.client == nil || ent.inuse == false {
 			continue
 		}
 
-		if ent.client.v_angle[Angle_Index.PITCH] > 180 {
-			ent.s.angles[Angle_Index.PITCH] = (-360 + ent.client.v_angle[Angle_Index.PITCH]) / 3
-		} else {
-			ent.s.angles[Angle_Index.PITCH] = ent.client.v_angle[Angle_Index.PITCH] / 3
-		}
+		ClientEndServerFrame(ent)
 	}
-}
-
-ClientEndServerFrame :: proc "c" (ent: ^Edict) {
-	context = runtime.default_context()
-
-	debug_log("ClientEndServerFrame")
 }

@@ -52,7 +52,7 @@ def clone():
 
 def build_yquake2():
     print("Building yquake2")
-    subprocess.run(["make"], check=True, cwd=yquake2_dir)
+    subprocess.run(["make", "DEBUG=1"], check=True, cwd=yquake2_dir)
 
 
 def build_yquake2_ref_vk():
