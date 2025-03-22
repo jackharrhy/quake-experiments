@@ -10,20 +10,20 @@ import "core:unicode"
 
 GAME_API_VERSION: i32 = 3
 
-CVAR_ARCHIVE: i32 = 1 // set to cause it to be saved to vars.rc
-CVAR_USERINFO: i32 = 2 // added to userinfo when changed
-CVAR_SERVERINFO: i32 = 4 // added to serverinfo when changed
-CVAR_NOSET: i32 = 8 // don't allow change from console at all, but can be set from the command line
-CVAR_LATCH: i32 = 16 // save changes until server restart
+CVAR_ARCHIVE: i32 = 1 // Set to cause it to be saved to vars.rc.
+CVAR_USERINFO: i32 = 2 // Added to userinfo when changed.
+CVAR_SERVERINFO: i32 = 4 // Added to serverinfo when changed.
+CVAR_NOSET: i32 = 8 // Don't allow change from console at all, but can be set from the command line.
+CVAR_LATCH: i32 = 16 // Save changes until server restart.
 
-TAG_GAME :: 765 // clear when unloading the dll
-TAG_LEVEL :: 766 // clear when loading a new level
+TAG_GAME :: 765 // Clear when unloading the dll.
+TAG_LEVEL :: 766 // Clear when loading a new level.
 
 MAX_STATS :: 32
 
-FRAMETIME :: 0.1
+FRAMETIME :: 0.1 // Time between server frames in seconds.
 
-MAX_QPATH :: 64 // max length of a quake game pathname
+MAX_QPATH :: 64 // Max length of a quake game pathname.
 MAX_ENT_CLUSTERS :: 16
 
 gi: Game_Import
@@ -39,6 +39,72 @@ g_spawnpoint: string
 
 cvar_maxentities: ^Cvar
 cvar_maxclients: ^Cvar
+
+// Destination class for gi.multicast()
+Multicast :: enum i32 {
+	ALL,
+	PHS,
+	PVS,
+	ALL_R,
+	PHS_R,
+	PVS_R,
+}
+
+// Protocol bytes that can be directly added to messages.
+//
+// NOTE: this was in local.h, so maybe we have to handle it here,
+// rather than just assuming the engine code will handle it.
+Svc :: enum i32 {
+	MUZZLEFLASH  = 1,
+	MUZZLEFLASH2 = 2,
+	TEMP_ENTITY  = 3,
+	LAYOUT       = 4,
+	INVENTORY    = 5,
+}
+
+// Game print flags
+Print :: enum i32 {
+	LOW    = 0, // pickup messages
+	MEDIUM = 1, // death messages
+	HIGH   = 2, // critical messages
+	CHAT   = 3, // chat messages
+}
+
+
+// Muzzle flashes / player effects.
+Muzzle_Flash :: enum i32 {
+	BLASTER          = 0,
+	MACHINEGUN       = 1,
+	SHOTGUN          = 2,
+	CHAINGUN1        = 3,
+	CHAINGUN2        = 4,
+	CHAINGUN3        = 5,
+	RAILGUN          = 6,
+	ROCKET           = 7,
+	GRENADE          = 8,
+	LOGIN            = 9,
+	LOGOUT           = 10,
+	RESPAWN          = 11,
+	BFG              = 12,
+	SSHOTGUN         = 13,
+	HYPERBLASTER     = 14,
+	ITEMRESPAWN      = 15,
+	IONRIPPER        = 16,
+	BLUEHYPERBLASTER = 17,
+	PHALANX          = 18,
+	SILENCED         = 128, // bit flag ORed with one of the above numbers
+	ETF_RIFLE        = 30,
+	UNUSED           = 31,
+	SHOTGUN2         = 32,
+	HEATBEAM         = 33,
+	BLASTER2         = 34,
+	TRACKER          = 35,
+	NUKE1            = 36,
+	NUKE2            = 37,
+	NUKE4            = 38,
+	NUKE8            = 39,
+}
+
 
 Level_Locals :: struct {
 	framenum:       i32,
@@ -186,7 +252,6 @@ Csurface :: struct {
 }
 
 Pmove :: struct {}
-Multicast :: enum i32 {}
 Cvar :: struct {
 	name:           cstring,
 	string:         cstring,
@@ -468,6 +533,31 @@ Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
 	}
 }
 
+// Finds an entity by its classname.
+//
+// Returns nil if no entity is found.
+FindEntityByClassName :: proc(match: string) -> ^Edict {
+	start_index: i32 = 0
+
+	for i: i32 = 0; i < globals.num_edicts; i += 1 {
+		ent := &g_edicts[i]
+
+		if !ent.inuse {
+			continue
+		}
+
+		if ent.classname == "" {
+			continue
+		}
+
+		if strings.equal_fold(ent.classname, match) {
+			return ent
+		}
+	}
+
+	return nil
+}
+
 SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
 
@@ -529,6 +619,13 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	context = runtime.default_context()
 }
 
+// Takes in an edict reference and returns the index of the edict in the g_edicts array.
+//
+// Quake II did this by some pointer arithmetic, ew!, so we're doing it the same way.
+ent_index_from_edict :: proc "c" (ent: ^Edict) -> int {
+	return int(uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0])) / size_of(Edict))
+}
+
 ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	context = runtime.default_context()
 
@@ -542,13 +639,7 @@ ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 		return false
 	}
 
-	ent_index := uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0]))
-	client_index := ent_index / size_of(Edict) - 1
-
-	debug_log(
-		fmt.tprintf("ClientConnect: ent_index: %d, client_index: %d", ent_index, client_index),
-	)
-
+	client_index := ent_index_from_edict(ent) - 1
 	ent.client = &g_clients[client_index]
 
 	return true
@@ -569,10 +660,42 @@ ClientDisconnect :: proc "c" (ent: ^Edict) {
 ClientBegin :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 
+	// In ClientConnect, we're setting the entities client
+	// but for some reason in the Quake II code, they do it again
+	// here, I'm going to see if we can just not do that and if
+	// it breaks anything.
+
+	client_index := ent_index_from_edict(ent) - 1
+	ent.client = &g_clients[client_index]
+
+	if (ent.inuse) {
+		// This would be from a loadgame, not sure if i should handle this yet.
+		gi.error("ClientBegin: ent is in use, oh no!")
+	} else {
+		InitEdict(ent)
+		ent.classname = "player"
+		LoginEffect(ent)
+	}
+
 	ent.client.ps.pmove.origin = [3]i16{0, 10, 0}
 	ent.client.ps.fov = 90
 
-	debug_log("ClientBegin")
+	ClientEndServerFrame(ent)
+}
+
+// LoginEffect sends a visual effect when a player connects to the server,
+// if we don't have more than one client, it doesn't send anything.
+LoginEffect :: proc(ent: ^Edict) {
+	if g_maxclients > 1 {
+		gi.WriteByte(i32(Svc.MUZZLEFLASH))
+		gi.WriteShort(i32(ent_index_from_edict(ent)))
+		gi.WriteByte(i32(Muzzle_Flash.LOGIN))
+		gi.multicast(ent.s.origin, .PVS)
+
+		// name := ent.client.pers.netname if ent.client != nil else "unknown"
+		message := "A player has joined the game"
+		gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s", message))
+	}
 }
 
 ClientCommand :: proc "c" (ent: ^Edict) {
@@ -631,4 +754,10 @@ ClientEndServerFrames :: proc "c" () {
 			ent.s.angles[Angle_Index.PITCH] = ent.client.v_angle[Angle_Index.PITCH] / 3
 		}
 	}
+}
+
+ClientEndServerFrame :: proc "c" (ent: ^Edict) {
+	context = runtime.default_context()
+
+	debug_log("ClientEndServerFrame")
 }

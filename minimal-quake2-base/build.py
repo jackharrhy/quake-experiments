@@ -64,7 +64,7 @@ def build_game_odin():
     print("Building game-odin")
     (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
     cmd = shlex.split(
-        "odin build ./game-odin -build-mode:dll -out:./release/baseq2/game.dylib"
+        "odin build ./game-odin -debug -build-mode:dll -out:./release/baseq2/game.dylib"
     )
     subprocess.run(cmd, check=True)
 
