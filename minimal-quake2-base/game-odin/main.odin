@@ -744,6 +744,16 @@ PutClientInServer :: proc(ent: ^Edict) {
 		gi.error("PutClientInServer: no spawn point found")
 	}
 
+	ent.client.ps = {}
+
+	ent.client.ps.fov = 90 // TODO get from userinfo
+
+	ent.client.ps.pmove.origin[0] = i16(spawn_point.s.origin[0] * 8)
+	ent.client.ps.pmove.origin[1] = i16(spawn_point.s.origin[1] * 8)
+	ent.client.ps.pmove.origin[2] = i16(spawn_point.s.origin[2] * 8)
+
+	ent.client.ps.pmove.pm_flags &= ~u8(PMF.NO_PREDICTION)
+
 	ent.s.origin = spawn_point.s.origin
 	ent.s.angles = spawn_point.s.angles
 }
@@ -754,7 +764,6 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 	InitEdict(ent)
 
 	ent.classname = "player"
-	ent.client.ps.fov = 90 // TODO get from userinfo
 
 	PutClientInServer(ent)
 
