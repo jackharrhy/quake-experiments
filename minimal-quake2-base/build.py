@@ -182,14 +182,13 @@ def copy_files():
     paths = [
         "pics/colormap.pcx",
         "pics/conchars.pcx",
-        "pics/conback.pcx",
         "pics/ch1.pcx",
-        "pics/pause.pcx",
         "pics/m_main_*.pcx",
         "pics/quit.pcx",
         "pics/num_*.pcx",
         "pics/anum_*.pcx",
         "pics/m_cursor*.pcx",
+        "pics/m_banner_*.pcx",
     ]
 
     for path in paths:

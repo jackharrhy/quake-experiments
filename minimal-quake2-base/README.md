@@ -1,6 +1,7 @@
 # quake experiments - minimal-quake2-base
 
 state:
+
 - still pulling in files from pak0 as needed, not yet overwritten with alternatives
 - no sounds
 
@@ -36,3 +37,14 @@ why ctf over the base game? honestly i don't know, in my brain ctf was maybe som
 and felt like a better choice than the expansions for something that would be played multiplayer
 
 but none of the above is based on facts, only vibes
+
+---
+
+While this minimal base isn't supposed to contain much graphics / vibes, I still want some level of art direction for _some_ vibes.
+
+Color scheme: https://lospec.com/palette-list/endesga-32
+
+- backdrop: #181425
+- menu backdrop: #3a4466
+
+Font: https://fonts.google.com/specimen/DynaPuff
