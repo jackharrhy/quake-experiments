@@ -408,8 +408,6 @@ GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
 
 	globals.edict_size = size_of(Edict)
 
-	debug_log("GetGameAPI")
-
 	return &globals
 }
 
@@ -427,7 +425,6 @@ InitGame :: proc "c" () {
 	globals.max_edicts = g_maxentities
 
 	g_maxclients = auto_cast cvar_maxclients.value
-	debug_log(fmt.tprintf("InitGame: g_maxclients: %d", g_maxclients))
 	g_clients = auto_cast gi.TagMalloc(g_maxclients * size_of(Client), TAG_GAME)
 
 	globals.num_edicts = g_maxclients + 1
@@ -435,8 +432,6 @@ InitGame :: proc "c" () {
 
 ShutdownGame :: proc "c" () {
 	context = runtime.default_context()
-
-	debug_log("ShutdownGame")
 
 	gi.FreeTags(TAG_GAME)
 	gi.FreeTags(TAG_LEVEL)
@@ -568,14 +563,6 @@ FindEntityByClassName :: proc(match: string) -> ^Edict {
 			continue
 		}
 
-		debug_log(
-			fmt.tprintf(
-				"FindEntityByClassName: ent.classname: %s, match: %s",
-				ent.classname,
-				match,
-			),
-		)
-
 		if strings.equal_fold(ent.classname, match) {
 			return ent
 		}
@@ -660,8 +647,6 @@ ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	// like, getting their ip, seeing if the password
 	// they have provided is correct, etc.
 
-	debug_log(fmt.tprintf("ClientConnect: ent: %p, userinfo: %s", ent, userinfo))
-
 	if ent == nil || userinfo == nil {
 		return false
 	}
@@ -670,10 +655,11 @@ ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	ent.client = &g_clients[client_index]
 
 	if (ent.inuse == false) {
-		debug_log("Putting client into a new entity")
 		InitClientPersistant(ent.client)
 	} else {
-		debug_log("Putting client into an existing entity")
+		debug_log(
+			"Putting client into an existing entity, I haven't handled this, not sure if I have to!",
+		)
 	}
 
 	return true
