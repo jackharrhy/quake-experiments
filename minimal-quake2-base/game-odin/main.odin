@@ -3,6 +3,10 @@ package game
 import "base:runtime"
 import "core:fmt"
 import "core:mem"
+import "core:os/os2"
+import "core:strconv"
+import "core:strings"
+import "core:unicode"
 
 GAME_API_VERSION: i32 = 3
 
@@ -149,7 +153,9 @@ Edict :: struct {
 	owner:        ^Edict,
 	// Don't touch anything above this!
 	// The server expects the fields in this order!
-	movetype:     i32,
+	classname:    string,
+	gravity:      f32,
+	model:        string,
 }
 
 Usercmd :: struct {}
@@ -291,7 +297,7 @@ prefixed_log :: proc(prefix: string, text: string) {
 }
 
 debug_log :: proc(text: string, args: ..any) {
-	fmt.eprintfln(text, ..args)
+	fmt.printfln("\x1b[33m%s\x1b[0m", fmt.tprintf(text, ..args))
 }
 
 @(export)
@@ -356,15 +362,114 @@ ShutdownGame :: proc "c" () {
 	gi.FreeTags(TAG_LEVEL)
 }
 
+InitEdict :: proc(e: ^Edict) {
+	e.inuse = true
+	e.classname = "noclass"
+	e.gravity = 1.0
+	e.s.number = i32(uintptr(rawptr(e)) - uintptr(rawptr(&g_edicts[0])) / size_of(Edict))
+}
+
+Spawn :: proc() -> ^Edict {
+	e := &g_edicts[g_maxclients + 1]
+
+	for i := g_maxclients + 1; i < globals.num_edicts; i += 1 {
+		e = &g_edicts[i]
+		if !e.inuse {
+			InitEdict(e)
+			return e
+		}
+	}
+
+	if i := globals.num_edicts; i == globals.max_edicts {
+		gi.error("Spawn: no free edicts")
+	}
+
+	globals.num_edicts += 1
+	e = &g_edicts[globals.num_edicts - 1]
+	InitEdict(e)
+	return e
+}
+
+Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
+	if len(entity_block) < 2 {
+		return
+	}
+
+	content := strings.trim_space(entity_block[1:len(entity_block) - 1])
+
+	lines := strings.split(content, "\n")
+	defer delete(lines)
+
+	for line in lines {
+		trimmed := strings.trim_space(line)
+		if trimmed == "" {
+			continue
+		}
+
+		state :: enum {
+			OUTSIDE,
+			IN_KEY,
+			AFTER_KEY,
+			IN_VALUE,
+		}
+
+		current_state := state.OUTSIDE
+		key := ""
+		value := ""
+
+		for c, i in trimmed {
+			switch current_state {
+			case .OUTSIDE:
+				if c == '"' {
+					current_state = .IN_KEY
+					key = ""
+				}
+
+			case .IN_KEY:
+				if c == '"' {
+					current_state = .AFTER_KEY
+				} else {
+					key = fmt.tprintf("%s%c", key, c)
+				}
+
+			case .AFTER_KEY:
+				if c == '"' {
+					current_state = .IN_VALUE
+					value = ""
+				}
+
+			case .IN_VALUE:
+				if c == '"' {
+					current_state = .OUTSIDE
+				} else {
+					value = fmt.tprintf("%s%c", value, c)
+				}
+			}
+		}
+
+		switch key {
+		case "classname":
+			entity.classname = value
+		case "model":
+			entity.model = value
+		case "origin":
+			parts := strings.split(value, " ")
+			if len(parts) >= 3 {
+				entity.s.origin[0] = strconv.parse_f32(parts[0]) or_else 0
+				entity.s.origin[1] = strconv.parse_f32(parts[1]) or_else 0
+				entity.s.origin[2] = strconv.parse_f32(parts[2]) or_else 0
+			} else {
+				gi.error(fmt.ctprintf("origin: invalid number of arguments: %s", value))
+			}
+			defer delete(parts)
+		case:
+			debug_log(fmt.tprintf("unknown key: %s, value: %s", key, value))
+		}
+	}
+}
+
 SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
-
-	debug_log(
-		"SpawnEntities: mapname: %s, entities: %s, spawnpoint: %s",
-		mapname,
-		entities,
-		spawnpoint,
-	)
 
 	gi.FreeTags(TAG_LEVEL)
 
@@ -380,7 +485,20 @@ SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstr
 		g_edicts[i + 1].client = &g_clients[i]
 	}
 
-	debug_log("SpawnEntities")
+	entities_str := string(entities)
+
+	entity_start := 0
+
+	for i := 0; i < len(entities_str); i += 1 {
+		if entities_str[i] == '{' {
+			entity_start = i
+		} else if entities_str[i] == '}' && entity_start > 0 {
+			entity_block := entities_str[entity_start:i + 1]
+			e := Spawn()
+			Parse_Entity(e, entity_block)
+			entity_start = 0
+		}
+	}
 }
 
 WriteGame :: proc "c" (filename: cstring, autosave: bool) {

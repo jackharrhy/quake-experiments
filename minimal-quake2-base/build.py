@@ -22,7 +22,7 @@ pak0_dir = tmp_dir / "pak0"
 
 release_dir = Path("release")
 
-build_odin = False
+build_odin = True
 
 
 def clone_yquake2():
