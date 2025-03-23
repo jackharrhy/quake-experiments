@@ -33,6 +33,8 @@ MAX_INFO_KEY :: 64
 MAX_INFO_VALUE :: 64
 MAX_INFO_STRING :: 512
 
+MAX_TOUCH :: 32
+
 FALL_TIME :: 0.3
 
 PITCH :: 0 // up / down
@@ -53,6 +55,7 @@ g_spawnpoint: string
 cvar_maxentities: ^Cvar
 cvar_maxclients: ^Cvar
 
+cvar_sv_gravity: ^Cvar
 cvar_sv_rollspeed: ^Cvar
 cvar_sv_rollangle: ^Cvar
 cvar_run_pitch: ^Cvar
@@ -82,6 +85,57 @@ Svc :: enum i32 {
 	LAYOUT       = 4,
 	INVENTORY    = 5,
 }
+
+// Content flags for trace
+Contents :: enum i32 {
+	SOLID        = 1, // an eye is never valid in a solid
+	WINDOW       = 2, // translucent, but not watery
+	AUX          = 4,
+	LAVA         = 8,
+	SLIME        = 16,
+	WATER        = 32,
+	MIST         = 64,
+	LAST_VISIBLE = 64,
+
+	// remaining contents are non-visible, and don't eat brushes
+	AREAPORTAL   = 0x8000,
+	PLAYERCLIP   = 0x10000,
+	MONSTERCLIP  = 0x20000,
+
+	// currents can be added to any other contents, and may be mixed
+	CURRENT_0    = 0x40000,
+	CURRENT_90   = 0x80000,
+	CURRENT_180  = 0x100000,
+	CURRENT_270  = 0x200000,
+	CURRENT_UP   = 0x400000,
+	CURRENT_DOWN = 0x800000,
+	ORIGIN       = 0x1000000, // removed before bsping an entity
+	MONSTER      = 0x2000000, // should never be on a brush, only in game
+	DEADMONSTER  = 0x4000000,
+	DETAIL       = 0x8000000, // brushes to be added after vis leafs
+	TRANSLUCENT  = 0x10000000, // auto set if any surface has trans
+	LADDER       = 0x20000000,
+}
+
+// Content masks
+MASK_ALL :: -1
+MASK_SOLID :: int(Contents.SOLID) | int(Contents.WINDOW)
+MASK_PLAYERSOLID ::
+	int(Contents.SOLID) | int(Contents.PLAYERCLIP) | int(Contents.WINDOW) | int(Contents.MONSTER)
+MASK_DEADSOLID :: int(Contents.SOLID) | int(Contents.PLAYERCLIP) | int(Contents.WINDOW)
+MASK_MONSTERSOLID ::
+	int(Contents.SOLID) | int(Contents.MONSTERCLIP) | int(Contents.WINDOW) | int(Contents.MONSTER)
+MASK_WATER :: int(Contents.WATER) | int(Contents.LAVA) | int(Contents.SLIME)
+MASK_OPAQUE :: int(Contents.SOLID) | int(Contents.SLIME) | int(Contents.LAVA)
+MASK_SHOT ::
+	int(Contents.SOLID) | int(Contents.MONSTER) | int(Contents.WINDOW) | int(Contents.DEADMONSTER)
+MASK_CURRENT ::
+	int(Contents.CURRENT_0) |
+	int(Contents.CURRENT_90) |
+	int(Contents.CURRENT_180) |
+	int(Contents.CURRENT_270) |
+	int(Contents.CURRENT_UP) |
+	int(Contents.CURRENT_DOWN)
 
 // Game print flags
 Print :: enum i32 {
@@ -150,11 +204,10 @@ Entity_Event :: enum i32 {
 
 
 Level_Locals :: struct {
-	framenum:       i32,
-	time:           f32,
-	level_name:     string,
-	mapname:        string,
-	current_entity: ^Edict,
+	framenum:   i32,
+	time:       f32,
+	level_name: string,
+	mapname:    string,
 }
 
 Pmtype :: enum i32 {
@@ -197,19 +250,22 @@ Client_Persistant :: struct {
 }
 
 Client :: struct {
-	ps:            Player_State,
-	ping:          i32,
+	ps:              Player_State,
+	ping:            i32,
 	// --
-	pers:          Client_Persistant,
-	// --
-	kick_angles:   [3]f32,
-	kick_origin:   [3]f32,
-	v_angle:       [3]f32,
-	fall_time:     f32,
-	fall_value:    f32,
-	bobtime:       f32,
-	oldvelocity:   [3]f32,
-	oldviewangles: [3]f32,
+	pers:            Client_Persistant,
+	buttons:         i32,
+	oldbuttons:      i32,
+	latched_buttons: i32,
+	kick_angles:     [3]f32,
+	kick_origin:     [3]f32,
+	v_angle:         [3]f32,
+	fall_time:       f32,
+	fall_value:      f32,
+	bobtime:         f32,
+	oldvelocity:     [3]f32,
+	oldviewangles:   [3]f32,
+	old_pmove:       Pmove_State,
 }
 
 Entity_State :: struct {
@@ -257,36 +313,50 @@ Angle_Index :: enum {
 }
 
 Edict :: struct {
-	s:            Entity_State,
-	client:       ^Client,
-	inuse:        bool,
-	linkcount:    i32,
-	area:         Link,
-	num_clusters: i32,
-	clusternums:  [MAX_ENT_CLUSTERS]i32,
-	headnode:     i32,
-	areanum:      i32,
-	areanum2:     i32,
-	svflags:      i32,
-	mins:         [3]f32,
-	maxs:         [3]f32,
-	absmin:       [3]f32,
-	absmax:       [3]f32,
-	size:         [3]f32,
-	solid:        Solid,
-	clipmask:     i32,
-	owner:        ^Edict,
+	s:                      Entity_State,
+	client:                 ^Client,
+	inuse:                  bool,
+	linkcount:              i32,
+	area:                   Link,
+	num_clusters:           i32,
+	clusternums:            [MAX_ENT_CLUSTERS]i32,
+	headnode:               i32,
+	areanum:                i32,
+	areanum2:               i32,
+	svflags:                i32,
+	mins:                   [3]f32,
+	maxs:                   [3]f32,
+	absmin:                 [3]f32,
+	absmax:                 [3]f32,
+	size:                   [3]f32,
+	solid:                  Solid,
+	clipmask:               i32,
+	owner:                  ^Edict,
 	// Don't touch anything above this!
 	// The server expects the fields in this order!
-	classname:    string,
-	gravity:      f32,
-	model:        string,
-	velocity:     [3]f32,
-	viewheight:   i32,
-	groundentity: ^Edict,
+	classname:              string,
+	movetype:               Movetype,
+	gravity:                f32,
+	model:                  string,
+	velocity:               [3]f32,
+	viewheight:             i32,
+	groundentity:           ^Edict,
+	groundentity_linkcount: i32,
+	watertype:              i32,
+	waterlevel:             i32,
+	light_level:            i32,
 }
 
-Usercmd :: struct {}
+Usercmd :: struct {
+	msec:        u8,
+	buttons:     u8,
+	angles:      [3]i16,
+	forwardmove: i16,
+	sidemove:    i16,
+	upmove:      i16,
+	impulse:     u8,
+	lightlevel:  u8, // light level the player is standing on
+}
 
 Trace :: struct {
 	allsolid:   bool,
@@ -313,7 +383,28 @@ Csurface :: struct {
 	value: i32,
 }
 
-Pmove :: struct {}
+Pmove :: struct {
+	// state (in / out)
+	state:         Pmove_State,
+
+	// command (in)
+	cmd:           Usercmd,
+	snapinitial:   bool, // if state has been changed outside pmove
+
+	// results (out)
+	numtouch:      i32,
+	touchents:     [MAX_TOUCH]^Edict,
+	viewangles:    [3]f32, // clamped
+	viewheight:    f32,
+	mins, maxs:    [3]f32, // bounding box size
+	groundentity:  ^Edict,
+	watertype:     i32,
+	waterlevel:    i32,
+
+	// callbacks to test the world
+	trace:         proc "c" (start, mins, maxs, end: [3]f32) -> Trace,
+	pointcontents: proc "c" (point: [3]f32) -> i32,
+}
 Cvar :: struct {
 	name:           cstring,
 	string:         cstring,
@@ -467,6 +558,7 @@ InitGame :: proc "c" () {
 	cvar_maxentities = gi.cvar("maxentities", "1024", i32(Cvar_Flag.LATCH))
 	cvar_maxclients = gi.cvar("maxclients", "4", i32(Cvar_Flag.SERVERINFO | Cvar_Flag.LATCH))
 
+	cvar_sv_gravity = gi.cvar("sv_gravity", "800", 0)
 	cvar_sv_rollspeed = gi.cvar("sv_rollspeed", "2", 0)
 	cvar_sv_rollangle = gi.cvar("sv_rollangle", "2", 0)
 	cvar_run_pitch = gi.cvar("run_pitch", "0.002", 0)
@@ -684,8 +776,94 @@ ReadLevel :: proc "c" (filename: cstring) {
 	debug_log("ReadLevel")
 }
 
+pm_passent: ^Edict
+
 ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	context = runtime.default_context()
+
+	if ent == nil {
+		return
+	}
+
+	// The server needs to know what the current entity is when calling
+	// the trace function, so it has to be a global here.
+	pm_passent = ent
+
+	client := ent.client
+
+	pm: Pmove = {}
+
+	if ent.movetype == .NOCLIP {
+		client.ps.pmove.pm_type = .SPECTATOR
+	} else if ent.s.modelindex != 255 {
+		client.ps.pmove.pm_type = .GIB
+	} else {
+		client.ps.pmove.pm_type = .NORMAL
+	}
+
+	client.ps.pmove.gravity = i16(cvar_sv_gravity.value)
+
+	pm.state = client.ps.pmove
+
+	for i in 0 ..< 3 {
+		pm.state.origin[i] = i16(ent.s.origin[i] * 8)
+		pm.state.velocity[i] = i16(ent.velocity[i] * 8)
+	}
+
+	if mem.compare_ptrs(&client.old_pmove, &pm.state, size_of(pm.state)) != 0 {
+		pm.snapinitial = true
+	}
+
+	pm.cmd = cmd^
+	pm.trace = proc "c" (start, mins, maxs, end: [3]f32) -> Trace {
+		context = runtime.default_context()
+		debug_log("trace: start=%v, mins=%v, maxs=%v, end=%v", start, mins, maxs, end)
+		return gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
+	}
+	pm.pointcontents = gi.pointcontents
+
+	gi.Pmove(&pm)
+
+	client.ps.pmove = pm.state
+	client.old_pmove = pm.state
+
+	for i in 0 ..< 3 {
+		ent.s.origin[i] = f32(pm.state.origin[i]) * 0.125
+		ent.velocity[i] = f32(pm.state.velocity[i]) * 0.125
+	}
+
+	ent.mins = pm.mins
+	ent.maxs = pm.maxs
+
+	// TODO jump sound
+
+	ent.viewheight = i32(pm.viewheight)
+	ent.waterlevel = pm.waterlevel
+	ent.watertype = pm.watertype
+	ent.groundentity = pm.groundentity
+
+	if pm.groundentity != nil {
+		ent.groundentity_linkcount = pm.groundentity.linkcount
+	}
+
+	client.v_angle = pm.viewangles
+	client.ps.viewangles = pm.viewangles
+
+	gi.linkentity(ent)
+
+	if ent.movetype != .NOCLIP {
+		// TODO G_TouchTriggers(ent)
+	}
+
+	for i in 0 ..< pm.numtouch {
+		// TODO touch	
+	}
+
+	client.oldbuttons = client.buttons
+	client.buttons = i32(cmd.buttons)
+	client.latched_buttons |= client.buttons & ~client.oldbuttons
+
+	ent.light_level = i32(cmd.lightlevel)
 }
 
 // Takes in an edict reference and returns the index of the edict in the g_edicts array.
@@ -738,6 +916,9 @@ ClientDisconnect :: proc "c" (ent: ^Edict) {
 }
 
 PutClientInServer :: proc(ent: ^Edict) {
+	mins := [3]f32{-16, -16, -24}
+	maxs := [3]f32{16, 16, 32}
+
 	spawn_point := FindEntityByClassName("info_player_start")
 
 	if spawn_point == nil {
@@ -756,6 +937,7 @@ PutClientInServer :: proc(ent: ^Edict) {
 
 	ent.s.origin = spawn_point.s.origin
 	ent.s.angles = spawn_point.s.angles
+	ent.s.old_origin = ent.s.origin
 }
 
 ClientBegin :: proc "c" (ent: ^Edict) {
@@ -794,8 +976,6 @@ G_RunFrame :: proc "c" () {
 
 	for i: i32 = 0; i < globals.num_edicts; i += 1 {
 		ent := &g_edicts[i]
-
-		g_level.current_entity = ent
 
 		ent.s.old_origin = ent.s.origin
 

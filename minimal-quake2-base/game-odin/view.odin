@@ -300,9 +300,6 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 	context = runtime.default_context()
 	bobtime: f32
 
-	current_player := ent
-	current_client := ent.client
-
 	// If the origin or velocity have changed since ClientThink(),
 	// update the pmove values. This will happen when the client
 	// is pushed by a bmodel or kicked by an explosion.
@@ -333,7 +330,7 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 
 	if xyspeed < 5 {
 		bobmove = 0
-		current_client.bobtime = 0 // start at beginning of cycle again
+		ent.client.bobtime = 0 // start at beginning of cycle again
 	} else if ent.groundentity != nil {
 		// so bobbing only cycles when on ground
 		if xyspeed > 210 {
@@ -345,10 +342,10 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 		}
 	}
 
-	current_client.bobtime += bobmove
-	bobtime = current_client.bobtime
+	ent.client.bobtime += bobmove
+	bobtime = ent.client.bobtime
 
-	if (current_client.ps.pmove.pm_flags & u8(PMF.DUCKED)) != 0 {
+	if (ent.client.ps.pmove.pm_flags & u8(PMF.DUCKED)) != 0 {
 		bobtime *= 4
 	}
 
