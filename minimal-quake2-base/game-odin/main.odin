@@ -402,7 +402,7 @@ Pmove :: struct {
 	waterlevel:    i32,
 
 	// callbacks to test the world
-	trace:         proc "c" (start, mins, maxs, end: [3]f32) -> Trace,
+	trace:         proc "c" (start, mins, maxs, end: [^]f32) -> Trace,
 	pointcontents: proc "c" (point: [3]f32) -> i32,
 }
 Cvar :: struct {
@@ -439,7 +439,7 @@ Game_Import :: struct {
 	imageindex:         proc "c" (name: cstring) -> i32,
 	setmodel:           proc "c" (ent: ^Edict, name: cstring),
 	trace:              proc "c" (
-		start, mins, maxs, end: [3]f32,
+		start, mins, maxs, end: [^]f32,
 		passent: ^Edict,
 		contentmask: i32,
 	) -> Trace,
@@ -456,7 +456,7 @@ Game_Import :: struct {
 		maxcount, areatype: i32,
 	) -> i32,
 	Pmove:              proc "c" (pmove: ^Pmove),
-	multicast:          proc "c" (origin: [3]f32, to: Multicast),
+	multicast:          proc "c" (origin: [^]f32, to: Multicast),
 	unicast:            proc "c" (ent: ^Edict, reliable: bool),
 	WriteChar:          proc "c" (c: i32),
 	WriteByte:          proc "c" (c: i32),
@@ -815,9 +815,8 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	}
 
 	pm.cmd = cmd^
-	pm.trace = proc "c" (start, mins, maxs, end: [3]f32) -> Trace {
+	pm.trace = proc "c" (start, mins, maxs, end: [^]f32) -> Trace {
 		context = runtime.default_context()
-		debug_log("trace: start=%v, mins=%v, maxs=%v, end=%v", start, mins, maxs, end)
 		return gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
 	}
 	pm.pointcontents = gi.pointcontents
@@ -843,7 +842,7 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	ent.groundentity = pm.groundentity
 
 	if pm.groundentity != nil {
-		ent.groundentity_linkcount = pm.groundentity.linkcount
+		// ent.groundentity_linkcount = pm.groundentity.linkcount
 	}
 
 	client.v_angle = pm.viewangles
@@ -949,12 +948,10 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 
 	PutClientInServer(ent)
 
-	/*
 	gi.WriteByte(i32(Svc.MUZZLEFLASH))
 	gi.WriteShort(i32(ent_index_from_edict(ent)))
 	gi.WriteByte(i32(Muzzle_Flash.LOGIN))
-	gi.multicast(ent.s.origin, .PVS)
-	*/
+	gi.multicast(raw_data(ent.s.origin[:]), .PVS)
 
 	message := "A player has joined the game"
 	gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s\n", message))
