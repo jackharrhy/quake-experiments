@@ -318,31 +318,6 @@ ClientDisconnect :: proc "c" (ent: ^Edict) {
 	debug_log("ClientDisconnect")
 }
 
-PutClientInServer :: proc(ent: ^Edict) {
-	mins := [3]f32{-16, -16, -24}
-	maxs := [3]f32{16, 16, 32}
-
-	spawn_point := FindEntityByClassName("info_player_start")
-
-	if spawn_point == nil {
-		gi.error("PutClientInServer: no spawn point found")
-	}
-
-	ent.client.ps = {}
-
-	ent.client.ps.fov = 90 // TODO get from userinfo
-
-	ent.client.ps.pmove.origin[0] = i16(spawn_point.s.origin[0] * 8)
-	ent.client.ps.pmove.origin[1] = i16(spawn_point.s.origin[1] * 8)
-	ent.client.ps.pmove.origin[2] = i16(spawn_point.s.origin[2] * 8)
-
-	ent.client.ps.pmove.pm_flags &= ~u8(PMF.NO_PREDICTION)
-
-	ent.s.origin = spawn_point.s.origin
-	ent.s.angles = spawn_point.s.angles
-	ent.s.old_origin = ent.s.origin
-}
-
 ClientBegin :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 

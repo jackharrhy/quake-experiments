@@ -159,7 +159,10 @@ def copy_files():
     files = [
         yquake2_dir / "release" / "q2ded",
         yquake2_dir / "release" / "quake2",
+        yquake2_dir / "release" / "ref_soft.dylib",
+        yquake2_dir / "release" / "ref_gl1.dylib",
         yquake2_dir / "release" / "ref_gl3.dylib",
+        yquake2_dir / "release" / "ref_gles3.dylib",
         yquake2_ref_vk_dir / "release" / "ref_vk.dylib",
     ]
 
@@ -198,6 +201,7 @@ def copy_files():
         "pics/anum_*.pcx",
         "pics/m_cursor*.pcx",
         "pics/m_banner_*.pcx",
+        "pics/16to8.dat",
     ]
 
     for path in paths:

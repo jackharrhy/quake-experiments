@@ -272,6 +272,7 @@ Edict :: struct {
 	// The server expects the fields in this order!
 	classname:              string,
 	movetype:               Movetype,
+	mass:                   f32,
 	gravity:                f32,
 	model:                  string,
 	velocity:               [3]f32,

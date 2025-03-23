@@ -12,36 +12,6 @@ bobmove: f32
 bobcycle: i32 // odd cycles are right foot going forward
 bobfracsin: f32 // sin(bobfrac*M_PI)
 
-AngleVectors :: proc(angles: [3]f32, forward, right, up: ^[3]f32) {
-	// Convert degrees to radians
-	yaw := angles.y * math.DEG_PER_RAD
-	pitch := angles.x * math.DEG_PER_RAD
-	roll := angles.z * math.DEG_PER_RAD
-
-	// Calculate sine and cosine of angles
-	sy, cy := math.sin(yaw), math.cos(yaw)
-	sp, cp := math.sin(pitch), math.cos(pitch)
-	sr, cr := math.sin(roll), math.cos(roll)
-
-	if forward != nil {
-		forward.x = cp * cy
-		forward.y = cp * sy
-		forward.z = -sp
-	}
-
-	if right != nil {
-		right.x = (-sr * sp * cy + -cr * -sy)
-		right.y = (-sr * sp * sy + -cr * cy)
-		right.z = -sr * cp
-	}
-
-	if up != nil {
-		up.x = (cr * sp * cy + -sr * -sy)
-		up.y = (cr * sp * sy + -sr * cy)
-		up.z = cr * cp
-	}
-}
-
 SV_CalcRoll :: proc(angles: [3]f32, velocity: [3]f32) -> f32 {
 	sign: f32
 	side: f32
@@ -311,7 +281,7 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 	}
 
 	// Calculate view vectors
-	AngleVectors(ent.client.v_angle, &forward, &right, &up)
+	angle_vectors(ent.client.v_angle, &forward, &right, &up)
 
 	// set model angles from view angles so other things in
 	// the world can tell which direction you are looking
