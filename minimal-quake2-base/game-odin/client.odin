@@ -102,7 +102,7 @@ PutClientInServer :: proc(ent: ^Edict) {
 	client := ent.client
 
 	old_pers := client.pers
-	// client = {}
+	mem.zero_item(client)
 	client.pers = old_pers
 
 	client.pers.connected = true
