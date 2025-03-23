@@ -811,12 +811,12 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	}
 
 	if mem.compare_ptrs(&client.old_pmove, &pm.state, size_of(pm.state)) != 0 {
+		debug_log("pm.snapinitial = true")
 		pm.snapinitial = true
 	}
 
 	pm.cmd = cmd^
 	pm.trace = proc "c" (start, mins, maxs, end: [^]f32) -> Trace {
-		context = runtime.default_context()
 		return gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
 	}
 	pm.pointcontents = gi.pointcontents
