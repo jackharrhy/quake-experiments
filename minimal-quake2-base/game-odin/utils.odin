@@ -64,6 +64,14 @@ debug_log :: proc(text: string, args: ..any) {
 	fmt.printfln("\x1b[33m%s\x1b[0m", fmt.tprintf(text, ..args))
 }
 
+error_log :: proc(text: string, args: ..any) {
+	fmt.printfln("\x1b[31m%s\x1b[0m", fmt.tprintf(text, ..args))
+}
+
+info_log :: proc(text: string, args: ..any) {
+	fmt.printfln("\x1b[32m%s\x1b[0m", fmt.tprintf(text, ..args))
+}
+
 debug_edicts :: proc() {
 	debug_log("=== DEBUG EDICTS ===\n")
 

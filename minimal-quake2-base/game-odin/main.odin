@@ -196,11 +196,11 @@ Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
 			}
 			defer delete(parts)
 		case:
-			debug_log(fmt.tprintf("unknown key: %s, value: %s", key, value))
+			error_log(fmt.tprintf("unknown key: %s, value: %s", key, value))
 		}
 	}
 
-	debug_log(fmt.tprintf("entity: classname=%s, origin=%v", entity.classname, entity.s.origin))
+	info_log(fmt.tprintf("entity: classname=%s, origin=%v", entity.classname, entity.s.origin))
 }
 
 // Finds an entity by its classname.
@@ -231,8 +231,6 @@ FindEntityByClassName :: proc(match: string) -> ^Edict {
 SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
 
-	debug_log("SpawnEntities", entities)
-
 	gi.FreeTags(TAG_LEVEL)
 
 	mem.zero_slice(g_edicts[:globals.max_edicts])
@@ -256,7 +254,7 @@ SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstr
 	for i := 0; i < len(entities_str); i += 1 {
 		if entities_str[i] == '{' {
 			entity_start = i
-		} else if entities_str[i] == '}' && entity_start > 0 {
+		} else if entities_str[i] == '}' {
 			entity_block := entities_str[entity_start:i + 1]
 			if e == nil {
 				e = Spawn(worldspawn = true)
@@ -310,7 +308,7 @@ ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
 	if (ent.inuse == false) {
 		InitClientPersistant(ent.client)
 	} else {
-		debug_log(
+		error_log(
 			"Putting client into an existing entity, I haven't handled this, not sure if I have to!",
 		)
 	}
