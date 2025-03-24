@@ -1,6 +1,7 @@
 package game
 
 import "base:runtime"
+import "core:fmt"
 import "core:mem"
 import "core:strings"
 
@@ -34,7 +35,8 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 
 	for i in 0 ..< 3 {
 		pm.state.origin[i] = i16(ent.s.origin[i] * 8)
-		pm.state.velocity[i] = i16(ent.velocity[i] * 8)
+		tmp_vel := i32(ent.velocity[i] * 8)
+		pm.state.velocity[i] = i16(tmp_vel)
 	}
 
 	if mem.compare_ptrs(&client.old_pmove, &pm.state, size_of(pm.state)) != 0 {
@@ -69,7 +71,9 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	ent.groundentity = pm.groundentity
 
 	if pm.groundentity != nil {
-		// ent.groundentity_linkcount = pm.groundentity.linkcount
+		debug_edicts()
+		debug_log("pm.groundentity: %p", pm.groundentity)
+		ent.groundentity_linkcount = pm.groundentity.linkcount
 	}
 
 	client.v_angle = pm.viewangles

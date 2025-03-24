@@ -22,7 +22,7 @@ pak0_dir = tmp_dir / "pak0"
 
 release_dir = Path("release")
 
-debug_build = False
+debug_build = True
 build_odin = True
 
 

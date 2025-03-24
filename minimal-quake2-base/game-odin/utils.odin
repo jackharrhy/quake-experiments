@@ -63,3 +63,26 @@ prefixed_log :: proc(prefix: string, text: string) {
 debug_log :: proc(text: string, args: ..any) {
 	fmt.printfln("\x1b[33m%s\x1b[0m", fmt.tprintf(text, ..args))
 }
+
+debug_edicts :: proc() {
+	debug_log("=== DEBUG EDICTS ===\n")
+
+	for i in 0 ..< globals.num_edicts {
+		e := &g_edicts[i]
+
+		index := ent_index_from_edict(e)
+
+		if !e.inuse {
+			continue
+		}
+
+		classname := "NO CLASSNAME"
+		if e.classname != "" {
+			classname = string(e.classname)
+		}
+
+		debug_log("Edict %d: classname=%s pointer=%p index=%d", i, classname, e, index)
+	}
+
+	debug_log("\n=== END DEBUG EDICTS ===")
+}

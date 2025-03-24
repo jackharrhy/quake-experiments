@@ -277,7 +277,8 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 	// behind the body position when pushed -- "sinking into plats"
 	for i in 0 ..< 3 {
 		ent.client.ps.pmove.origin[i] = i16(ent.s.origin[i] * 8.0)
-		ent.client.ps.pmove.velocity[i] = i16(ent.velocity[i] * 8.0)
+		tmp_vel := i32(ent.velocity[i] * 8.0)
+		ent.client.ps.pmove.velocity[i] = i16(tmp_vel)
 	}
 
 	// Calculate view vectors

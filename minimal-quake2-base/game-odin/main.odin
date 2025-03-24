@@ -93,19 +93,25 @@ InitEdict :: proc(e: ^Edict) {
 	e.s.number = i32(uintptr(rawptr(e)) - uintptr(rawptr(&g_edicts[0])) / size_of(Edict))
 }
 
-Spawn :: proc() -> ^Edict {
-	e := &g_edicts[g_maxclients + 1]
+Spawn :: proc(worldspawn: bool = false) -> ^Edict {
+	e: ^Edict
+	if worldspawn {
+		// worldspawn is always the first edict
+		e = &g_edicts[0]
+	} else {
+		e = &g_edicts[g_maxclients + 1]
 
-	for i := g_maxclients + 1; i < globals.num_edicts; i += 1 {
-		e = &g_edicts[i]
-		if !e.inuse {
-			InitEdict(e)
-			return e
+		for i := g_maxclients + 1; i < globals.num_edicts; i += 1 {
+			e = &g_edicts[i]
+			if !e.inuse {
+				InitEdict(e)
+				return e
+			}
 		}
-	}
 
-	if i := globals.num_edicts; i == globals.max_edicts {
-		gi.error("Spawn: no free edicts")
+		if i := globals.num_edicts; i == globals.max_edicts {
+			gi.error("Spawn: no free edicts")
+		}
 	}
 
 	globals.num_edicts += 1
@@ -193,6 +199,8 @@ Parse_Entity :: proc(entity: ^Edict, entity_block: string) {
 			debug_log(fmt.tprintf("unknown key: %s, value: %s", key, value))
 		}
 	}
+
+	debug_log(fmt.tprintf("entity: classname=%s, origin=%v", entity.classname, entity.s.origin))
 }
 
 // Finds an entity by its classname.
@@ -223,6 +231,8 @@ FindEntityByClassName :: proc(match: string) -> ^Edict {
 SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
 
+	debug_log("SpawnEntities", entities)
+
 	gi.FreeTags(TAG_LEVEL)
 
 	mem.zero_slice(g_edicts[:globals.max_edicts])
@@ -241,12 +251,18 @@ SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstr
 
 	entity_start := 0
 
+	e: ^Edict
+
 	for i := 0; i < len(entities_str); i += 1 {
 		if entities_str[i] == '{' {
 			entity_start = i
 		} else if entities_str[i] == '}' && entity_start > 0 {
 			entity_block := entities_str[entity_start:i + 1]
-			e := Spawn()
+			if e == nil {
+				e = Spawn(worldspawn = true)
+			} else {
+				e = Spawn()
+			}
 			Parse_Entity(e, entity_block)
 			entity_start = 0
 		}
@@ -353,7 +369,17 @@ G_RunFrame :: proc "c" () {
 	for i: i32 = 0; i < globals.num_edicts; i += 1 {
 		ent := &g_edicts[i]
 
+		if !ent.inuse {
+			continue
+		}
+
 		ent.s.old_origin = ent.s.origin
+
+		// if the ground entity moved, make sure we are still on it
+		if (ent.groundentity != nil) &&
+		   (ent.groundentity.linkcount != ent.groundentity_linkcount) {
+			ent.groundentity = nil
+		}
 
 		if i > 0 && i <= i32(cvar_maxclients.value) {
 			ClientBeginServerFrame(ent)
