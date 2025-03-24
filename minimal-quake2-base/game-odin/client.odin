@@ -47,8 +47,18 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	pm.cmd = cmd^
 	pm.trace = proc "c" (start, mins, maxs, end: [^]f32) -> Trace {
 		context = runtime.default_context()
+		debug_log("pm_passent: %v", pm_passent)
 		trace := gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
-		debug_log("pm trace done, %v", trace)
+		debug_log("groundentity: %p", pm_passent.groundentity)
+
+		debug_log("trace: allsolid %#v", trace.allsolid)
+		debug_log("trace: startsolid %#v", trace.startsolid)
+		debug_log("trace: fraction %#v", trace.fraction)
+		debug_log("trace: endpos %#v", trace.endpos)
+		debug_log("trace: plane %#v", trace.plane)
+		debug_log("trace: surface %#v", trace.surface)
+		debug_log("trace: contents %#v", trace.contents)
+		debug_log("trace: ent %#v", trace.ent)
 		return trace
 	}
 	pm.pointcontents = gi.pointcontents
