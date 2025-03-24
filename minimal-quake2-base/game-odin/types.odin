@@ -1,6 +1,6 @@
 package game
-// Destination class for gi.multicast()
 
+// Destination class for gi.multicast()
 Multicast :: enum i32 {
 	ALL,
 	PHS,
@@ -284,7 +284,7 @@ Edict :: struct {
 	light_level:            i32,
 }
 
-Usercmd :: struct {
+Usercmd :: struct #packed {
 	msec:        u8,
 	buttons:     u8,
 	angles:      [3]i16,
@@ -296,8 +296,8 @@ Usercmd :: struct {
 }
 
 Trace :: struct {
-	allsolid:   bool,
-	startsolid: bool,
+	allsolid:   b32,
+	startsolid: b32,
 	fraction:   f32,
 	endpos:     [3]f32,
 	plane:      Cplane,
