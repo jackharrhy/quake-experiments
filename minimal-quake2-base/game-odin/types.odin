@@ -340,7 +340,7 @@ Pmove :: struct {
 
 	// callbacks to test the world
 	trace:         proc "c" (start, mins, maxs, end: [^]f32) -> Trace,
-	pointcontents: proc "c" (point: [3]f32) -> i32,
+	pointcontents: proc "c" (point: [^]f32) -> i32,
 }
 Cvar :: struct {
 	name:           cstring,
@@ -364,7 +364,7 @@ Game_Import :: struct {
 		volume, attenuation, timeofs: f32,
 	),
 	positioned_sound:   proc "c" (
-		origin: [3]f32,
+		origin: [^]f32,
 		ent: ^Edict,
 		channel, soundindex: i32,
 		volume, attenuation, timeofs: f32,
@@ -380,15 +380,15 @@ Game_Import :: struct {
 		passent: ^Edict,
 		contentmask: i32,
 	) -> Trace,
-	pointcontents:      proc "c" (point: [3]f32) -> i32,
-	inPVS:              proc "c" (p1, p2: [3]f32) -> bool,
-	inPHS:              proc "c" (p1, p2: [3]f32) -> bool,
+	pointcontents:      proc "c" (point: [^]f32) -> i32,
+	inPVS:              proc "c" (p1, p2: [^]f32) -> bool,
+	inPHS:              proc "c" (p1, p2: [^]f32) -> bool,
 	SetAreaPortalState: proc "c" (portalnum: i32, open: bool),
 	AreasConnected:     proc "c" (area1, area2: i32) -> bool,
 	linkentity:         proc "c" (ent: ^Edict),
 	unlinkentity:       proc "c" (ent: ^Edict),
 	BoxEdicts:          proc "c" (
-		mins, maxs: [3]f32,
+		mins, maxs: [^]f32,
 		list: ^^Edict,
 		maxcount, areatype: i32,
 	) -> i32,
@@ -401,8 +401,8 @@ Game_Import :: struct {
 	WriteLong:          proc "c" (c: i32),
 	WriteFloat:         proc "c" (f: f32),
 	WriteString:        proc "c" (s: cstring),
-	WritePosition:      proc "c" (pos: [3]f32),
-	WriteDir:           proc "c" (pos: [3]f32),
+	WritePosition:      proc "c" (pos: [^]f32),
+	WriteDir:           proc "c" (pos: [^]f32),
 	WriteAngle:         proc "c" (f: f32),
 	TagMalloc:          proc "c" (size, tag: i32) -> rawptr,
 	TagFree:            proc "c" (block: rawptr),

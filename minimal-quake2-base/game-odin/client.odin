@@ -46,7 +46,10 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 
 	pm.cmd = cmd^
 	pm.trace = proc "c" (start, mins, maxs, end: [^]f32) -> Trace {
-		return gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
+		context = runtime.default_context()
+		trace := gi.trace(start, mins, maxs, end, pm_passent, i32(MASK_PLAYERSOLID))
+		debug_log("pm trace done, %v", trace)
+		return trace
 	}
 	pm.pointcontents = gi.pointcontents
 
