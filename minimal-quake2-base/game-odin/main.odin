@@ -267,7 +267,7 @@ SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstr
 	}
 }
 
-WriteGame :: proc "c" (filename: cstring, autosave: bool) {
+WriteGame :: proc "c" (filename: cstring, autosave: b32) {
 	context = runtime.default_context()
 
 	debug_log("WriteGame")
@@ -291,7 +291,7 @@ ReadLevel :: proc "c" (filename: cstring) {
 	debug_log("ReadLevel")
 }
 
-ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> bool {
+ClientConnect :: proc "c" (ent: ^Edict, userinfo: cstring) -> b32 {
 	context = runtime.default_context()
 
 	// TODO parse user info into something useful

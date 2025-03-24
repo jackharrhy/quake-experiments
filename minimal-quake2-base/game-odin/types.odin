@@ -251,7 +251,7 @@ Angle_Index :: enum {
 Edict :: struct {
 	s:                      Entity_State,
 	client:                 ^Client,
-	inuse:                  bool,
+	inuse:                  b32,
 	linkcount:              i32,
 	area:                   Link,
 	num_clusters:           i32,
@@ -326,7 +326,7 @@ Pmove :: struct {
 
 	// command (in)
 	cmd:           Usercmd,
-	snapinitial:   bool, // if state has been changed outside pmove
+	snapinitial:   b32, // if state has been changed outside pmove
 
 	// results (out)
 	numtouch:      i32,
@@ -381,10 +381,10 @@ Game_Import :: struct {
 		contentmask: i32,
 	) -> Trace,
 	pointcontents:      proc "c" (point: [^]f32) -> i32,
-	inPVS:              proc "c" (p1, p2: [^]f32) -> bool,
-	inPHS:              proc "c" (p1, p2: [^]f32) -> bool,
-	SetAreaPortalState: proc "c" (portalnum: i32, open: bool),
-	AreasConnected:     proc "c" (area1, area2: i32) -> bool,
+	inPVS:              proc "c" (p1, p2: [^]f32) -> b32,
+	inPHS:              proc "c" (p1, p2: [^]f32) -> b32,
+	SetAreaPortalState: proc "c" (portalnum: i32, open: b32),
+	AreasConnected:     proc "c" (area1, area2: i32) -> b32,
 	linkentity:         proc "c" (ent: ^Edict),
 	unlinkentity:       proc "c" (ent: ^Edict),
 	BoxEdicts:          proc "c" (
@@ -394,7 +394,7 @@ Game_Import :: struct {
 	) -> i32,
 	Pmove:              proc "c" (pmove: ^Pmove),
 	multicast:          proc "c" (origin: [^]f32, to: Multicast),
-	unicast:            proc "c" (ent: ^Edict, reliable: bool),
+	unicast:            proc "c" (ent: ^Edict, reliable: b32),
 	WriteChar:          proc "c" (c: i32),
 	WriteByte:          proc "c" (c: i32),
 	WriteShort:         proc "c" (c: i32),
@@ -423,11 +423,11 @@ Game_Export :: struct {
 	Init:                  proc "c" (),
 	Shutdown:              proc "c" (),
 	SpawnEntities:         proc "c" (mapname, entstring, spawnpoint: cstring),
-	WriteGame:             proc "c" (filename: cstring, autosave: bool),
+	WriteGame:             proc "c" (filename: cstring, autosave: b32),
 	ReadGame:              proc "c" (filename: cstring),
 	WriteLevel:            proc "c" (filename: cstring),
 	ReadLevel:             proc "c" (filename: cstring),
-	ClientConnect:         proc "c" (ent: ^Edict, userinfo: cstring) -> bool,
+	ClientConnect:         proc "c" (ent: ^Edict, userinfo: cstring) -> b32,
 	ClientBegin:           proc "c" (ent: ^Edict),
 	ClientUserinfoChanged: proc "c" (ent: ^Edict, userinfo: cstring),
 	ClientDisconnect:      proc "c" (ent: ^Edict),
