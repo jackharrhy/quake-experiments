@@ -2,6 +2,7 @@ package game
 
 import "core:fmt"
 import "core:math"
+import "core:strings"
 
 // Takes in an edict reference and returns the index of the edict in the g_edicts array.
 //
@@ -9,6 +10,38 @@ import "core:math"
 ent_index_from_edict :: proc "c" (ent: ^Edict) -> int {
 	offset := uintptr(rawptr(ent)) - uintptr(rawptr(&g_edicts[0]))
 	return int(offset / size_of(Edict))
+}
+
+// Finds an entity by its classname.
+//
+// Returns nil if no entity is found.
+find_entity_by_classname :: proc(match: string) -> ^Edict {
+	start_index: i32 = 0
+
+	for i: i32 = 0; i < globals.num_edicts; i += 1 {
+		ent := &g_edicts[i]
+
+		if !ent.inuse {
+			continue
+		}
+
+		if ent.classname == "" {
+			continue
+		}
+
+		if strings.equal_fold(ent.classname, match) {
+			return ent
+		}
+	}
+
+	return nil
+}
+
+send_muzzle_flash :: proc "c" (ent: ^Edict, muzzle_flash: Muzzle_Flash) {
+	gi.WriteByte(i32(Svc.MUZZLEFLASH))
+	gi.WriteShort(i32(ent_index_from_edict(ent)))
+	gi.WriteByte(i32(muzzle_flash))
+	gi.multicast(raw_data(ent.s.origin[:]), .PVS)
 }
 
 angle_to_short :: proc "c" (x: f32) -> i32 {
@@ -48,7 +81,6 @@ angle_vectors :: proc(angles: [3]f32, forward, right, up: ^[3]f32) {
 		up.z = cr * cp
 	}
 }
-
 
 log :: proc(text: string) {
 	c_text := fmt.ctprintf("%s\n", text)

@@ -165,31 +165,6 @@ parse_entity :: proc(entity: ^Edict, entity_block: string) {
 	info_log(fmt.tprintf("entity: classname=%s, origin=%v", entity.classname, entity.s.origin))
 }
 
-// Finds an entity by its classname.
-//
-// Returns nil if no entity is found.
-find_entity_by_classname :: proc(match: string) -> ^Edict {
-	start_index: i32 = 0
-
-	for i: i32 = 0; i < globals.num_edicts; i += 1 {
-		ent := &g_edicts[i]
-
-		if !ent.inuse {
-			continue
-		}
-
-		if ent.classname == "" {
-			continue
-		}
-
-		if strings.equal_fold(ent.classname, match) {
-			return ent
-		}
-	}
-
-	return nil
-}
-
 SpawnEntities :: proc "c" (mapname: cstring, entities: cstring, spawnpoint: cstring) {
 	context = runtime.default_context()
 
@@ -299,10 +274,7 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 
 	put_client_in_server(ent)
 
-	gi.WriteByte(i32(Svc.MUZZLEFLASH))
-	gi.WriteShort(i32(ent_index_from_edict(ent)))
-	gi.WriteByte(i32(Muzzle_Flash.LOGIN))
-	gi.multicast(raw_data(ent.s.origin[:]), .PVS)
+	send_muzzle_flash(ent, .LOGIN)
 
 	message := "A player has joined the game"
 	gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s\n", message))
