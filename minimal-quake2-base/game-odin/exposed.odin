@@ -10,6 +10,7 @@ setup_cvars :: proc() {
 	cvar_maxentities = gi.cvar("maxentities", "1024", i32(Cvar_Flag.LATCH))
 	cvar_maxclients = gi.cvar("maxclients", "4", i32(Cvar_Flag.SERVERINFO | Cvar_Flag.LATCH))
 
+	cvar_sv_cheats = gi.cvar("sv_cheats", "0", 0)
 	cvar_sv_gravity = gi.cvar("sv_gravity", "800", 0)
 	cvar_sv_rollspeed = gi.cvar("sv_rollspeed", "2", 0)
 	cvar_sv_rollangle = gi.cvar("sv_rollangle", "2", 0)
@@ -282,10 +283,42 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 	client_end_server_frame(ent)
 }
 
+client_cmd_noclip :: proc(ent: ^Edict) {
+	if cvar_sv_cheats.value == 0 {
+		gi.cprintf(
+			ent,
+			i32(Print.HIGH),
+			"You must run the server with '+set cheats 1' to enable this command.\n",
+		)
+		return
+	}
+
+	msg: cstring
+	if ent.movetype == Movetype.NOCLIP {
+		ent.movetype = Movetype.WALK
+		msg = "noclip OFF\n"
+	} else {
+		ent.movetype = Movetype.NOCLIP
+		msg = "noclip ON\n"
+	}
+	gi.cprintf(ent, i32(Print.HIGH), msg)
+}
+
 ClientCommand :: proc "c" (ent: ^Edict) {
 	context = runtime.default_context()
 
-	debug_log("ClientCommand")
+	if ent.client == nil {
+		return
+	}
+
+	cmd := gi.argv(0)
+
+	switch cmd {
+	case "noclip":
+		client_cmd_noclip(ent)
+	case:
+	// TODO make it a chat message
+	}
 }
 
 RunFrame :: proc "c" () {
@@ -323,7 +356,9 @@ RunFrame :: proc "c" () {
 ServerCommand :: proc "c" () {
 	context = runtime.default_context()
 
-	debug_log("ServerCommand")
+	cmd := gi.argv(1)
+
+	debug_log(fmt.tprintf("ServerCommand: %s", cmd))
 }
 
 ClientBeginServerFrame :: proc "c" (ent: ^Edict) {
