@@ -96,11 +96,11 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 	ent.light_level = i32(cmd.lightlevel)
 }
 
-PutClientInServer :: proc(ent: ^Edict) {
-	spawn_point := FindEntityByClassName("info_player_start")
+put_client_in_server :: proc(ent: ^Edict) {
+	spawn_point := find_entity_by_classname("info_player_start")
 
 	if spawn_point == nil {
-		gi.error("PutClientInServer: no spawn point found")
+		gi.error("put_client_in_server: no spawn point found")
 	}
 
 	client := ent.client

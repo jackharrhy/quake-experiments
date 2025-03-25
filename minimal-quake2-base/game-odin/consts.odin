@@ -2,6 +2,8 @@ package game
 
 // NOTE these might be able to be enums?
 
+GAME_API_VERSION: i32 = 3
+
 TAG_GAME :: 765 // Clear when unloading the dll.
 TAG_LEVEL :: 766 // Clear when loading a new level.
 

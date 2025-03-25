@@ -1,5 +1,13 @@
 package game
 
+Cvar_Flag :: enum i32 {
+	ARCHIVE    = 1, // set to cause it to be saved to vars.rc
+	USERINFO   = 2, // added to userinfo  when changed
+	SERVERINFO = 4, // added to serverinfo when changed
+	NOSET      = 8, // don't allow change from console at all, but can be set from the command line
+	LATCH      = 16, // save changes until server restart
+}
+
 // Destination class for gi.multicast()
 Multicast :: enum i32 {
 	ALL,

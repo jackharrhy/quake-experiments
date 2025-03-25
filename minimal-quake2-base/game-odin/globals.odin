@@ -14,6 +14,7 @@ g_spawnpoint: string
 cvar_maxentities: ^Cvar
 cvar_maxclients: ^Cvar
 
+cvar_sv_cheats: ^Cvar
 cvar_sv_gravity: ^Cvar
 cvar_sv_rollspeed: ^Cvar
 cvar_sv_rollangle: ^Cvar

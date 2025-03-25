@@ -6,6 +6,12 @@ state:
 - no sounds / models, just _some_ custom images
 - odin code has a working player controller, still some things missing that are _needed_, like disconnect / server commands / user info / save / loads
 
+todo
+
+- sounds, player jump, player fall
+- player model
+- player animations
+
 goals:
 
 - blank canvas for a prospective quake engineer
