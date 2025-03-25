@@ -2,7 +2,6 @@ import os
 import subprocess
 import argparse
 import shutil
-import shlex
 from pathlib import Path
 
 yquake2_url = "https://github.com/yquake2/yquake2.git"
@@ -24,6 +23,7 @@ release_dir = Path("release")
 
 debug_build = True
 build_odin = True
+odin_vet = False
 
 
 def clone_yquake2():
@@ -67,15 +67,22 @@ def build_yquake2_ref_vk():
 def build_game_odin():
     print("Building game-odin")
     (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
+
+    build_args = [
+        "odin",
+        "build",
+        "./game-odin",
+        "-build-mode:dll",
+        "-out:./release/baseq2/game.dylib",
+    ]
+
     if debug_build:
-        cmd = shlex.split(
-            "odin build ./game-odin -debug -build-mode:dll -out:./release/baseq2/game.dylib"
-        )
-    else:
-        cmd = shlex.split(
-            "odin build ./game-odin -build-mode:dll -out:./release/baseq2/game.dylib"
-        )
-    subprocess.run(cmd, check=True)
+        build_args.append("-debug")
+
+    if odin_vet:
+        build_args.append("-vet")
+
+    subprocess.run(build_args, check=True)
 
 
 def build_game_c():

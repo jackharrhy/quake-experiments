@@ -1,9 +1,7 @@
 package game
 
 import "base:runtime"
-import "core:fmt"
 import "core:mem"
-import "core:strings"
 
 pm_passent: ^Edict
 

@@ -16,8 +16,6 @@ ent_index_from_edict :: proc "c" (ent: ^Edict) -> int {
 //
 // Returns nil if no entity is found.
 find_entity_by_classname :: proc(match: string) -> ^Edict {
-	start_index: i32 = 0
-
 	for i: i32 = 0; i < globals.num_edicts; i += 1 {
 		ent := &g_edicts[i]
 

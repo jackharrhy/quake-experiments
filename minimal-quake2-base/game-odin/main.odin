@@ -1,12 +1,6 @@
 package game
 
 import "base:runtime"
-import "core:fmt"
-import "core:mem"
-import "core:os/os2"
-import "core:strconv"
-import "core:strings"
-import "core:unicode"
 
 @(export)
 GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
