@@ -3,7 +3,8 @@
 state:
 
 - still pulling in files from pak0 as needed, not yet overwritten with alternatives
-- no sounds
+- no sounds / models, just _some_ custom images
+- odin code has a working player controller, still some things missing that are _needed_, like disconnect / server commands / user info / save / loads
 
 goals:
 
@@ -12,9 +13,8 @@ goals:
 - game dll written in odin
 - player, in a box, running around
 - dedicated server works
-- menus work, even if they don't look pretty
 - work well on linux/macos/windows
-- target vulkan renderer for visual consistency
+- target opengl 3.2 renderer for visual consistency, and support (thanks macos)
 - possible to create something epic with this as its base
 - just because its an old engine, it should not feel old / low quality
 - easy to run build script that works multiplatform, shell would be fine if not for windows, python is a perfectly fine choice
@@ -29,14 +29,10 @@ non goals:
 
 `game-c` is based off of [yquake2/ctf](https://github.com/yquake2/ctf/tree/c7a4b27bf67c9b09fe906bfb2263ff9f66fb57b6)
 
-the plan is, to tear game-c down to its _core_, and then rewrite that into `game-odin`
+it was used as a test to see _how much_ you can rip away from the game until it stops compiling / working.
 
-`game-odin`, currently _boots_ and does not crash, but it does very little... for now
-
-why ctf over the base game? honestly i don't know, in my brain ctf was maybe something that came out afterwards maybe with some patches,
-and felt like a better choice than the expansions for something that would be played multiplayer
-
-but none of the above is based on facts, only vibes
+its (mostly) surved its purpose, might get moved to a parent directory at some point since it has no real path
+forward here, but it was _very_ useful for getting started!
 
 ---
 
