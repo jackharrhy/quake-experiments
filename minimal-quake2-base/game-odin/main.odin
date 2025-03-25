@@ -31,7 +31,7 @@ GetGameAPI :: proc "c" (game_import: ^Game_Import) -> ^Game_Export {
 	globals.ClientBegin = ClientBegin
 	globals.ClientCommand = ClientCommand
 
-	globals.RunFrame = G_RunFrame
+	globals.RunFrame = RunFrame
 
 	globals.ServerCommand = ServerCommand
 

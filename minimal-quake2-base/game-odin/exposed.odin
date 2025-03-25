@@ -279,7 +279,7 @@ ClientBegin :: proc "c" (ent: ^Edict) {
 	message := "A player has joined the game"
 	gi.bprintf(i32(Print.HIGH), fmt.ctprintf("%s\n", message))
 
-	ClientEndServerFrame(ent)
+	client_end_server_frame(ent)
 }
 
 ClientCommand :: proc "c" (ent: ^Edict) {
@@ -288,7 +288,7 @@ ClientCommand :: proc "c" (ent: ^Edict) {
 	debug_log("ClientCommand")
 }
 
-G_RunFrame :: proc "c" () {
+RunFrame :: proc "c" () {
 	context = runtime.default_context()
 
 	g_level.framenum += 1
@@ -340,6 +340,6 @@ ClientEndServerFrames :: proc "c" () {
 			continue
 		}
 
-		ClientEndServerFrame(ent)
+		client_end_server_frame(ent)
 	}
 }

@@ -12,7 +12,7 @@ bobmove: f32
 bobcycle: i32 // odd cycles are right foot going forward
 bobfracsin: f32 // sin(bobfrac*M_PI)
 
-SV_CalcRoll :: proc(angles: [3]f32, velocity: [3]f32) -> f32 {
+sv_calc_roll :: proc(angles: [3]f32, velocity: [3]f32) -> f32 {
 	sign: f32
 	side: f32
 	value: f32
@@ -32,7 +32,7 @@ SV_CalcRoll :: proc(angles: [3]f32, velocity: [3]f32) -> f32 {
 	return side * sign
 }
 
-SV_CalcViewOffset :: proc(ent: ^Edict) {
+sv_calc_view_offset :: proc(ent: ^Edict) {
 	angles: ^[3]f32
 	bob: f32
 	ratio: f32
@@ -130,7 +130,7 @@ SV_CalcViewOffset :: proc(ent: ^Edict) {
 	ent.client.ps.viewoffset = v
 }
 
-SV_AddBlend :: proc(r, g, b, a: f32, v_blend: ^[4]f32) {
+sv_add_blend :: proc(r, g, b, a: f32, v_blend: ^[4]f32) {
 	a2, a3: f32
 
 	if a <= 0 {
@@ -146,7 +146,7 @@ SV_AddBlend :: proc(r, g, b, a: f32, v_blend: ^[4]f32) {
 	v_blend[3] = a2
 }
 
-G_SetClientEvent :: proc(ent: ^Edict) {
+set_client_event :: proc(ent: ^Edict) {
 	current_client := ent.client
 
 	if ent.s.event != 0 {
@@ -160,7 +160,7 @@ G_SetClientEvent :: proc(ent: ^Edict) {
 	}
 }
 
-G_SetClientFrame :: proc(ent: ^Edict) {
+set_client_frame :: proc(ent: ^Edict) {
 	duck, run: bool
 
 	if ent.s.modelindex != 255 {
@@ -266,7 +266,7 @@ G_SetClientFrame :: proc(ent: ^Edict) {
 	*/
 }
 
-ClientEndServerFrame :: proc(ent: ^Edict) {
+client_end_server_frame :: proc(ent: ^Edict) {
 	context = runtime.default_context()
 	bobtime: f32
 
@@ -294,7 +294,7 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 
 	ent.s.angles[YAW] = ent.client.v_angle[YAW]
 	ent.s.angles[ROLL] = 0
-	ent.s.angles[ROLL] = SV_CalcRoll(ent.s.angles, ent.velocity) * 4
+	ent.s.angles[ROLL] = sv_calc_roll(ent.s.angles, ent.velocity) * 4
 
 	// calculate speed and cycle to be used for all cyclic walking effects
 	xyspeed = math.sqrt(ent.velocity[0] * ent.velocity[0] + ent.velocity[1] * ent.velocity[1])
@@ -324,11 +324,11 @@ ClientEndServerFrame :: proc(ent: ^Edict) {
 	bobfracsin = math.abs(math.sin(bobtime * math.PI))
 
 	// determine the view offsets
-	SV_CalcViewOffset(ent)
+	sv_calc_view_offset(ent)
 
-	G_SetClientEvent(ent)
+	set_client_event(ent)
 
-	G_SetClientFrame(ent)
+	set_client_frame(ent)
 
 	ent.client.oldvelocity = ent.velocity
 	ent.client.oldviewangles = ent.client.ps.viewangles
