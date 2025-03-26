@@ -1,0 +1,6 @@
+[submodule "pak-adventure/third_party/imgui"]
+	path = pak-adventure/third_party/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "pak-adventure/third_party/tinyfiledialogs"]
+	path = pak-adventure/third_party/tinyfiledialogs
+	url = https://git.code.sf.net/p/tinyfiledialogs/code
