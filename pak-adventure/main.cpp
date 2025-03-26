@@ -205,13 +205,17 @@ namespace PCXParser
 struct PakViewerState
 {
     std::vector<PakFileEntry> entries;
-    std::optional<PCXImage> currentImage;
+    std::vector<PCXImage> loadedImages;   // Store all loaded images
+    std::optional<PCXImage> currentImage; // Currently selected single image
     std::string pakPath;
     int selectedEntry = -1;
     bool showFileDialog = false;
     std::string selectedPath;
     float sidebarWidth = 200.0f;
     FileTreeNode fileTree;
+    bool gridView = true;      // Whether we're in grid view mode
+    std::string currentFolder; // Current folder path being viewed
+    float gridScale = 0.5f;    // Scale factor for grid view
 };
 
 void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
@@ -253,6 +257,24 @@ void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
     }
 }
 
+void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std::vector<PCXImage> &images)
+{
+    // If this is a file node with a PCX
+    if (node.entry && node.name.find(".pcx") != std::string::npos)
+    {
+        if (auto image = PCXParser::loadPCX(pakPath, *node.entry))
+        {
+            images.push_back(*image);
+        }
+    }
+
+    // Recursively process all children
+    for (const auto &child : node.children)
+    {
+        collectPCXImages(child, pakPath, images);
+    }
+}
+
 void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
 {
     if (node.children.empty())
@@ -267,6 +289,7 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
                                                    [&](const PakFileEntry &e)
                                                    { return e.filename == node.entry->filename; }) -
                                       state.entries.begin();
+                state.gridView = false; // Switch to single view when selecting an image
                 state.currentImage = PCXParser::loadPCX(state.pakPath, *node.entry);
             }
         }
@@ -281,6 +304,16 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
                 renderFileTreeNode(child, state);
             }
             ImGui::TreePop();
+        }
+
+        // Handle folder selection
+        if (ImGui::IsItemClicked())
+        {
+            state.gridView = true;
+            state.currentFolder = node.name;
+            // Load all PCX images in this folder and its subfolders
+            state.loadedImages.clear();
+            collectPCXImages(node, state.pakPath, state.loadedImages);
         }
     }
 }
@@ -400,11 +433,41 @@ auto renderUI(PakViewerState &state) -> void
 
     ImGui::SameLine();
     ImGui::BeginChild("ImageView", ImVec2(0, 0), true);
-    if (state.currentImage)
+
+    if (state.gridView)
     {
+        // Grid view controls
+        ImGui::SliderFloat("Grid Scale", &state.gridScale, 0.1f, 2.0f);
+
+        // Calculate grid layout
+        float windowWidth = ImGui::GetWindowWidth();
+        float windowHeight = ImGui::GetWindowHeight();
+        float cellSize = 200.0f * state.gridScale;
+        int columns = static_cast<int>(windowWidth / cellSize);
+        columns = std::max(1, columns);
+
+        ImGui::BeginGroup();
+        for (size_t i = 0; i < state.loadedImages.size(); ++i)
+        {
+            if (i % columns != 0)
+                ImGui::SameLine();
+
+            const auto &image = state.loadedImages[i];
+            float scaledWidth = cellSize;
+            float scaledHeight = (cellSize * image.height) / image.width;
+
+            ImGui::Image((ImTextureID)(uintptr_t)image.textureID,
+                         ImVec2(scaledWidth, scaledHeight));
+        }
+        ImGui::EndGroup();
+    }
+    else if (state.currentImage)
+    {
+        // Single image view
         ImGui::Image((ImTextureID)(uintptr_t)state.currentImage->textureID,
                      ImVec2(state.currentImage->width, state.currentImage->height));
     }
+
     ImGui::EndChild();
 
     ImGui::End();
@@ -456,9 +519,14 @@ int main()
         glfwSwapBuffers(window);
     }
 
+    // Clean up all loaded textures
     if (state.currentImage)
     {
         glDeleteTextures(1, &state.currentImage->textureID);
+    }
+    for (const auto &image : state.loadedImages)
+    {
+        glDeleteTextures(1, &image.textureID);
     }
 
     ImGui_ImplOpenGL3_Shutdown();
