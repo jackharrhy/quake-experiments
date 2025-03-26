@@ -8,9 +8,17 @@
 #include <fstream>
 #include <optional>
 #include <functional>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <emscripten/val.h>
+#include <emscripten/html5.h>
+#include <emscripten/bind.h>
+#else
 #include <zlib.h>
-#include <filesystem>
 #include <tinyfiledialogs.h>
+#endif
+#include <filesystem>
+#include "platform.h"
 
 struct PakFileEntry
 {
@@ -320,6 +328,10 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
 
 std::string openFileDialog()
 {
+#ifdef __EMSCRIPTEN__
+    // For web, we use the Platform abstraction which handles HTML5 file input
+    return Platform::openFileDialog("Select PAK File", "");
+#else
     const char *filters[] = {"*.pak", "PAK Files"};
     const char *file = tinyfd_openFileDialog(
         "Select PAK File",
@@ -329,6 +341,7 @@ std::string openFileDialog()
         "PAK Files",
         0);
     return file ? std::string(file) : "";
+#endif
 }
 
 auto renderUI(PakViewerState &state) -> void
@@ -475,34 +488,92 @@ auto renderUI(PakViewerState &state) -> void
 
 int main()
 {
+    printf("Starting application initialization...\n");
     if (!glfwInit())
+    {
+        printf("Failed to initialize GLFW\n");
         return -1;
+    }
+    printf("GLFW initialized successfully\n");
 
-    // Add OpenGL 4.1 context hints
+#ifdef __EMSCRIPTEN__
+    printf("Running in Emscripten environment\n");
+    // For web, we use WebGL2
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+
+    // Set up file handling callback
+    Platform::setFileSelectedCallback([](const std::string &filename, const std::vector<uint8_t> &data)
+                                      {
+        printf("File received: %s, size: %zu bytes\n", filename.c_str(), data.size());
+        
+        // Create a temporary file to handle the data
+        // This is a workaround until we implement memory-based file reading
+        std::string tempFilename = filename;
+        FILE* tempFile = fopen(tempFilename.c_str(), "wb");
+        if (tempFile) {
+            fwrite(data.data(), 1, data.size(), tempFile);
+            fclose(tempFile);
+            
+            // Try to load the PAK file
+            auto entries = PakParser::loadPakFile(tempFilename);
+            if (entries) {
+                printf("PAK file loaded successfully with %zu entries\n", entries->size());
+                // Update the UI state here
+                // Note: We need to be careful about accessing state from this callback
+                // You might want to store the entries in a queue and process them in the main loop
+            } else {
+                printf("Failed to load PAK file\n");
+            }
+            
+            // Clean up the temporary file
+            remove(tempFilename.c_str());
+        } else {
+            printf("Failed to create temporary file\n");
+        } });
+#else
+    printf("Running in desktop environment\n");
+    // Desktop OpenGL 4.1
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
     GLFWwindow *window = glfwCreateWindow(1280, 720, "Quake II PAK Viewer", nullptr, nullptr);
     if (!window)
     {
+        printf("Failed to create GLFW window\n");
         glfwTerminate();
         return -1;
     }
-
+    printf("GLFW window created successfully\n");
     glfwMakeContextCurrent(window);
+
     glfwSwapInterval(1);
 
+    printf("Initializing ImGui...\n");
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL(window, true);
+#ifdef __EMSCRIPTEN__
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+#else
     ImGui_ImplOpenGL3_Init("#version 410");
+#endif
+    printf("ImGui initialized successfully\n");
 
     PakViewerState state;
 
-    while (!glfwWindowShouldClose(window))
-    {
+    printf("Initializing platform...\n");
+    Platform::init();
+    printf("Platform initialized successfully\n");
+
+    printf("Starting main loop...\n");
+    Platform::mainLoop([&]()
+                       {
+        printf("Main loop iteration\n");
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -512,13 +583,17 @@ int main()
 
         ImGui::Render();
         int display_w, display_h;
+#ifdef __EMSCRIPTEN__
+        emscripten_get_canvas_element_size("#canvas", &display_w, &display_h);
+#else
         glfwGetFramebufferSize(window, &display_w, &display_h);
+#endif
         glViewport(0, 0, display_w, display_h);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        glfwSwapBuffers(window);
-    }
+        glfwSwapBuffers(window); });
 
+    printf("Main loop ended, cleaning up...\n");
     // Clean up all loaded textures
     if (state.currentImage)
     {
@@ -532,8 +607,13 @@ int main()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+#ifndef __EMSCRIPTEN__
     glfwDestroyWindow(window);
+#endif
     glfwTerminate();
 
+    Platform::cleanup();
+
+    printf("Application cleanup completed\n");
     return 0;
 }

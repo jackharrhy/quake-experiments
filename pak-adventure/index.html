@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Quake II PAK Viewer</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        var QuakePakViewer = {
+            canvas: document.getElementById('canvas'),
+            printErr: function(text) {
+                console.error(text);
+            },
+            print: function(text) {
+                console.log(text);
+            }
+        };
+    </script>
+    <script async src="QuakePakViewer.js"></script>
+</body>
+</html> 
