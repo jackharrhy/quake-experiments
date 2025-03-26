@@ -27,6 +27,12 @@ ClientThink :: proc "c" (ent: ^Edict, cmd: ^Usercmd) {
 		client.ps.pmove.pm_type = .NORMAL
 	}
 
+	if cvar_sv_autobhop.value != 0 {
+		if (cmd.upmove >= 10 && ent.groundentity == nil) {
+			client.ps.pmove.pm_flags &= ~u8(PMF.JUMP_HELD)
+		}
+	}
+
 	client.ps.pmove.gravity = i16(cvar_sv_gravity.value)
 
 	pm.state = client.ps.pmove

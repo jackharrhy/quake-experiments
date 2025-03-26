@@ -12,6 +12,7 @@ setup_cvars :: proc() {
 
 	cvar_sv_cheats = gi.cvar("sv_cheats", "0", 0)
 	cvar_sv_gravity = gi.cvar("sv_gravity", "800", 0)
+	cvar_sv_airaccelerate = gi.cvar("sv_airaccelerate", "1", 0)
 	cvar_sv_rollspeed = gi.cvar("sv_rollspeed", "2", 0)
 	cvar_sv_rollangle = gi.cvar("sv_rollangle", "2", 0)
 	cvar_run_pitch = gi.cvar("run_pitch", "0.002", 0)
@@ -19,6 +20,8 @@ setup_cvars :: proc() {
 	cvar_bob_up = gi.cvar("bob_up", "0.005", 0)
 	cvar_bob_pitch = gi.cvar("bob_pitch", "0.002", 0)
 	cvar_bob_roll = gi.cvar("bob_roll", "0.002", 0)
+
+	cvar_sv_autobhop = gi.cvar("sv_autobhop", "0", 0)
 }
 
 setup_globals :: proc() {

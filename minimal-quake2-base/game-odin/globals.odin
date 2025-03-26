@@ -16,6 +16,7 @@ cvar_maxclients: ^Cvar
 
 cvar_sv_cheats: ^Cvar
 cvar_sv_gravity: ^Cvar
+cvar_sv_airaccelerate: ^Cvar
 cvar_sv_rollspeed: ^Cvar
 cvar_sv_rollangle: ^Cvar
 cvar_run_pitch: ^Cvar
@@ -23,3 +24,5 @@ cvar_run_roll: ^Cvar
 cvar_bob_up: ^Cvar
 cvar_bob_pitch: ^Cvar
 cvar_bob_roll: ^Cvar
+
+cvar_sv_autobhop: ^Cvar

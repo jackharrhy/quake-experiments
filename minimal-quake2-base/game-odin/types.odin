@@ -292,7 +292,7 @@ Edict :: struct {
 	light_level:            i32,
 }
 
-Usercmd :: struct #packed {
+Usercmd :: struct {
 	msec:        u8,
 	buttons:     u8,
 	angles:      [3]i16,
