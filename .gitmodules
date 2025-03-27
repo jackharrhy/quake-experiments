@@ -4,3 +4,12 @@
 [submodule "pak-adventure/third_party/tinyfiledialogs"]
 	path = pak-adventure/third_party/tinyfiledialogs
 	url = https://git.code.sf.net/p/tinyfiledialogs/code
+[submodule "pak-adventure/third_party/libzip"]
+	path = pak-adventure/third_party/libzip
+	url = https://github.com/nih-at/libzip.git
+[submodule "pak-adventure/third_party/stb"]
+	path = pak-adventure/third_party/stb
+	url = https://github.com/nothings/stb.git
+[submodule "pak-adventure/third_party/miniaudio"]
+	path = pak-adventure/third_party/miniaudio
+	url = https://github.com/mackron/miniaudio.git

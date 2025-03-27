@@ -1,4 +1,5 @@
 #define GL_SILENCE_DEPRECATION
+#define STB_IMAGE_IMPLEMENTATION
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
@@ -11,12 +12,17 @@
 #include <zlib.h>
 #include <filesystem>
 #include <tinyfiledialogs.h>
+#include <zip.h>
+#include <iostream>
+#include <stb_image.h>
 
 struct PakFileEntry
 {
     std::string filename;
     uint32_t offset;
     uint32_t size;
+    bool isPK3;          // Whether this entry is from a PK3 file
+    zip_file_t *zipFile; // For PK3 files
 };
 
 struct FileTreeNode
@@ -31,6 +37,16 @@ struct PCXImage
     int width;
     int height;
     GLuint textureID;
+};
+
+struct TextFile
+{
+    std::string contents;
+};
+
+struct BinaryFile
+{
+    std::vector<uint8_t> data;
 };
 
 namespace PakParser
@@ -202,11 +218,304 @@ namespace PCXParser
     }
 }
 
+namespace WALParser
+{
+    struct WALHeader
+    {
+        char name[32];
+        uint32_t width;
+        uint32_t height;
+        uint32_t offset[4]; // mipmap offsets
+        char animname[32];
+        uint32_t flags;
+        uint32_t contents;
+        uint32_t value;
+    };
+
+    static std::optional<std::vector<uint8_t>> globalPalette;
+
+    auto loadGlobalPalette(const std::string &pakPath, const std::vector<PakFileEntry> &entries) -> bool
+    {
+        // Find the colormap.pcx entry
+        auto it = std::find_if(entries.begin(), entries.end(),
+                               [](const PakFileEntry &e)
+                               { return e.filename == "pics/colormap.pcx"; });
+
+        if (it == entries.end())
+        {
+            return false;
+        }
+
+        // Load the PCX file
+        std::ifstream file(pakPath, std::ios::binary);
+        if (!file.is_open())
+        {
+            return false;
+        }
+
+        file.seekg(it->offset);
+        auto pcxImage = PCXParser::loadPCX(pakPath, *it);
+        if (!pcxImage)
+        {
+            return false;
+        }
+
+        // Read back the texture data to get the palette
+        std::vector<uint8_t> pixels(pcxImage->width * pcxImage->height * 4);
+        glBindTexture(GL_TEXTURE_2D, pcxImage->textureID);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        // Convert RGBA to RGB palette
+        globalPalette = std::vector<uint8_t>(256 * 3);
+        for (int i = 0; i < 256; i++)
+        {
+            globalPalette->at(i * 3 + 0) = pixels[i * 4 + 0];
+            globalPalette->at(i * 3 + 1) = pixels[i * 4 + 1];
+            globalPalette->at(i * 3 + 2) = pixels[i * 4 + 2];
+        }
+
+        // Clean up the temporary texture
+        glDeleteTextures(1, &pcxImage->textureID);
+        return true;
+    }
+
+    auto readHeader(std::ifstream &file) -> std::optional<WALHeader>
+    {
+        WALHeader header;
+        file.read(header.name, 32);
+        file.read(reinterpret_cast<char *>(&header.width), 4);
+        file.read(reinterpret_cast<char *>(&header.height), 4);
+        file.read(reinterpret_cast<char *>(&header.offset), 16); // 4 mipmap offsets
+        file.read(header.animname, 32);
+        file.read(reinterpret_cast<char *>(&header.flags), 4);
+        file.read(reinterpret_cast<char *>(&header.contents), 4);
+        file.read(reinterpret_cast<char *>(&header.value), 4);
+
+        return file ? std::optional(header) : std::nullopt;
+    }
+
+    auto loadWAL(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<PCXImage>
+    {
+        // Load the global palette if we haven't already
+        if (!globalPalette)
+        {
+            // We need to find all entries to locate the colormap
+            auto entries = PakParser::loadPakFile(pakPath);
+            if (!entries || !loadGlobalPalette(pakPath, *entries))
+            {
+                return std::nullopt;
+            }
+        }
+
+        std::ifstream file(pakPath, std::ios::binary);
+        if (!file.is_open())
+            return std::nullopt;
+
+        file.seekg(entry.offset);
+        auto header = readHeader(file);
+        if (!header)
+            return std::nullopt;
+
+        // Read the main image data
+        std::vector<uint8_t> data(header->width * header->height);
+        file.seekg(entry.offset + header->offset[0]); // First mipmap level
+        file.read(reinterpret_cast<char *>(data.data()), data.size());
+
+        // Convert indexed color to RGBA using global palette
+        std::vector<uint8_t> rgba(header->width * header->height * 4);
+        for (int i = 0; i < header->width * header->height; i++)
+        {
+            uint8_t colorIndex = data[i];
+            // Handle transparent pixels (index 255 is transparent)
+            if (colorIndex == 255)
+            {
+                rgba[i * 4 + 0] = 0; // R
+                rgba[i * 4 + 1] = 0; // G
+                rgba[i * 4 + 2] = 0; // B
+                rgba[i * 4 + 3] = 0; // A (transparent)
+            }
+            else
+            {
+                rgba[i * 4 + 0] = globalPalette->at(colorIndex * 3 + 0); // R
+                rgba[i * 4 + 1] = globalPalette->at(colorIndex * 3 + 1); // G
+                rgba[i * 4 + 2] = globalPalette->at(colorIndex * 3 + 2); // B
+                rgba[i * 4 + 3] = 255;                                   // A (opaque)
+            }
+        }
+
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, header->width, header->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        return PCXImage{static_cast<int>(header->width), static_cast<int>(header->height), textureID};
+    }
+}
+
+namespace PK3Parser
+{
+    auto loadPK3File(const std::string &path) -> std::optional<std::vector<PakFileEntry>>
+    {
+        int error;
+        zip_t *archive = zip_open(path.c_str(), 0, &error);
+        if (!archive)
+            return std::nullopt;
+
+        std::vector<PakFileEntry> entries;
+        zip_int64_t num_entries = zip_get_num_entries(archive, 0);
+
+        for (zip_int64_t i = 0; i < num_entries; i++)
+        {
+            struct zip_stat st;
+            if (zip_stat_index(archive, i, 0, &st) == -1)
+                continue;
+
+            // Skip directories
+            if (st.name[strlen(st.name) - 1] == '/')
+                continue;
+
+            PakFileEntry entry;
+            entry.filename = st.name;
+            entry.size = st.size;
+            entry.isPK3 = true;
+            entry.zipFile = nullptr; // Will be set when file is opened
+            entries.push_back(entry);
+        }
+
+        return entries;
+    }
+
+    auto readPK3File(const std::string &path, const PakFileEntry &entry) -> std::vector<uint8_t>
+    {
+        int error;
+        zip_t *archive = zip_open(path.c_str(), 0, &error);
+        if (!archive)
+            return {};
+
+        zip_file_t *file = zip_fopen(archive, entry.filename.c_str(), 0);
+        if (!file)
+        {
+            zip_close(archive);
+            return {};
+        }
+
+        std::vector<uint8_t> data(entry.size);
+        zip_fread(file, data.data(), entry.size);
+        zip_fclose(file);
+        zip_close(archive);
+
+        return data;
+    }
+}
+
+namespace TextFileParser
+{
+    auto loadTextFile(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<TextFile>
+    {
+        if (entry.isPK3)
+        {
+            auto data = PK3Parser::readPK3File(pakPath, entry);
+            if (data.empty())
+                return std::nullopt;
+            return TextFile{std::string(data.begin(), data.end())};
+        }
+
+        std::ifstream file(pakPath, std::ios::binary);
+        if (!file.is_open())
+            return std::nullopt;
+
+        file.seekg(entry.offset);
+        std::string contents(entry.size, '\0');
+        file.read(&contents[0], entry.size);
+
+        return TextFile{contents};
+    }
+}
+
+namespace BinaryFileParser
+{
+    auto loadBinaryFile(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<BinaryFile>
+    {
+        if (entry.isPK3)
+        {
+            auto data = PK3Parser::readPK3File(pakPath, entry);
+            if (data.empty())
+                return std::nullopt;
+            return BinaryFile{data};
+        }
+
+        std::ifstream file(pakPath, std::ios::binary);
+        if (!file.is_open())
+            return std::nullopt;
+
+        file.seekg(entry.offset);
+        std::vector<uint8_t> data(entry.size);
+        file.read(reinterpret_cast<char *>(data.data()), entry.size);
+
+        return BinaryFile{data};
+    }
+}
+
+namespace STBImageParser
+{
+    auto loadSTBImage(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<PCXImage>
+    {
+        if (entry.isPK3)
+        {
+            auto data = PK3Parser::readPK3File(pakPath, entry);
+            if (data.empty())
+                return std::nullopt;
+
+            int width, height, channels;
+            unsigned char *imageData = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
+            if (!imageData)
+                return std::nullopt;
+
+            GLuint textureID;
+            glGenTextures(1, &textureID);
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+            stbi_image_free(imageData);
+            return PCXImage{width, height, textureID};
+        }
+
+        std::ifstream file(pakPath, std::ios::binary);
+        if (!file.is_open())
+            return std::nullopt;
+
+        file.seekg(entry.offset);
+        std::vector<uint8_t> data(entry.size);
+        file.read(reinterpret_cast<char *>(data.data()), entry.size);
+
+        int width, height, channels;
+        unsigned char *imageData = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
+        if (!imageData)
+            return std::nullopt;
+
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        stbi_image_free(imageData);
+        return PCXImage{width, height, textureID};
+    }
+}
+
 struct PakViewerState
 {
     std::vector<PakFileEntry> entries;
-    std::vector<PCXImage> loadedImages;   // Store all loaded images
-    std::optional<PCXImage> currentImage; // Currently selected single image
+    std::vector<PCXImage> loadedImages;      // Store all loaded images
+    std::optional<PCXImage> currentImage;    // Currently selected single image
+    std::optional<TextFile> currentText;     // Currently selected text file
+    std::optional<BinaryFile> currentBinary; // Currently selected binary file
     std::string pakPath;
     int selectedEntry = -1;
     bool showFileDialog = false;
@@ -259,12 +568,32 @@ void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
 
 void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std::vector<PCXImage> &images)
 {
-    // If this is a file node with a PCX
-    if (node.entry && node.name.find(".pcx") != std::string::npos)
+    // If this is a file node with a supported image format
+    if (node.entry)
     {
-        if (auto image = PCXParser::loadPCX(pakPath, *node.entry))
+        std::string ext = std::filesystem::path(node.name).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        if (ext == ".pcx")
         {
-            images.push_back(*image);
+            if (auto image = PCXParser::loadPCX(pakPath, *node.entry))
+            {
+                images.push_back(*image);
+            }
+        }
+        else if (ext == ".wal")
+        {
+            if (auto image = WALParser::loadWAL(pakPath, *node.entry))
+            {
+                images.push_back(*image);
+            }
+        }
+        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
+        {
+            if (auto image = STBImageParser::loadSTBImage(pakPath, *node.entry))
+            {
+                images.push_back(*image);
+            }
         }
     }
 
@@ -280,18 +609,70 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
     if (node.children.empty())
     {
         // This is a file
-        if (node.name.find(".pcx") != std::string::npos)
+        std::string ext = std::filesystem::path(node.name).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        bool isPCX = ext == ".pcx";
+        bool isWAL = ext == ".wal";
+        bool isSTBImage = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
+        bool isText = ext == ".cfg" || ext == ".txt";
+        bool isBinary = ext == ".dat";
+        bool isViewable = isPCX || isWAL || isSTBImage || isText || isBinary;
+
+        // Set text color based on file type
+        if (!isViewable)
         {
-            if (ImGui::Selectable(node.name.c_str(), state.selectedEntry != -1 &&
-                                                         state.entries[state.selectedEntry].filename == node.entry->filename))
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        }
+
+        if (ImGui::Selectable(node.name.c_str(), state.selectedEntry != -1 &&
+                                                     state.entries[state.selectedEntry].filename == node.entry->filename))
+        {
+            if (isViewable)
             {
                 state.selectedEntry = std::find_if(state.entries.begin(), state.entries.end(),
                                                    [&](const PakFileEntry &e)
                                                    { return e.filename == node.entry->filename; }) -
                                       state.entries.begin();
                 state.gridView = false; // Switch to single view when selecting an image
-                state.currentImage = PCXParser::loadPCX(state.pakPath, *node.entry);
+
+                if (isPCX)
+                {
+                    state.currentImage = PCXParser::loadPCX(state.pakPath, *node.entry);
+                    state.currentText = std::nullopt;
+                    state.currentBinary = std::nullopt;
+                }
+                else if (isWAL)
+                {
+                    state.currentImage = WALParser::loadWAL(state.pakPath, *node.entry);
+                    state.currentText = std::nullopt;
+                    state.currentBinary = std::nullopt;
+                }
+                else if (isSTBImage)
+                {
+                    state.currentImage = STBImageParser::loadSTBImage(state.pakPath, *node.entry);
+                    state.currentText = std::nullopt;
+                    state.currentBinary = std::nullopt;
+                }
+                else if (isText)
+                {
+                    state.currentImage = std::nullopt;
+                    state.currentText = TextFileParser::loadTextFile(state.pakPath, *node.entry);
+                    state.currentBinary = std::nullopt;
+                }
+                else if (isBinary)
+                {
+                    state.currentImage = std::nullopt;
+                    state.currentText = std::nullopt;
+                    state.currentBinary = BinaryFileParser::loadBinaryFile(state.pakPath, *node.entry);
+                }
             }
+        }
+
+        // Pop the style color if we pushed it
+        if (!isViewable)
+        {
+            ImGui::PopStyleColor();
         }
     }
     else
@@ -311,7 +692,7 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
         {
             state.gridView = true;
             state.currentFolder = node.name;
-            // Load all PCX images in this folder and its subfolders
+            // Load all viewable images in this folder and its subfolders
             state.loadedImages.clear();
             collectPCXImages(node, state.pakPath, state.loadedImages);
         }
@@ -320,15 +701,22 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
 
 std::string openFileDialog()
 {
-    const char *filters[] = {"*.pak", "PAK Files"};
     const char *file = tinyfd_openFileDialog(
-        "Select PAK File",
+        "Select PAK/PK3 File",
         "",
-        2,
-        filters,
-        "PAK Files",
+        0,
+        nullptr,
+        "All Files",
         0);
-    return file ? std::string(file) : "";
+
+    if (file)
+    {
+        std::string path(file);
+        std::cout << "Selected file: " << path << std::endl;
+        std::cout << "Extension: " << std::filesystem::path(path).extension().string() << std::endl;
+        return path;
+    }
+    return "";
 }
 
 auto renderUI(PakViewerState &state) -> void
@@ -373,7 +761,19 @@ auto renderUI(PakViewerState &state) -> void
         {
             if (std::filesystem::exists(path))
             {
-                auto newEntries = PakParser::loadPakFile(path);
+                std::string ext = std::filesystem::path(path).extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                std::optional<std::vector<PakFileEntry>> newEntries;
+                if (ext == ".pak")
+                {
+                    newEntries = PakParser::loadPakFile(path);
+                }
+                else if (ext == ".pk3")
+                {
+                    newEntries = PK3Parser::loadPK3File(path);
+                }
+
                 if (newEntries)
                 {
                     state.entries = *newEntries;
@@ -466,6 +866,69 @@ auto renderUI(PakViewerState &state) -> void
         // Single image view
         ImGui::Image((ImTextureID)(uintptr_t)state.currentImage->textureID,
                      ImVec2(state.currentImage->width, state.currentImage->height));
+    }
+    else if (state.currentText)
+    {
+        // Text file view
+        ImGui::BeginChild("TextView", ImVec2(0, 0), true);
+        ImGui::TextWrapped("%s", state.currentText->contents.c_str());
+        ImGui::EndChild();
+    }
+    else if (state.currentBinary)
+    {
+        // Binary file view (hex viewer)
+        ImGui::BeginChild("HexView", ImVec2(0, 0), true);
+
+        // File size info
+        ImGui::Text("File Size: %zu bytes", state.currentBinary->data.size());
+
+        // Hex viewer settings
+        static int bytesPerRow = 16;
+        static bool showAscii = true;
+        ImGui::SliderInt("Bytes per Row", &bytesPerRow, 4, 32, "%d", ImGuiSliderFlags_None);
+        ImGui::SameLine();
+        ImGui::Checkbox("Show ASCII", &showAscii);
+
+        // Hex viewer content
+        const auto &data = state.currentBinary->data;
+        char line[256];
+        for (size_t i = 0; i < data.size(); i += bytesPerRow)
+        {
+            // Address
+            snprintf(line, sizeof(line), "%08zX: ", i);
+            ImGui::Text("%s", line);
+
+            // Hex values
+            for (int j = 0; j < bytesPerRow && (i + j) < data.size(); j++)
+            {
+                ImGui::SameLine();
+                snprintf(line, sizeof(line), "%02X", data[i + j]);
+                ImGui::Text("%s", line);
+            }
+
+            // ASCII representation
+            if (showAscii)
+            {
+                ImGui::SameLine();
+                ImGui::Text("  |");
+                for (int j = 0; j < bytesPerRow && (i + j) < data.size(); j++)
+                {
+                    ImGui::SameLine();
+                    char c = data[i + j];
+                    if (c >= 32 && c <= 126)
+                    {
+                        snprintf(line, sizeof(line), "%c", c);
+                    }
+                    else
+                    {
+                        snprintf(line, sizeof(line), ".");
+                    }
+                    ImGui::Text("%s", line);
+                }
+            }
+        }
+
+        ImGui::EndChild();
     }
 
     ImGui::EndChild();

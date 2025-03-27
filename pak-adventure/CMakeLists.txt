@@ -6,6 +6,9 @@ find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(ZLIB REQUIRED)
 
+# Add libzip from submodule
+add_subdirectory(third_party/libzip)
+
 # Add ImGui library
 add_library(imgui
     third_party/imgui/imgui.cpp
@@ -34,4 +37,8 @@ target_include_directories(tinyfiledialogs PUBLIC
 target_link_libraries(imgui PUBLIC glfw)
 
 add_executable(PakViewer main.cpp)
-target_link_libraries(PakViewer glfw OpenGL::GL ZLIB::ZLIB imgui tinyfiledialogs)
+target_include_directories(PakViewer PRIVATE 
+    ${CMAKE_SOURCE_DIR}/third_party/libzip/lib
+    ${CMAKE_SOURCE_DIR}/third_party/stb
+)
+target_link_libraries(PakViewer glfw OpenGL::GL ZLIB::ZLIB zip imgui tinyfiledialogs)
