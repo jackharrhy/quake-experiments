@@ -15,14 +15,23 @@
 #include <zip.h>
 #include <iostream>
 #include <stb_image.h>
+#include <unordered_map>
+
+// Define an enum for Pak file formats
+enum class PakFormat
+{
+    PAK,   // Original Quake/Quake 2 .pak format
+    PKZIP, // ZIP-based formats (PK3, PK4, etc.)
+    UNKNOWN
+};
 
 struct PakFileEntry
 {
     std::string filename;
     uint32_t offset;
     uint32_t size;
-    bool isPK3;          // Whether this entry is from a PK3 file
-    zip_file_t *zipFile; // For PK3 files
+    PakFormat format;    // Format of the archive containing this entry
+    zip_file_t *zipFile; // For ZIP-based formats (only valid during read operations)
 };
 
 struct FileTreeNode
@@ -37,6 +46,7 @@ struct PCXImage
     int width;
     int height;
     GLuint textureID;
+    std::string filename; // Add filename to track which file this image is from
 };
 
 struct TextFile
@@ -48,6 +58,34 @@ struct BinaryFile
 {
     std::vector<uint8_t> data;
 };
+
+namespace ParserRegistry
+{
+    // Function types for different operations
+    using LoadArchiveFunc = std::optional<std::vector<PakFileEntry>> (*)(const std::string &);
+    using ReadDataFunc = std::vector<uint8_t> (*)(const std::string &, const PakFileEntry &);
+
+    // Structure to hold parser functions for a specific format
+    struct FormatHandlers
+    {
+        LoadArchiveFunc loadArchive;
+        ReadDataFunc readData;
+        std::string description;
+    };
+
+    // Declare the handlers map (will be defined after all parsers are implemented)
+    extern std::unordered_map<PakFormat, FormatHandlers> handlers;
+
+    // Helper to get file format from extension
+    PakFormat getFormatFromExtension(const std::string &extension)
+    {
+        if (extension == ".pak")
+            return PakFormat::PAK;
+        if (extension == ".pk3" || extension == ".pk4")
+            return PakFormat::PKZIP;
+        return PakFormat::UNKNOWN;
+    }
+}
 
 namespace PakParser
 {
@@ -84,7 +122,7 @@ namespace PakParser
         return {std::string(name), offset, size};
     }
 
-    auto loadPakFile(const std::string &path) -> std::optional<std::vector<PakFileEntry>>
+    auto loadArchive(const std::string &path) -> std::optional<std::vector<PakFileEntry>>
     {
         std::ifstream file(path, std::ios::binary);
         if (!file.is_open())
@@ -97,11 +135,26 @@ namespace PakParser
         file.seekg(header->dirOffset);
         std::vector<PakFileEntry> entries(header->dirLength / 64);
 
-        std::generate(entries.begin(), entries.end(),
-                      [&file]()
-                      { return readEntry(file); });
+        for (auto &entry : entries)
+        {
+            entry = readEntry(file);
+            entry.format = PakFormat::PAK;
+        }
 
         return entries;
+    }
+
+    auto readData(const std::string &path, const PakFileEntry &entry) -> std::vector<uint8_t>
+    {
+        std::ifstream file(path, std::ios::binary);
+        if (!file.is_open())
+            return {};
+
+        file.seekg(entry.offset);
+        std::vector<uint8_t> data(entry.size);
+        file.read(reinterpret_cast<char *>(data.data()), entry.size);
+
+        return data;
     }
 }
 
@@ -214,7 +267,7 @@ namespace PCXParser
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        return PCXImage{width, height, textureID};
+        return PCXImage{width, height, textureID, ""}; // Initialize filename field
     }
 }
 
@@ -300,7 +353,7 @@ namespace WALParser
         if (!globalPalette)
         {
             // We need to find all entries to locate the colormap
-            auto entries = PakParser::loadPakFile(pakPath);
+            auto entries = PakParser::loadArchive(pakPath);
             if (!entries || !loadGlobalPalette(pakPath, *entries))
             {
                 return std::nullopt;
@@ -350,13 +403,13 @@ namespace WALParser
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        return PCXImage{static_cast<int>(header->width), static_cast<int>(header->height), textureID};
+        return PCXImage{static_cast<int>(header->width), static_cast<int>(header->height), textureID, ""};
     }
 }
 
-namespace PK3Parser
+namespace PKZipParser
 {
-    auto loadPK3File(const std::string &path) -> std::optional<std::vector<PakFileEntry>>
+    auto loadArchive(const std::string &path) -> std::optional<std::vector<PakFileEntry>>
     {
         int error;
         zip_t *archive = zip_open(path.c_str(), 0, &error);
@@ -379,7 +432,7 @@ namespace PK3Parser
             PakFileEntry entry;
             entry.filename = st.name;
             entry.size = st.size;
-            entry.isPK3 = true;
+            entry.format = PakFormat::PKZIP;
             entry.zipFile = nullptr; // Will be set when file is opened
             entries.push_back(entry);
         }
@@ -387,7 +440,7 @@ namespace PK3Parser
         return entries;
     }
 
-    auto readPK3File(const std::string &path, const PakFileEntry &entry) -> std::vector<uint8_t>
+    auto readData(const std::string &path, const PakFileEntry &entry) -> std::vector<uint8_t>
     {
         int error;
         zip_t *archive = zip_open(path.c_str(), 0, &error);
@@ -414,23 +467,13 @@ namespace TextFileParser
 {
     auto loadTextFile(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<TextFile>
     {
-        if (entry.isPK3)
-        {
-            auto data = PK3Parser::readPK3File(pakPath, entry);
-            if (data.empty())
-                return std::nullopt;
-            return TextFile{std::string(data.begin(), data.end())};
-        }
+        auto readDataFunc = ParserRegistry::handlers[entry.format].readData;
+        auto data = readDataFunc(pakPath, entry);
 
-        std::ifstream file(pakPath, std::ios::binary);
-        if (!file.is_open())
+        if (data.empty())
             return std::nullopt;
 
-        file.seekg(entry.offset);
-        std::string contents(entry.size, '\0');
-        file.read(&contents[0], entry.size);
-
-        return TextFile{contents};
+        return TextFile{std::string(data.begin(), data.end())};
     }
 }
 
@@ -438,21 +481,11 @@ namespace BinaryFileParser
 {
     auto loadBinaryFile(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<BinaryFile>
     {
-        if (entry.isPK3)
-        {
-            auto data = PK3Parser::readPK3File(pakPath, entry);
-            if (data.empty())
-                return std::nullopt;
-            return BinaryFile{data};
-        }
+        auto readDataFunc = ParserRegistry::handlers[entry.format].readData;
+        auto data = readDataFunc(pakPath, entry);
 
-        std::ifstream file(pakPath, std::ios::binary);
-        if (!file.is_open())
+        if (data.empty())
             return std::nullopt;
-
-        file.seekg(entry.offset);
-        std::vector<uint8_t> data(entry.size);
-        file.read(reinterpret_cast<char *>(data.data()), entry.size);
 
         return BinaryFile{data};
     }
@@ -462,35 +495,11 @@ namespace STBImageParser
 {
     auto loadSTBImage(const std::string &pakPath, const PakFileEntry &entry) -> std::optional<PCXImage>
     {
-        if (entry.isPK3)
-        {
-            auto data = PK3Parser::readPK3File(pakPath, entry);
-            if (data.empty())
-                return std::nullopt;
+        auto readDataFunc = ParserRegistry::handlers[entry.format].readData;
+        auto data = readDataFunc(pakPath, entry);
 
-            int width, height, channels;
-            unsigned char *imageData = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
-            if (!imageData)
-                return std::nullopt;
-
-            GLuint textureID;
-            glGenTextures(1, &textureID);
-            glBindTexture(GL_TEXTURE_2D, textureID);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-            stbi_image_free(imageData);
-            return PCXImage{width, height, textureID};
-        }
-
-        std::ifstream file(pakPath, std::ios::binary);
-        if (!file.is_open())
+        if (data.empty())
             return std::nullopt;
-
-        file.seekg(entry.offset);
-        std::vector<uint8_t> data(entry.size);
-        file.read(reinterpret_cast<char *>(data.data()), entry.size);
 
         int width, height, channels;
         unsigned char *imageData = stbi_load_from_memory(data.data(), data.size(), &width, &height, &channels, STBI_rgb_alpha);
@@ -505,8 +514,16 @@ namespace STBImageParser
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
         stbi_image_free(imageData);
-        return PCXImage{width, height, textureID};
+        return PCXImage{width, height, textureID, ""};
     }
+}
+
+// Define the ParserRegistry::handlers map after all parsers are implemented
+namespace ParserRegistry
+{
+    std::unordered_map<PakFormat, FormatHandlers> handlers = {
+        {PakFormat::PAK, {&PakParser::loadArchive, &PakParser::readData, "Quake/Quake 2 PAK Format"}},
+        {PakFormat::PKZIP, {&PKZipParser::loadArchive, &PKZipParser::readData, "ZIP-based Format (PK3/PK4)"}}};
 }
 
 struct PakViewerState
@@ -578,6 +595,7 @@ void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std:
         {
             if (auto image = PCXParser::loadPCX(pakPath, *node.entry))
             {
+                image->filename = node.entry->filename; // Store the filename
                 images.push_back(*image);
             }
         }
@@ -585,6 +603,7 @@ void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std:
         {
             if (auto image = WALParser::loadWAL(pakPath, *node.entry))
             {
+                image->filename = node.entry->filename; // Store the filename
                 images.push_back(*image);
             }
         }
@@ -592,6 +611,7 @@ void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std:
         {
             if (auto image = STBImageParser::loadSTBImage(pakPath, *node.entry))
             {
+                image->filename = node.entry->filename; // Store the filename
                 images.push_back(*image);
             }
         }
@@ -615,7 +635,10 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
         bool isPCX = ext == ".pcx";
         bool isWAL = ext == ".wal";
         bool isSTBImage = ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga";
-        bool isText = ext == ".cfg" || ext == ".txt";
+        bool isText = ext == ".cfg" || ext == ".txt" || ext == ".script" || ext == ".ent" ||
+                      ext == ".def" || ext == ".qc" || ext == ".log" || ext == ".ini" ||
+                      ext == ".lst" || ext == ".bsp.info" || ext == ".loc" || ext == ".arena" ||
+                      ext == ".md" || ext == ".rtf" || ext == ".html" || ext == ".htm" || ext == ".lang";
         bool isBinary = ext == ".dat";
         bool isViewable = isPCX || isWAL || isSTBImage || isText || isBinary;
 
@@ -732,65 +755,32 @@ auto renderUI(PakViewerState &state) -> void
 
     if (ImGui::Button("Open PAK File"))
     {
-        state.showFileDialog = true;
-    }
-
-    if (state.showFileDialog)
-    {
-        ImGui::OpenPopup("Open PAK File");
-        state.showFileDialog = false;
-    }
-
-    if (ImGui::BeginPopupModal("Open PAK File", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        static char path[1024] = "";
-        ImGui::InputText("File Path", path, IM_ARRAYSIZE(path));
-
-        if (ImGui::Button("Browse"))
+        std::string selectedFile = openFileDialog();
+        if (!selectedFile.empty())
         {
-            std::string selectedFile = openFileDialog();
-            if (!selectedFile.empty())
+            if (std::filesystem::exists(selectedFile))
             {
-                strncpy(path, selectedFile.c_str(), IM_ARRAYSIZE(path) - 1);
-                path[IM_ARRAYSIZE(path) - 1] = '\0';
-            }
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Open"))
-        {
-            if (std::filesystem::exists(path))
-            {
-                std::string ext = std::filesystem::path(path).extension().string();
+                std::string ext = std::filesystem::path(selectedFile).extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-                std::optional<std::vector<PakFileEntry>> newEntries;
-                if (ext == ".pak")
-                {
-                    newEntries = PakParser::loadPakFile(path);
-                }
-                else if (ext == ".pk3")
-                {
-                    newEntries = PK3Parser::loadPK3File(path);
-                }
+                PakFormat format = ParserRegistry::getFormatFromExtension(ext);
 
-                if (newEntries)
+                if (format != PakFormat::UNKNOWN)
                 {
-                    state.entries = *newEntries;
-                    state.pakPath = path;
-                    state.currentImage = std::nullopt;
-                    state.selectedEntry = -1;
-                    buildFileTree(state.entries, state.fileTree);
-                    ImGui::CloseCurrentPopup();
+                    auto loadFunc = ParserRegistry::handlers[format].loadArchive;
+                    auto newEntries = loadFunc(selectedFile);
+
+                    if (newEntries)
+                    {
+                        state.entries = *newEntries;
+                        state.pakPath = selectedFile;
+                        state.currentImage = std::nullopt;
+                        state.selectedEntry = -1;
+                        buildFileTree(state.entries, state.fileTree);
+                    }
                 }
             }
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel"))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
     }
 
     const float minSidebarWidth = 100.0f;
@@ -832,34 +822,136 @@ auto renderUI(PakViewerState &state) -> void
     }
 
     ImGui::SameLine();
+
+    // Create a parent container for controls and image view
+    ImGui::BeginChild("ContentArea", ImVec2(0, 0), false);
+
+    // Fixed control panel section
+    if (state.gridView)
+    {
+        ImGui::BeginChild("ControlPanel", ImVec2(0, ImGui::GetFrameHeightWithSpacing() + 8), true);
+        // Grid view controls
+        ImGui::SliderFloat("Grid Scale", &state.gridScale, 0.1f, 2.0f);
+        ImGui::EndChild();
+    }
+
+    // Scrollable content area
     ImGui::BeginChild("ImageView", ImVec2(0, 0), true);
 
     if (state.gridView)
     {
-        // Grid view controls
-        ImGui::SliderFloat("Grid Scale", &state.gridScale, 0.1f, 2.0f);
-
-        // Calculate grid layout
         float windowWidth = ImGui::GetWindowWidth();
-        float windowHeight = ImGui::GetWindowHeight();
         float cellSize = 200.0f * state.gridScale;
-        int columns = static_cast<int>(windowWidth / cellSize);
-        columns = std::max(1, columns);
+        int columns = std::max(1, static_cast<int>(windowWidth / cellSize));
 
-        ImGui::BeginGroup();
-        for (size_t i = 0; i < state.loadedImages.size(); ++i)
+        // Defensive check for empty image list
+        if (state.loadedImages.empty())
         {
-            if (i % columns != 0)
-                ImGui::SameLine();
-
-            const auto &image = state.loadedImages[i];
-            float scaledWidth = cellSize;
-            float scaledHeight = (cellSize * image.height) / image.width;
-
-            ImGui::Image((ImTextureID)(uintptr_t)image.textureID,
-                         ImVec2(scaledWidth, scaledHeight));
+            ImGui::TextWrapped("No images to display in this folder.");
         }
-        ImGui::EndGroup();
+        else
+        {
+            // Create a simple table with fixed-size columns
+            if (ImGui::BeginTable("##ImageGrid", columns,
+                                  ImGuiTableFlags_Borders |
+                                      ImGuiTableFlags_NoHostExtendX))
+            {
+                // Set up equal-width columns
+                for (int col = 0; col < columns; col++)
+                {
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cellSize);
+                }
+
+                // Process images in a grid layout
+                int idx = 0;
+                int itemsPerRow = 0;
+
+                for (const auto &image : state.loadedImages)
+                {
+                    // Start a new row when needed
+                    if (itemsPerRow == 0)
+                        ImGui::TableNextRow(ImGuiTableRowFlags_None, cellSize);
+
+                    ImGui::TableSetColumnIndex(itemsPerRow);
+                    itemsPerRow = (itemsPerRow + 1) % columns;
+
+                    // Create a vertical layout for image and text
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
+
+                    // Calculate image dimensions, keeping aspect ratio
+                    float imageAspect = (float)image.width / image.height;
+                    if (imageAspect <= 0.0f)
+                        imageAspect = 1.0f;
+
+                    float maxImgHeight = cellSize * 0.7f; // Reserve space for filename
+                    float maxImgWidth = cellSize * 0.9f;  // Leave some margin
+
+                    float imgWidth, imgHeight;
+                    if (imageAspect > 1.0f)
+                    {
+                        // Wider than tall
+                        imgWidth = maxImgWidth;
+                        imgHeight = imgWidth / imageAspect;
+                        if (imgHeight > maxImgHeight)
+                        {
+                            imgHeight = maxImgHeight;
+                            imgWidth = imgHeight * imageAspect;
+                        }
+                    }
+                    else
+                    {
+                        // Taller than wide
+                        imgHeight = maxImgHeight;
+                        imgWidth = imgHeight * imageAspect;
+                        if (imgWidth > maxImgWidth)
+                        {
+                            imgWidth = maxImgWidth;
+                            imgHeight = imgWidth / imageAspect;
+                        }
+                    }
+
+                    // Center the image in the cell
+                    float cellWidth = ImGui::GetContentRegionAvail().x;
+                    float centerOffset = (cellWidth - imgWidth) * 0.5f;
+                    if (centerOffset > 0)
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
+
+                    // Add image
+                    ImGui::Image((ImTextureID)(uintptr_t)image.textureID, ImVec2(imgWidth, imgHeight));
+
+                    // Get filename for label
+                    std::string filename;
+                    try
+                    {
+                        filename = image.filename;
+                        size_t lastSlash = filename.find_last_of('/');
+                        if (lastSlash != std::string::npos && lastSlash < filename.length() - 1)
+                            filename = filename.substr(lastSlash + 1);
+                    }
+                    catch (...)
+                    {
+                        filename = "[Error]";
+                    }
+
+                    // Simple fixed-length truncation with ellipsis
+                    if (filename.length() > 18)
+                    {
+                        filename = filename.substr(0, 15) + "...";
+                    }
+
+                    // Center the filename
+                    float textWidth = ImGui::CalcTextSize(filename.c_str()).x;
+                    centerOffset = (cellWidth - textWidth) * 0.5f;
+                    if (centerOffset > 0)
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
+
+                    ImGui::TextUnformatted(filename.c_str());
+                    ImGui::PopStyleVar();
+                }
+
+                ImGui::EndTable();
+            }
+        }
     }
     else if (state.currentImage)
     {
@@ -933,6 +1025,7 @@ auto renderUI(PakViewerState &state) -> void
 
     ImGui::EndChild();
 
+    ImGui::EndChild();
     ImGui::End();
 }
 
