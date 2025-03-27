@@ -932,7 +932,7 @@ auto renderUI(PakViewerState &state) -> void
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-    ImGui::Begin("Quake II PAK Viewer", nullptr,
+    ImGui::Begin("PAK Adventure", nullptr,
                  ImGuiWindowFlags_NoTitleBar |
                      ImGuiWindowFlags_NoResize |
                      ImGuiWindowFlags_NoMove |
@@ -1306,7 +1306,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    GLFWwindow *window = glfwCreateWindow(1280, 720, "Quake II PAK Viewer", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(1280, 720, "PAK Adventure", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
