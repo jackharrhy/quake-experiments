@@ -16,9 +16,9 @@
 #include <iostream>
 #include <stb_image.h>
 #include <unordered_map>
+#include <limits>
 #include <misc/cpp/imgui_stdlib.h>
 
-// Define an enum for Pak file formats
 enum class PakFormat
 {
     PAK,   // Original Quake/Quake 2 .pak format
@@ -31,8 +31,8 @@ struct PakFileEntry
     std::string filename;
     uint32_t offset;
     uint32_t size;
-    PakFormat format;    // Format of the archive containing this entry
-    zip_file_t *zipFile; // For ZIP-based formats (only valid during read operations)
+    PakFormat format;
+    zip_file_t *zipFile;
 };
 
 struct FileTreeNode
@@ -47,7 +47,7 @@ struct PCXImage
     int width;
     int height;
     GLuint textureID;
-    std::string filename; // Add filename to track which file this image is from
+    std::string filename;
 };
 
 struct TextFile
@@ -62,11 +62,9 @@ struct BinaryFile
 
 namespace ParserRegistry
 {
-    // Function types for different operations
     using LoadArchiveFunc = std::optional<std::vector<PakFileEntry>> (*)(const std::string &);
     using ReadDataFunc = std::vector<uint8_t> (*)(const std::string &, const PakFileEntry &);
 
-    // Structure to hold parser functions for a specific format
     struct FormatHandlers
     {
         LoadArchiveFunc loadArchive;
@@ -74,10 +72,8 @@ namespace ParserRegistry
         std::string description;
     };
 
-    // Declare the handlers map (will be defined after all parsers are implemented)
     extern std::unordered_map<PakFormat, FormatHandlers> handlers;
 
-    // Helper to get file format from extension
     PakFormat getFormatFromExtension(const std::string &extension)
     {
         if (extension == ".pak")
@@ -519,7 +515,6 @@ namespace STBImageParser
     }
 }
 
-// Define the ParserRegistry::handlers map after all parsers are implemented
 namespace ParserRegistry
 {
     std::unordered_map<PakFormat, FormatHandlers> handlers = {
@@ -530,21 +525,28 @@ namespace ParserRegistry
 struct PakViewerState
 {
     std::vector<PakFileEntry> entries;
-    std::vector<PCXImage> loadedImages;      // Store all loaded images
-    std::optional<PCXImage> currentImage;    // Currently selected single image
-    std::optional<TextFile> currentText;     // Currently selected text file
-    std::optional<BinaryFile> currentBinary; // Currently selected binary file
+    std::vector<PCXImage> loadedImages;
+    std::optional<PCXImage> currentImage;
+    std::optional<TextFile> currentText;
+    std::optional<BinaryFile> currentBinary;
     std::string pakPath;
     int selectedEntry = -1;
     bool showFileDialog = false;
     std::string selectedPath;
     float sidebarWidth = 200.0f;
     FileTreeNode fileTree;
-    bool gridView = true;      // Whether we're in grid view mode
-    std::string currentFolder; // Current folder path being viewed
-    float gridScale = 0.5f;    // Scale factor for grid view
-    std::string searchFilter;  // Search filter string
+    bool gridView = true;
+    std::string currentFolder;
+    float gridScale = 0.5f;
+    std::string searchFilter;
+    std::string statusMessage;
 };
+
+void setStatusMessage(PakViewerState &state, const std::string &message)
+{
+    state.statusMessage = message;
+    std::cout << "Status: " << message << std::endl;
+}
 
 void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
 {
@@ -561,7 +563,6 @@ void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
             std::string dir = path.substr(0, pos);
             path = path.substr(pos + 1);
 
-            // Find or create directory node
             auto it = std::find_if(current->children.begin(), current->children.end(),
                                    [&dir](const FileTreeNode &node)
                                    { return node.name == dir; });
@@ -577,7 +578,6 @@ void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
             }
         }
 
-        // Add file node
         if (!path.empty())
         {
             current->children.push_back({path, {}, entry});
@@ -585,9 +585,8 @@ void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
     }
 }
 
-void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std::vector<PCXImage> &images)
+void collectSupportedImages(const FileTreeNode &node, const std::string &pakPath, std::vector<PCXImage> &images)
 {
-    // If this is a file node with a supported image format
     if (node.entry)
     {
         std::string ext = std::filesystem::path(node.name).extension().string();
@@ -622,11 +621,10 @@ void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std:
     // Recursively process all children
     for (const auto &child : node.children)
     {
-        collectPCXImages(child, pakPath, images);
+        collectSupportedImages(child, pakPath, images);
     }
 }
 
-// Helper function to check if string contains a filter (case-insensitive)
 bool stringContainsFilter(const std::string &str, const std::string &filter)
 {
     if (filter.empty())
@@ -640,60 +638,47 @@ bool stringContainsFilter(const std::string &str, const std::string &filter)
     return lowerStr.find(lowerFilter) != std::string::npos;
 }
 
-// Helper function to check if node matches the search filter (non-recursive)
 bool nodeMatchesFilter(const FileTreeNode &node, const std::string &filter)
 {
     if (filter.empty())
         return true;
 
-    // Check if node name matches
     if (stringContainsFilter(node.name, filter))
         return true;
 
-    // Check if file path matches (for files only)
     if (node.entry && stringContainsFilter(node.entry->filename, filter))
         return true;
 
-    // The node doesn't match directly, but we'll still show it if its children match
-    // This is handled separately in renderFileTreeNode
     return false;
 }
 
-// Helper to get a filtered list of files from a directory node
-std::vector<const FileTreeNode *> getFilteredFiles(const FileTreeNode &node, const std::string &filter, int maxResults = 100)
+std::vector<const FileTreeNode *> getFilteredFiles(const FileTreeNode &node, const std::string &filter, int maxResults = std::numeric_limits<int>::max())
 {
     std::vector<const FileTreeNode *> results;
 
-    // Non-recursive implementation using a manual stack
     std::vector<const FileTreeNode *> stack;
     stack.push_back(&node);
 
-    while (!stack.empty() && results.size() < maxResults)
+    while (!stack.empty())
     {
         const FileTreeNode *current = stack.back();
         stack.pop_back();
 
-        // Process files
         if (current->entry)
         {
-            // Check if the file matches the filter
             if (filter.empty() || stringContainsFilter(current->entry->filename, filter))
             {
-                // For image files, only include supported formats
                 std::string ext = std::filesystem::path(current->name).extension().string();
                 std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
                 if (ext == ".pcx" || ext == ".wal" || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
                 {
                     results.push_back(current);
-                    if (results.size() >= maxResults)
-                        break;
                 }
             }
         }
-        else // This is a directory
+        else
         {
-            // Add all children to the stack for further processing
             for (auto it = current->children.rbegin(); it != current->children.rend(); ++it)
             {
                 stack.push_back(&(*it));
@@ -704,13 +689,12 @@ std::vector<const FileTreeNode *> getFilteredFiles(const FileTreeNode &node, con
     return results;
 }
 
-// Optimized function: Load filtered images
 void loadFilteredImages(const std::vector<const FileTreeNode *> &filteredNodes, const std::string &pakPath, std::vector<PCXImage> &images)
 {
     for (const FileTreeNode *node : filteredNodes)
     {
         if (!node->entry)
-            continue; // Skip if not a file
+            continue;
 
         std::string ext = std::filesystem::path(node->name).extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -911,7 +895,7 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state, int dep
 std::string openFileDialog()
 {
     const char *file = tinyfd_openFileDialog(
-        "Select PAK/PK3 File",
+        "Select PAK/PK3 etc. File",
         "",
         0,
         nullptr,
@@ -939,6 +923,10 @@ auto renderUI(PakViewerState &state) -> void
                      ImGuiWindowFlags_NoBringToFrontOnFocus |
                      ImGuiWindowFlags_NoNavFocus);
 
+    // Create a horizontal layout for the top bar
+    ImGui::BeginChild("TopBar", ImVec2(0, ImGui::GetFrameHeightWithSpacing() + 8), true);
+
+    // Left side: Open PAK File button
     if (ImGui::Button("Open PAK File"))
     {
         std::string selectedFile = openFileDialog();
@@ -965,11 +953,24 @@ auto renderUI(PakViewerState &state) -> void
                         buildFileTree(state.entries, state.fileTree);
                         state.searchFilter = ""; // Clear search filter when loading a new file
                         state.loadedImages.clear();
+                        setStatusMessage(state, "File loaded successfully");
+                    }
+                    else
+                    {
+                        setStatusMessage(state, "Unknown file type");
                     }
                 }
             }
         }
     }
+
+    // Right side: Status message
+    ImGui::SameLine();
+    float statusWidth = ImGui::GetWindowWidth() - ImGui::GetCursorPosX() - 10.0f;
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - statusWidth - 10.0f);
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "%s", state.statusMessage.c_str());
+
+    ImGui::EndChild();
 
     const float minSidebarWidth = 100.0f;
     const float maxSidebarWidth = 400.0f;
@@ -1035,9 +1036,9 @@ auto renderUI(PakViewerState &state) -> void
     {
         ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Searching...");
     }
-    else if (!state.searchFilter.empty() && state.loadedImages.size() == 100)
+    else if (!state.searchFilter.empty())
     {
-        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Results limited (showing 100)");
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Found %d results", (int)state.loadedImages.size());
     }
 
     ImGui::Separator();
@@ -1091,11 +1092,11 @@ auto renderUI(PakViewerState &state) -> void
         // Grid view controls
         ImGui::SliderFloat("Grid Scale", &state.gridScale, 0.1f, 2.0f);
 
-        // Show search results count in grid view
-        if (!state.searchFilter.empty() && !state.loadedImages.empty())
+        // Show image count in grid view
+        if (!state.loadedImages.empty())
         {
             ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.0f, 0.7f, 1.0f, 1.0f), "Found %d image(s)", (int)state.loadedImages.size());
+            ImGui::TextColored(ImVec4(0.0f, 0.7f, 1.0f, 1.0f), "Showing %d image(s)", (int)state.loadedImages.size());
         }
 
         ImGui::EndChild();
@@ -1108,7 +1109,7 @@ auto renderUI(PakViewerState &state) -> void
     {
         float windowWidth = ImGui::GetWindowWidth();
         float cellSize = 200.0f * state.gridScale;
-        int columns = std::max(1, static_cast<int>(windowWidth / cellSize));
+        int imagesPerRow = std::max(1, static_cast<int>(windowWidth / cellSize));
 
         // Defensive check for empty image list
         if (state.loadedImages.empty())
@@ -1117,106 +1118,89 @@ auto renderUI(PakViewerState &state) -> void
         }
         else
         {
-            // Create a simple table with fixed-size columns
-            if (ImGui::BeginTable("##ImageGrid", columns,
-                                  ImGuiTableFlags_Borders |
-                                      ImGuiTableFlags_NoHostExtendX))
+            // Simple grid layout without tables (more efficient)
+            int imageCount = state.loadedImages.size();
+            ImGui::Columns(imagesPerRow, nullptr, false);
+
+            for (int i = 0; i < imageCount; i++)
             {
-                // Set up equal-width columns
-                for (int col = 0; col < columns; col++)
+                const auto &image = state.loadedImages[i];
+
+                // Calculate image dimensions with aspect ratio
+                float imageAspect = (float)image.width / image.height;
+                if (imageAspect <= 0.0f)
+                    imageAspect = 1.0f;
+
+                float maxImgHeight = cellSize * 0.7f;
+                float maxImgWidth = cellSize * 0.9f;
+
+                float imgWidth, imgHeight;
+                if (imageAspect > 1.0f)
                 {
-                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, cellSize);
-                }
-
-                // Process images in a grid layout
-                int idx = 0;
-                int itemsPerRow = 0;
-
-                for (const auto &image : state.loadedImages)
-                {
-                    // Start a new row when needed
-                    if (itemsPerRow == 0)
-                        ImGui::TableNextRow(ImGuiTableRowFlags_None, cellSize);
-
-                    ImGui::TableSetColumnIndex(itemsPerRow);
-                    itemsPerRow = (itemsPerRow + 1) % columns;
-
-                    // Create a vertical layout for image and text
-                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 4));
-
-                    // Calculate image dimensions, keeping aspect ratio
-                    float imageAspect = (float)image.width / image.height;
-                    if (imageAspect <= 0.0f)
-                        imageAspect = 1.0f;
-
-                    float maxImgHeight = cellSize * 0.7f; // Reserve space for filename
-                    float maxImgWidth = cellSize * 0.9f;  // Leave some margin
-
-                    float imgWidth, imgHeight;
-                    if (imageAspect > 1.0f)
+                    imgWidth = maxImgWidth;
+                    imgHeight = imgWidth / imageAspect;
+                    if (imgHeight > maxImgHeight)
                     {
-                        // Wider than tall
-                        imgWidth = maxImgWidth;
-                        imgHeight = imgWidth / imageAspect;
-                        if (imgHeight > maxImgHeight)
-                        {
-                            imgHeight = maxImgHeight;
-                            imgWidth = imgHeight * imageAspect;
-                        }
-                    }
-                    else
-                    {
-                        // Taller than wide
                         imgHeight = maxImgHeight;
                         imgWidth = imgHeight * imageAspect;
-                        if (imgWidth > maxImgWidth)
-                        {
-                            imgWidth = maxImgWidth;
-                            imgHeight = imgWidth / imageAspect;
-                        }
                     }
-
-                    // Center the image in the cell
-                    float cellWidth = ImGui::GetContentRegionAvail().x;
-                    float centerOffset = (cellWidth - imgWidth) * 0.5f;
-                    if (centerOffset > 0)
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
-
-                    // Add image
-                    ImGui::Image((ImTextureID)(uintptr_t)image.textureID, ImVec2(imgWidth, imgHeight));
-
-                    // Get filename for label
-                    std::string filename;
-                    try
+                }
+                else
+                {
+                    imgHeight = maxImgHeight;
+                    imgWidth = imgHeight * imageAspect;
+                    if (imgWidth > maxImgWidth)
                     {
-                        filename = image.filename;
-                        size_t lastSlash = filename.find_last_of('/');
-                        if (lastSlash != std::string::npos && lastSlash < filename.length() - 1)
-                            filename = filename.substr(lastSlash + 1);
+                        imgWidth = maxImgWidth;
+                        imgHeight = imgWidth / imageAspect;
                     }
-                    catch (...)
-                    {
-                        filename = "[Error]";
-                    }
-
-                    // Simple fixed-length truncation with ellipsis
-                    if (filename.length() > 18)
-                    {
-                        filename = filename.substr(0, 15) + "...";
-                    }
-
-                    // Center the filename
-                    float textWidth = ImGui::CalcTextSize(filename.c_str()).x;
-                    centerOffset = (cellWidth - textWidth) * 0.5f;
-                    if (centerOffset > 0)
-                        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
-
-                    ImGui::TextUnformatted(filename.c_str());
-                    ImGui::PopStyleVar();
                 }
 
-                ImGui::EndTable();
+                // Center the image in column
+                float colWidth = ImGui::GetColumnWidth();
+                float centerOffset = (colWidth - imgWidth) * 0.5f;
+                if (centerOffset > 0)
+                {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
+                }
+
+                // Always render all images
+                ImGui::Image((ImTextureID)(uintptr_t)image.textureID, ImVec2(imgWidth, imgHeight));
+
+                // Get filename for label
+                std::string filename;
+                try
+                {
+                    filename = image.filename;
+                    size_t lastSlash = filename.find_last_of('/');
+                    if (lastSlash != std::string::npos && lastSlash < filename.length() - 1)
+                        filename = filename.substr(lastSlash + 1);
+                }
+                catch (...)
+                {
+                    filename = "[Error]";
+                }
+
+                // Simple truncation
+                if (filename.length() > 18)
+                {
+                    filename = filename.substr(0, 15) + "...";
+                }
+
+                // Center filename
+                float textWidth = ImGui::CalcTextSize(filename.c_str()).x;
+                centerOffset = (colWidth - textWidth) * 0.5f;
+                if (centerOffset > 0)
+                {
+                    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + centerOffset);
+                }
+
+                ImGui::TextUnformatted(filename.c_str());
+
+                ImGui::NextColumn();
             }
+
+            ImGui::Columns(1);
         }
     }
     else if (state.currentImage)
