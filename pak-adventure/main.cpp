@@ -16,6 +16,7 @@
 #include <iostream>
 #include <stb_image.h>
 #include <unordered_map>
+#include <misc/cpp/imgui_stdlib.h>
 
 // Define an enum for Pak file formats
 enum class PakFormat
@@ -542,6 +543,7 @@ struct PakViewerState
     bool gridView = true;      // Whether we're in grid view mode
     std::string currentFolder; // Current folder path being viewed
     float gridScale = 0.5f;    // Scale factor for grid view
+    std::string searchFilter;  // Search filter string
 };
 
 void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
@@ -624,8 +626,160 @@ void collectPCXImages(const FileTreeNode &node, const std::string &pakPath, std:
     }
 }
 
-void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
+// Helper function to check if string contains a filter (case-insensitive)
+bool stringContainsFilter(const std::string &str, const std::string &filter)
 {
+    if (filter.empty())
+        return true;
+
+    std::string lowerStr = str;
+    std::string lowerFilter = filter;
+    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(), ::tolower);
+
+    return lowerStr.find(lowerFilter) != std::string::npos;
+}
+
+// Helper function to check if node matches the search filter (non-recursive)
+bool nodeMatchesFilter(const FileTreeNode &node, const std::string &filter)
+{
+    if (filter.empty())
+        return true;
+
+    // Check if node name matches
+    if (stringContainsFilter(node.name, filter))
+        return true;
+
+    // Check if file path matches (for files only)
+    if (node.entry && stringContainsFilter(node.entry->filename, filter))
+        return true;
+
+    // The node doesn't match directly, but we'll still show it if its children match
+    // This is handled separately in renderFileTreeNode
+    return false;
+}
+
+// Helper to get a filtered list of files from a directory node
+std::vector<const FileTreeNode *> getFilteredFiles(const FileTreeNode &node, const std::string &filter, int maxResults = 100)
+{
+    std::vector<const FileTreeNode *> results;
+
+    // Non-recursive implementation using a manual stack
+    std::vector<const FileTreeNode *> stack;
+    stack.push_back(&node);
+
+    while (!stack.empty() && results.size() < maxResults)
+    {
+        const FileTreeNode *current = stack.back();
+        stack.pop_back();
+
+        // Process files
+        if (current->entry)
+        {
+            // Check if the file matches the filter
+            if (filter.empty() || stringContainsFilter(current->entry->filename, filter))
+            {
+                // For image files, only include supported formats
+                std::string ext = std::filesystem::path(current->name).extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+                if (ext == ".pcx" || ext == ".wal" || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
+                {
+                    results.push_back(current);
+                    if (results.size() >= maxResults)
+                        break;
+                }
+            }
+        }
+        else // This is a directory
+        {
+            // Add all children to the stack for further processing
+            for (auto it = current->children.rbegin(); it != current->children.rend(); ++it)
+            {
+                stack.push_back(&(*it));
+            }
+        }
+    }
+
+    return results;
+}
+
+// Optimized function: Load filtered images
+void loadFilteredImages(const std::vector<const FileTreeNode *> &filteredNodes, const std::string &pakPath, std::vector<PCXImage> &images)
+{
+    for (const FileTreeNode *node : filteredNodes)
+    {
+        if (!node->entry)
+            continue; // Skip if not a file
+
+        std::string ext = std::filesystem::path(node->name).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        if (ext == ".pcx")
+        {
+            if (auto image = PCXParser::loadPCX(pakPath, *node->entry))
+            {
+                image->filename = node->entry->filename;
+                images.push_back(*image);
+            }
+        }
+        else if (ext == ".wal")
+        {
+            if (auto image = WALParser::loadWAL(pakPath, *node->entry))
+            {
+                image->filename = node->entry->filename;
+                images.push_back(*image);
+            }
+        }
+        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
+        {
+            if (auto image = STBImageParser::loadSTBImage(pakPath, *node->entry))
+            {
+                image->filename = node->entry->filename;
+                images.push_back(*image);
+            }
+        }
+    }
+}
+
+// Helper to check if any children match the filter
+bool anyChildrenMatchFilter(const FileTreeNode &node, const std::string &filter)
+{
+    if (filter.empty())
+        return true;
+
+    // Limit search to only direct children for performance
+    for (const auto &child : node.children)
+    {
+        // Check node name
+        if (stringContainsFilter(child.name, filter))
+            return true;
+
+        // Check filename for files
+        if (child.entry && stringContainsFilter(child.entry->filename, filter))
+            return true;
+    }
+
+    return false;
+}
+
+void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state, int depth, int maxDepth)
+{
+    // Prevent excessive recursion by limiting tree depth
+    if (depth >= maxDepth)
+        return;
+
+    // Check if this node or any of its children match the filter
+    bool nodeMatches = nodeMatchesFilter(node, state.searchFilter);
+    bool childrenMatch = false;
+
+    if (!nodeMatches && !state.searchFilter.empty())
+    {
+        childrenMatch = anyChildrenMatchFilter(node, state.searchFilter);
+        if (!childrenMatch)
+            return; // Skip this node if neither it nor its children match
+    }
+
     if (node.children.empty())
     {
         // This is a file
@@ -646,6 +800,11 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
         if (!isViewable)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        }
+        else if (nodeMatches && !state.searchFilter.empty())
+        {
+            // Highlight matches
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
         }
 
         if (ImGui::Selectable(node.name.c_str(), state.selectedEntry != -1 &&
@@ -693,7 +852,7 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
         }
 
         // Pop the style color if we pushed it
-        if (!isViewable)
+        if (!isViewable || (nodeMatches && !state.searchFilter.empty()))
         {
             ImGui::PopStyleColor();
         }
@@ -701,23 +860,50 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state)
     else
     {
         // This is a directory
-        if (ImGui::TreeNode(node.name.c_str()))
+        // If there's a search filter and this node contains matches, automatically open it
+        ImGuiTreeNodeFlags nodeFlags = 0;
+        if (!state.searchFilter.empty() && childrenMatch)
+            nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+
+        // Highlight directory if it matches the search
+        if (nodeMatches && !state.searchFilter.empty())
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
+
+        if (ImGui::TreeNodeEx(node.name.c_str(), nodeFlags))
         {
-            for (const auto &child : node.children)
+            // Only process children if we haven't exceeded the maximum depth
+            if (depth + 1 < maxDepth)
             {
-                renderFileTreeNode(child, state);
+                for (const auto &child : node.children)
+                {
+                    renderFileTreeNode(child, state, depth + 1, maxDepth);
+                }
             }
+            else if (depth + 1 == maxDepth)
+            {
+                // At max depth, just display a message
+                ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "(Maximum depth reached)");
+            }
+
             ImGui::TreePop();
         }
+
+        // Pop style if we pushed it
+        if (nodeMatches && !state.searchFilter.empty())
+            ImGui::PopStyleColor();
 
         // Handle folder selection
         if (ImGui::IsItemClicked())
         {
             state.gridView = true;
             state.currentFolder = node.name;
-            // Load all viewable images in this folder and its subfolders
+
+            // First get filtered files based on search criteria
+            auto filteredFiles = getFilteredFiles(node, state.searchFilter);
+
+            // Clear previous images and load new ones
             state.loadedImages.clear();
-            collectPCXImages(node, state.pakPath, state.loadedImages);
+            loadFilteredImages(filteredFiles, state.pakPath, state.loadedImages);
         }
     }
 }
@@ -777,6 +963,8 @@ auto renderUI(PakViewerState &state) -> void
                         state.currentImage = std::nullopt;
                         state.selectedEntry = -1;
                         buildFileTree(state.entries, state.fileTree);
+                        state.searchFilter = ""; // Clear search filter when loading a new file
+                        state.loadedImages.clear();
                     }
                 }
             }
@@ -787,11 +975,81 @@ auto renderUI(PakViewerState &state) -> void
     const float maxSidebarWidth = 400.0f;
 
     ImGui::BeginChild("FileList", ImVec2(state.sidebarWidth, 0), true);
+
+    // Add search box at the top of the sidebar
+    ImGui::Text("Search:");
+    ImGui::SameLine();
+    // Create a full-width search box minus some margin
+    float searchWidth = ImGui::GetContentRegionAvail().x - 10.0f;
+    ImGui::PushItemWidth(searchWidth);
+
+    // Store the previous search filter to detect changes
+    std::string prevSearchFilter = state.searchFilter;
+
+    // Limit input length to prevent performance issues with long search terms
+    if (state.searchFilter.length() > 50)
+    {
+        state.searchFilter = state.searchFilter.substr(0, 50);
+    }
+
+    // Use a buffer here to avoid issues with the input text callback
+    bool searchChanged = ImGui::InputText("##SearchFilter", &state.searchFilter, ImGuiInputTextFlags_AutoSelectAll);
+
+    ImGui::PopItemWidth();
+
+    // Show a search in progress indicator
+    static bool searchInProgress = false;
+    if (searchChanged)
+    {
+        searchInProgress = true;
+
+        // Defer grid view update to avoid UI freezing
+        if (state.gridView && !state.fileTree.children.empty())
+        {
+            // Find the current folder node - simplified approach
+            FileTreeNode *folderNode = &state.fileTree;
+
+            // Only attempt to find the specific folder if it's a top-level folder
+            // This avoids expensive recursive searches
+            if (!state.currentFolder.empty())
+            {
+                for (auto &child : state.fileTree.children)
+                {
+                    if (child.name == state.currentFolder)
+                    {
+                        folderNode = &child;
+                        break;
+                    }
+                }
+            }
+
+            // Run the improved filtering and loading approach
+            auto filteredFiles = getFilteredFiles(*folderNode, state.searchFilter);
+            state.loadedImages.clear();
+            loadFilteredImages(filteredFiles, state.pakPath, state.loadedImages);
+        }
+        searchInProgress = false;
+    }
+
+    if (searchInProgress)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), "Searching...");
+    }
+    else if (!state.searchFilter.empty() && state.loadedImages.size() == 100)
+    {
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Results limited (showing 100)");
+    }
+
+    ImGui::Separator();
+
     if (ImGui::TreeNode("PAK Contents"))
     {
+        // Maximum depth for tree rendering to prevent stack overflow
+        const int MAX_DEPTH = 10;
+
         for (const auto &node : state.fileTree.children)
         {
-            renderFileTreeNode(node, state);
+            renderFileTreeNode(node, state, 0, MAX_DEPTH);
         }
         ImGui::TreePop();
     }
@@ -832,6 +1090,14 @@ auto renderUI(PakViewerState &state) -> void
         ImGui::BeginChild("ControlPanel", ImVec2(0, ImGui::GetFrameHeightWithSpacing() + 8), true);
         // Grid view controls
         ImGui::SliderFloat("Grid Scale", &state.gridScale, 0.1f, 2.0f);
+
+        // Show search results count in grid view
+        if (!state.searchFilter.empty() && !state.loadedImages.empty())
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(ImVec4(0.0f, 0.7f, 1.0f, 1.0f), "Found %d image(s)", (int)state.loadedImages.size());
+        }
+
         ImGui::EndChild();
     }
 

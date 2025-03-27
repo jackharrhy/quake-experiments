@@ -18,6 +18,7 @@ add_library(imgui
     third_party/imgui/imgui_widgets.cpp
     third_party/imgui/backends/imgui_impl_glfw.cpp
     third_party/imgui/backends/imgui_impl_opengl3.cpp
+    third_party/imgui/misc/cpp/imgui_stdlib.cpp
 )
 
 target_include_directories(imgui PUBLIC
