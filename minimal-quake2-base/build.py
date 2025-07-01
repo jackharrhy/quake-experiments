@@ -1,7 +1,9 @@
 import os
+import sys
 import subprocess
 import argparse
 import shutil
+import zipfile
 from pathlib import Path
 
 yquake2_url = "https://github.com/yquake2/yquake2.git"
@@ -12,11 +14,16 @@ yquake2_ref_vk_url = "https://github.com/yquake2/ref_vk"
 yquake2_ref_vk_commit = "21bde3c4bb3ab3af00d41c2fd85b86c0a021732f"
 yquake2_ref_vk_dir = Path("ref_vk")
 
+ericw_tools_url = "https://github.com/ericwa/ericw-tools.git"
+ericw_tools_commit = "ac607554e93455328ea3901388e476a64b1402e9"
+ericw_tools_dir = Path("ericw-tools")
+
 game_c_dir = Path("game-c")
 
 base_dir = Path("base")
 
 tmp_dir = Path("tmp")
+tmp_dir.mkdir(parents=True, exist_ok=True)
 pak0_dir = tmp_dir / "pak0"
 
 release_dir = Path("release")
@@ -46,22 +53,62 @@ def clone_yquake2_ref_vk():
     )
 
 
+def download_ericw_tools():
+    ericw_zip_path = tmp_dir / "ericw-tools.zip"
+
+    ericw_extract_dir = tmp_dir / "ericw-tools"
+
+    if ericw_zip_path.exists():
+        print(f"{ericw_zip_path} already exists. Skipping download.")
+    else:
+        os_string = "Darwin"
+        if sys.platform.startswith("linux"):
+            os_string = "Linux"
+        elif sys.platform.startswith("win"):
+            os_string = "win64"
+
+        download_url = f"https://github.com/ericwa/ericw-tools/releases/download/2.0.0-alpha9/ericw-tools-2.0.0-alpha9-{os_string}.zip"
+
+        subprocess.run(
+            ["wget", "-O", ericw_zip_path, download_url],
+            check=True,
+        )
+        ericw_extract_dir.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(ericw_zip_path, "r") as zip_ref:
+        zip_ref.extractall(ericw_extract_dir)
+
+    for file in ericw_extract_dir.iterdir():
+        if file.suffix == ".exe" and file.is_file():
+            dest = ericw_tools_dir / file.name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            file.replace(dest)
+
+    sys.exit(1)
+
+
 def clone():
     clone_yquake2()
     clone_yquake2_ref_vk()
+    download_ericw_tools()
 
 
 def build_yquake2():
     print("Building yquake2")
     if debug_build:
-        subprocess.run(["make", "DEBUG=1"], check=True, cwd=yquake2_dir)
+        subprocess.run(["make", "DEBUG=1", "WITH_SDL3=yes"], check=True, cwd=yquake2_dir)
     else:
-        subprocess.run(["make"], check=True, cwd=yquake2_dir)
+        subprocess.run(["make", "WITH_SDL3=yes"], check=True, cwd=yquake2_dir)
 
 
 def build_yquake2_ref_vk():
     print("Building yquake2 ref_vk")
-    subprocess.run(["make"], check=True, cwd=yquake2_ref_vk_dir)
+    subprocess.run(["make", "WITH_SDL3=yes"], check=True, cwd=yquake2_ref_vk_dir)
+
+
+def build_ericw_tools():
+    print("Building ericw-tools")
+    subprocess.run(["make"], check=True, cwd=ericw_tools_dir)
 
 
 def build_game_odin():
@@ -109,9 +156,17 @@ def build_maps():
     for map_file in map_files:
         map_name = map_file.stem
         print(f"Building map: {map_name}")
-        subprocess.run(["qbsp", "-q2bsp", f"{map_name}.map"], check=True, cwd=maps_dir)
-        subprocess.run(["vis", f"{map_name}.bsp"], check=True, cwd=maps_dir)
-        subprocess.run(["light", f"{map_name}.bsp"], check=True, cwd=maps_dir)
+        import sys
+
+        def tool_path(tool_name):
+            exe = ".exe" if sys.platform.startswith("win") else ""
+            path = ericw_tools_dir / f"{tool_name}{exe}"
+            print(f"Path for {tool_name}: {path}")
+            return str(path)
+
+        subprocess.run([tool_path("qbsp"), "-q2bsp", f"{map_name}.map"], check=True, cwd=maps_dir)
+        subprocess.run([tool_path("vis"), f"{map_name}.bsp"], check=True, cwd=maps_dir)
+        subprocess.run([tool_path("light"), f"{map_name}.bsp"], check=True, cwd=maps_dir)
 
 
 def copy_directory_recursively(src, dst, **kwargs):
