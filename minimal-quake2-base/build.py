@@ -292,10 +292,19 @@ def all():
     run()
 
 
-def setup_trenchbroom():
-    games_dir = Path(
-        os.path.expanduser("~/Library/Application Support/TrenchBroom/games/")
-    )
+def setup_trenchbroom(os_string: str):
+    if os_string == "Darwin":
+        games_dir = Path(
+            os.path.expanduser("~/Library/Application Support/TrenchBroom/games/")
+        )
+
+    elif os_string == "Linux":
+        games_dir = Path(
+            os.path.expanduser("~/.TrenchBroom/games/")
+        )
+
+    elif os_string == "win64":
+        games_dir = Path(os.environ["APPDATA"]) / "TrenchBroom" / "games"
 
     if not games_dir.exists():
         print("TrenchBroom games directory not found, not setting up Trenchbroom")
@@ -305,15 +314,9 @@ def setup_trenchbroom():
 
     games_dir.mkdir(parents=True, exist_ok=True)
 
-    subprocess.run(
-        [
-            "cp",
-            "-r",
-            "./trenchbroom-config/",
-            games_dir,
-        ],
-        check=True,
-    )
+    src = Path("./trenchbroom-config")
+    dst = games_dir / src.name
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
 
 def loc_metrics():
@@ -325,7 +328,20 @@ def loc_metrics():
     print(f"Lines of code metrics written to {output_file}")
 
 
+def get_os_info():
+    os_string = "Darwin"
+
+    if sys.platform.startswith("linux"):
+        os_string = "Linux"
+    elif sys.platform.startswith("win"):
+        os_string = "win64"
+
+    return os_string
+
 def main():
+
+    os_string = get_os_info()
+
     parser = argparse.ArgumentParser(description="Build tools for minimal-quake2-base")
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
@@ -380,7 +396,7 @@ def main():
         copy_files()
         run(args.args)
     elif args.command == "setup-trenchbroom":
-        setup_trenchbroom()
+        setup_trenchbroom(os_string)
     elif args.command == "loc-metrics":
         loc_metrics()
     elif not args.command:
