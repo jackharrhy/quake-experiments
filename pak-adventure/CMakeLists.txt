@@ -6,6 +6,9 @@ find_package(glfw3 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(ZLIB REQUIRED)
 
+# Find SQLite package
+find_package(SQLite3 REQUIRED)
+
 # Add libzip from submodule
 add_subdirectory(third_party/libzip)
 
@@ -41,5 +44,6 @@ add_executable(PakViewer main.cpp)
 target_include_directories(PakViewer PRIVATE 
     ${CMAKE_SOURCE_DIR}/third_party/libzip/lib
     ${CMAKE_SOURCE_DIR}/third_party/stb
+    ${SQLite3_INCLUDE_DIRS}
 )
-target_link_libraries(PakViewer glfw OpenGL::GL ZLIB::ZLIB zip imgui tinyfiledialogs)
+target_link_libraries(PakViewer glfw OpenGL::GL ZLIB::ZLIB zip imgui tinyfiledialogs ${SQLite3_LIBRARIES})
