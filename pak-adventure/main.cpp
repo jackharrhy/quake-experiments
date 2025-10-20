@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <limits>
 #include <misc/cpp/imgui_stdlib.h>
+#include <sqlite3.h>
 
 enum class PakFormat
 {
@@ -59,6 +60,282 @@ struct BinaryFile
 {
     std::vector<uint8_t> data;
 };
+
+// SQLite database helper functions
+namespace SQLiteHelper
+{
+    sqlite3 *db = nullptr;
+
+    bool initDatabase()
+    {
+        int rc = sqlite3_open(":memory:", &db);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Cannot open database: " << sqlite3_errmsg(db) << std::endl;
+            return false;
+        }
+
+        // Create tables
+        const char *createPakFilesTable =
+            "CREATE TABLE IF NOT EXISTS pak_files ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "path TEXT NOT NULL,"
+            "format INTEGER NOT NULL,"
+            "timestamp INTEGER NOT NULL"
+            ");";
+
+        const char *createEntriesTable =
+            "CREATE TABLE IF NOT EXISTS entries ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "pak_id INTEGER NOT NULL,"
+            "filename TEXT NOT NULL,"
+            "offset INTEGER,"
+            "size INTEGER NOT NULL,"
+            "extension TEXT,"
+            "is_directory INTEGER NOT NULL DEFAULT 0,"
+            "FOREIGN KEY (pak_id) REFERENCES pak_files(id)"
+            ");";
+
+        char *errMsg = nullptr;
+        rc = sqlite3_exec(db, createPakFilesTable, nullptr, nullptr, &errMsg);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "SQL error: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            return false;
+        }
+
+        rc = sqlite3_exec(db, createEntriesTable, nullptr, nullptr, &errMsg);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "SQL error: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            return false;
+        }
+
+        // Create index for faster searches
+        const char *createIndexSQL =
+            "CREATE INDEX IF NOT EXISTS idx_entries_filename ON entries(filename);";
+
+        rc = sqlite3_exec(db, createIndexSQL, nullptr, nullptr, &errMsg);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "SQL error: " << errMsg << std::endl;
+            sqlite3_free(errMsg);
+            return false;
+        }
+
+        return true;
+    }
+
+    int insertPakFile(const std::string &path, PakFormat format)
+    {
+        sqlite3_stmt *stmt;
+        const char *sql = "INSERT INTO pak_files (path, format, timestamp) VALUES (?, ?, strftime('%s','now')) RETURNING id;";
+
+        int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Prepare error: " << sqlite3_errmsg(db) << std::endl;
+            return -1;
+        }
+
+        sqlite3_bind_text(stmt, 1, path.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 2, static_cast<int>(format));
+
+        rc = sqlite3_step(stmt);
+        int pakId = -1;
+
+        if (rc == SQLITE_ROW)
+        {
+            pakId = sqlite3_column_int(stmt, 0);
+        }
+
+        sqlite3_finalize(stmt);
+        return pakId;
+    }
+
+    bool insertEntry(int pakId, const std::string &filename, uint32_t offset, uint32_t size)
+    {
+        sqlite3_stmt *stmt;
+
+        // Extract extension
+        std::string extension;
+        size_t lastDotPos = filename.find_last_of('.');
+        if (lastDotPos != std::string::npos)
+        {
+            extension = filename.substr(lastDotPos);
+            std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+        }
+
+        // Determine if it's a directory (ending with /)
+        bool isDirectory = !filename.empty() && filename.back() == '/';
+
+        const char *sql = "INSERT INTO entries (pak_id, filename, offset, size, extension, is_directory) VALUES (?, ?, ?, ?, ?, ?);";
+
+        int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Prepare error: " << sqlite3_errmsg(db) << std::endl;
+            return false;
+        }
+
+        sqlite3_bind_int(stmt, 1, pakId);
+        sqlite3_bind_text(stmt, 2, filename.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 3, offset);
+        sqlite3_bind_int(stmt, 4, size);
+        sqlite3_bind_text(stmt, 5, extension.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 6, isDirectory ? 1 : 0);
+
+        rc = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        return rc == SQLITE_DONE;
+    }
+
+    bool clearEntriesForPak(int pakId)
+    {
+        sqlite3_stmt *stmt;
+        const char *sql = "DELETE FROM entries WHERE pak_id = ?;";
+
+        int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Prepare error: " << sqlite3_errmsg(db) << std::endl;
+            return false;
+        }
+
+        sqlite3_bind_int(stmt, 1, pakId);
+        rc = sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+
+        return rc == SQLITE_DONE;
+    }
+
+    std::vector<PakFileEntry> searchEntries(int pakId, const std::string &searchQuery, const std::string &directory = "", const std::string &fileType = "")
+    {
+        std::vector<PakFileEntry> results;
+        sqlite3_stmt *stmt;
+
+        std::string sql =
+            "SELECT id, filename, offset, size FROM entries "
+            "WHERE pak_id = ? AND is_directory = 0";
+
+        std::vector<std::string> params;
+        params.push_back(std::to_string(pakId));
+
+        if (!searchQuery.empty())
+        {
+            sql += " AND filename LIKE ?";
+            params.push_back("%" + searchQuery + "%");
+        }
+
+        if (!directory.empty())
+        {
+            sql += " AND filename LIKE ?";
+            params.push_back(directory + "%");
+        }
+
+        if (!fileType.empty())
+        {
+            sql += " AND extension = ?";
+            params.push_back(fileType);
+        }
+
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Search prepare error: " << sqlite3_errmsg(db) << std::endl;
+            return results;
+        }
+
+        for (size_t i = 0; i < params.size(); i++)
+        {
+            if (i == 0)
+            { // pakId is an integer
+                sqlite3_bind_int(stmt, i + 1, std::stoi(params[i]));
+            }
+            else
+            {
+                sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_STATIC);
+            }
+        }
+
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            PakFileEntry entry;
+            entry.filename = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1));
+            entry.offset = sqlite3_column_int(stmt, 2);
+            entry.size = sqlite3_column_int(stmt, 3);
+            // Format will be set later
+            results.push_back(entry);
+        }
+
+        sqlite3_finalize(stmt);
+        return results;
+    }
+
+    std::vector<std::string> getDirectories(int pakId, const std::string &parentDir = "")
+    {
+        std::vector<std::string> directories;
+        sqlite3_stmt *stmt;
+
+        std::string sql;
+        if (parentDir.empty())
+        {
+            // Get top-level directories
+            sql = "SELECT DISTINCT substr(filename, 1, instr(filename, '/')) "
+                  "FROM entries WHERE pak_id = ? AND filename LIKE '%/';";
+        }
+        else
+        {
+            // Get subdirectories of parentDir
+            sql = "SELECT DISTINCT substr(filename, length(?) + 1, instr(substr(filename, length(?) + 1), '/')) "
+                  "FROM entries WHERE pak_id = ? AND filename LIKE ? || '%/' AND filename NOT LIKE ? || '/%/%';";
+        }
+
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+        if (rc != SQLITE_OK)
+        {
+            std::cerr << "Directory query prepare error: " << sqlite3_errmsg(db) << std::endl;
+            return directories;
+        }
+
+        if (parentDir.empty())
+        {
+            sqlite3_bind_int(stmt, 1, pakId);
+        }
+        else
+        {
+            sqlite3_bind_text(stmt, 1, parentDir.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(stmt, 2, parentDir.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(stmt, 3, pakId);
+            sqlite3_bind_text(stmt, 4, parentDir.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(stmt, 5, parentDir.c_str(), -1, SQLITE_STATIC);
+        }
+
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            const char *dirName = reinterpret_cast<const char *>(sqlite3_column_text(stmt, 0));
+            if (dirName)
+            {
+                directories.push_back(dirName);
+            }
+        }
+
+        sqlite3_finalize(stmt);
+        return directories;
+    }
+
+    void closeDatabase()
+    {
+        if (db)
+        {
+            sqlite3_close(db);
+            db = nullptr;
+        }
+    }
+}
 
 namespace ParserRegistry
 {
@@ -540,12 +817,150 @@ struct PakViewerState
     float gridScale = 0.5f;
     std::string searchFilter;
     std::string statusMessage;
+    int currentPakId = -1; // Database ID for the current PAK file
 };
 
 void setStatusMessage(PakViewerState &state, const std::string &message)
 {
     state.statusMessage = message;
     std::cout << "Status: " << message << std::endl;
+}
+
+// New function to build the file tree from database entries instead of in-memory vector
+void buildFileTreeFromDB(int pakId, FileTreeNode &root)
+{
+    root.children.clear();
+
+    // Get all entries from the database for this PAK file
+    auto entries = SQLiteHelper::searchEntries(pakId, "", "");
+
+    for (const auto &entry : entries)
+    {
+        std::string path = entry.filename;
+        FileTreeNode *current = &root;
+
+        size_t pos = 0;
+        while ((pos = path.find('/')) != std::string::npos)
+        {
+            std::string dir = path.substr(0, pos);
+            path = path.substr(pos + 1);
+
+            auto it = std::find_if(current->children.begin(), current->children.end(),
+                                   [&dir](const FileTreeNode &node)
+                                   { return node.name == dir; });
+
+            if (it == current->children.end())
+            {
+                current->children.push_back({dir, {}, std::nullopt});
+                current = &current->children.back();
+            }
+            else
+            {
+                current = &(*it);
+            }
+        }
+
+        if (!path.empty())
+        {
+            current->children.push_back({path, {}, entry});
+        }
+    }
+}
+
+// Helper function to prepare the database when opening a new PAK file
+bool prepareDatabaseForPak(PakViewerState &state, const std::string &pakPath, PakFormat format)
+{
+    // Insert the PAK file record and get its ID
+    int pakId = SQLiteHelper::insertPakFile(pakPath, format);
+    if (pakId == -1)
+    {
+        setStatusMessage(state, "Failed to add PAK file to database");
+        return false;
+    }
+
+    state.currentPakId = pakId;
+    return true;
+}
+
+// Helper function to add entries to the database
+bool addEntriesToDatabase(PakViewerState &state, const std::vector<PakFileEntry> &entries)
+{
+    if (state.currentPakId == -1)
+    {
+        setStatusMessage(state, "No active PAK file in database");
+        return false;
+    }
+
+    // Clear any existing entries for this PAK
+    SQLiteHelper::clearEntriesForPak(state.currentPakId);
+
+    // Add all entries to the database
+    for (const auto &entry : entries)
+    {
+        if (!SQLiteHelper::insertEntry(state.currentPakId, entry.filename, entry.offset, entry.size))
+        {
+            setStatusMessage(state, "Failed to add entry to database: " + entry.filename);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// This replaces the original version to use database for loading filtered images
+void loadFilteredImages(PakViewerState &state)
+{
+    state.loadedImages.clear();
+
+    // Get image file entries from database that match the current filter
+    std::vector<std::string> imageExtensions = {".pcx", ".wal", ".png", ".jpg", ".jpeg", ".tga"};
+    std::vector<PakFileEntry> imageEntries;
+
+    for (const auto &ext : imageExtensions)
+    {
+        auto entries = SQLiteHelper::searchEntries(state.currentPakId, state.searchFilter, state.currentFolder, ext);
+        for (auto &entry : entries)
+        {
+            // Set the format for the entry based on how the entry will be read
+            entry.format = PakFormat::PAK; // Default to PAK format
+
+            // Use registry to determine actual format
+            std::string fileExt = std::filesystem::path(state.pakPath).extension().string();
+            std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::tolower);
+            PakFormat format = ParserRegistry::getFormatFromExtension(fileExt);
+            entry.format = format;
+
+            imageEntries.push_back(entry);
+        }
+    }
+
+    // Load each image
+    for (const auto &entry : imageEntries)
+    {
+        std::string ext = std::filesystem::path(entry.filename).extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+        std::optional<PCXImage> image;
+
+        if (ext == ".pcx")
+        {
+            image = PCXParser::loadPCX(state.pakPath, entry);
+        }
+        else if (ext == ".wal")
+        {
+            image = WALParser::loadWAL(state.pakPath, entry);
+        }
+        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
+        {
+            image = STBImageParser::loadSTBImage(state.pakPath, entry);
+        }
+
+        if (image)
+        {
+            image->filename = entry.filename;
+            state.loadedImages.push_back(*image);
+        }
+    }
 }
 
 void buildFileTree(const std::vector<PakFileEntry> &entries, FileTreeNode &root)
@@ -687,43 +1102,6 @@ std::vector<const FileTreeNode *> getFilteredFiles(const FileTreeNode &node, con
     }
 
     return results;
-}
-
-void loadFilteredImages(const std::vector<const FileTreeNode *> &filteredNodes, const std::string &pakPath, std::vector<PCXImage> &images)
-{
-    for (const FileTreeNode *node : filteredNodes)
-    {
-        if (!node->entry)
-            continue;
-
-        std::string ext = std::filesystem::path(node->name).extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-        if (ext == ".pcx")
-        {
-            if (auto image = PCXParser::loadPCX(pakPath, *node->entry))
-            {
-                image->filename = node->entry->filename;
-                images.push_back(*image);
-            }
-        }
-        else if (ext == ".wal")
-        {
-            if (auto image = WALParser::loadWAL(pakPath, *node->entry))
-            {
-                image->filename = node->entry->filename;
-                images.push_back(*image);
-            }
-        }
-        else if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga")
-        {
-            if (auto image = STBImageParser::loadSTBImage(pakPath, *node->entry))
-            {
-                image->filename = node->entry->filename;
-                images.push_back(*image);
-            }
-        }
-    }
 }
 
 // Helper to check if any children match the filter
@@ -882,12 +1260,8 @@ void renderFileTreeNode(const FileTreeNode &node, PakViewerState &state, int dep
             state.gridView = true;
             state.currentFolder = node.name;
 
-            // First get filtered files based on search criteria
-            auto filteredFiles = getFilteredFiles(node, state.searchFilter);
-
-            // Clear previous images and load new ones
-            state.loadedImages.clear();
-            loadFilteredImages(filteredFiles, state.pakPath, state.loadedImages);
+            // Load images from the database with the current folder filter
+            loadFilteredImages(state);
         }
     }
 }
@@ -946,19 +1320,42 @@ auto renderUI(PakViewerState &state) -> void
 
                     if (newEntries)
                     {
+                        // Store original entries for file access but primarily use database
                         state.entries = *newEntries;
                         state.pakPath = selectedFile;
                         state.currentImage = std::nullopt;
                         state.selectedEntry = -1;
-                        buildFileTree(state.entries, state.fileTree);
-                        state.searchFilter = ""; // Clear search filter when loading a new file
-                        state.loadedImages.clear();
-                        setStatusMessage(state, "File loaded successfully");
+
+                        // Prepare database for this PAK file
+                        if (prepareDatabaseForPak(state, selectedFile, format))
+                        {
+                            // Add entries to database
+                            if (addEntriesToDatabase(state, state.entries))
+                            {
+                                // Build file tree from database
+                                buildFileTreeFromDB(state.currentPakId, state.fileTree);
+                                state.searchFilter = ""; // Clear search filter when loading a new file
+                                state.loadedImages.clear();
+                                setStatusMessage(state, "File loaded successfully into database");
+                            }
+                            else
+                            {
+                                setStatusMessage(state, "Failed to add entries to database");
+                            }
+                        }
+                        else
+                        {
+                            setStatusMessage(state, "Failed to prepare database for PAK file");
+                        }
                     }
                     else
                     {
-                        setStatusMessage(state, "Unknown file type");
+                        setStatusMessage(state, "Failed to parse file");
                     }
+                }
+                else
+                {
+                    setStatusMessage(state, "Unknown file type");
                 }
             }
         }
@@ -1004,31 +1401,13 @@ auto renderUI(PakViewerState &state) -> void
     {
         searchInProgress = true;
 
-        // Defer grid view update to avoid UI freezing
-        if (state.gridView && !state.fileTree.children.empty())
+        // Perform database search if we have a valid PAK file loaded
+        if (state.currentPakId != -1)
         {
-            // Find the current folder node - simplified approach
-            FileTreeNode *folderNode = &state.fileTree;
-
-            // Only attempt to find the specific folder if it's a top-level folder
-            // This avoids expensive recursive searches
-            if (!state.currentFolder.empty())
-            {
-                for (auto &child : state.fileTree.children)
-                {
-                    if (child.name == state.currentFolder)
-                    {
-                        folderNode = &child;
-                        break;
-                    }
-                }
-            }
-
-            // Run the improved filtering and loading approach
-            auto filteredFiles = getFilteredFiles(*folderNode, state.searchFilter);
-            state.loadedImages.clear();
-            loadFilteredImages(filteredFiles, state.pakPath, state.loadedImages);
+            // Load filtered images using database query
+            loadFilteredImages(state);
         }
+
         searchInProgress = false;
     }
 
@@ -1307,6 +1686,13 @@ int main()
 
     PakViewerState state;
 
+    // Initialize the SQLite database
+    if (!SQLiteHelper::initDatabase())
+    {
+        std::cerr << "Failed to initialize SQLite database" << std::endl;
+        return -1;
+    }
+
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
@@ -1334,6 +1720,9 @@ int main()
     {
         glDeleteTextures(1, &image.textureID);
     }
+
+    // Close the SQLite database before exiting
+    SQLiteHelper::closeDatabase();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
