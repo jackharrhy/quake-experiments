@@ -6,5 +6,5 @@ ericw-tools
 minimal-quake2-base-xcode
 
 autosave
+*.swp
 
-*.zip
