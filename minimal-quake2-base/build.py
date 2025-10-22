@@ -29,8 +29,27 @@ pak0_dir = tmp_dir / "pak0"
 release_dir = Path("release")
 
 debug_build = True
-build_odin = True
+build_odin = False
 odin_vet = False
+
+def get_os_info():
+    if sys.platform.startswith("linux"):
+        os_string = "Linux"
+    elif sys.platform.startswith("win"):
+        os_string = "win64"
+    else:
+        os_string = "Darwin"
+
+
+def get_dyn_lib_ext():
+    if sys.platform.startswith("linux"):
+        ext = "so"
+    elif sys.platform.startswith("win"):
+        ext = "dll"
+    else:
+        ext = "dylib"
+
+    return ext
 
 
 def clone_yquake2():
@@ -84,9 +103,6 @@ def download_ericw_tools():
             dest.parent.mkdir(parents=True, exist_ok=True)
             file.replace(dest)
 
-    sys.exit(1)
-
-
 def clone():
     clone_yquake2()
     clone_yquake2_ref_vk()
@@ -120,7 +136,7 @@ def build_game_odin():
         "build",
         "./game-odin",
         "-build-mode:dll",
-        "-out:./release/baseq2/game.dylib",
+        f"-out:./release/baseq2/game.{get_dyn_lib_ext()}",
     ]
 
     if debug_build:
@@ -137,8 +153,8 @@ def build_game_c():
     (release_dir / "baseq2").mkdir(parents=True, exist_ok=True)
     subprocess.run(["make", "clean"], check=True, cwd=game_c_dir)
     subprocess.run(["make", "DEBUG=0"], check=True, cwd=game_c_dir)
-    game_lib_src = game_c_dir / "release" / "game.dylib"
-    game_lib_dst = release_dir / "baseq2" / "game.dylib"
+    game_lib_src = game_c_dir / "release" / f"game.{get_dyn_lib_ext()}"
+    game_lib_dst = release_dir / "baseq2" / f"game.{get_dyn_lib_ext()}"
     shutil.copy2(game_lib_src, game_lib_dst)
 
 
@@ -162,6 +178,7 @@ def build_maps():
             exe = ".exe" if sys.platform.startswith("win") else ""
             path = ericw_tools_dir / f"{tool_name}{exe}"
             print(f"Path for {tool_name}: {path}")
+            path = os.path.abspath(path)
             return str(path)
 
         subprocess.run([tool_path("qbsp"), "-q2bsp", f"{map_name}.map"], check=True, cwd=maps_dir)
@@ -221,11 +238,11 @@ def copy_files():
     files = [
         yquake2_dir / "release" / "q2ded",
         yquake2_dir / "release" / "quake2",
-        yquake2_dir / "release" / "ref_soft.dylib",
-        yquake2_dir / "release" / "ref_gl1.dylib",
-        yquake2_dir / "release" / "ref_gl3.dylib",
-        yquake2_dir / "release" / "ref_gles3.dylib",
-        yquake2_ref_vk_dir / "release" / "ref_vk.dylib",
+        yquake2_dir / "release" / f"ref_soft.{get_dyn_lib_ext()}",
+        yquake2_dir / "release" / f"ref_gl1.{get_dyn_lib_ext()}",
+        yquake2_dir / "release" / f"ref_gl3.{get_dyn_lib_ext()}",
+        yquake2_dir / "release" / f"ref_gles3.{get_dyn_lib_ext()}",
+        yquake2_ref_vk_dir / "release" / f"ref_vk.{get_dyn_lib_ext()}",
     ]
 
     for file in files:
@@ -327,16 +344,6 @@ def loc_metrics():
 
     print(f"Lines of code metrics written to {output_file}")
 
-
-def get_os_info():
-    os_string = "Darwin"
-
-    if sys.platform.startswith("linux"):
-        os_string = "Linux"
-    elif sys.platform.startswith("win"):
-        os_string = "win64"
-
-    return os_string
 
 def main():
 
