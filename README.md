@@ -1,11 +1,8 @@
 # quake experiments
 
-idtech fun 🧪
+this repo used to contain folders, but those folders grew their own wings elsewhere...
 
-- [minimal-quake2-base](./minimal-quake2-base) - just enough stuff to start creating your own _fully_ custom games with quake 2 (work in progress)
-
-things that have grown into their own repos:
-
+- [fogo-sh/quakeless-ii](https://github.com/fogo-sh/quakeless-ii) - just enough stuff to start creating your own _fully_ custom games with quake 2
 - [fogo-sh/pak-adventure](https://github.com/fogo-sh/pak-adventure) - pak file viewer
 
 ---
